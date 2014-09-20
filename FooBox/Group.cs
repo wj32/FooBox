@@ -20,6 +20,7 @@ namespace FooBox
         }
     
         public string Description { get; set; }
+        public bool IsAdmin { get; set; }
     
         public virtual ICollection<User> Users { get; set; }
     }

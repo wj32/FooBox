@@ -16,10 +16,12 @@ namespace FooBox
     {
         public long Id { get; set; }
         public ChangeType Type { get; set; }
-        public long FileId { get; set; }
         public long ChangelistId { get; set; }
+        public long FileId { get; set; }
+        public Nullable<long> DocumentVersionId { get; set; }
     
-        public virtual File File { get; set; }
         public virtual Changelist Changelist { get; set; }
+        public virtual File File { get; set; }
+        public virtual DocumentVersion DocumentVersion { get; set; }
     }
 }

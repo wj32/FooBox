@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 09/20/2014 20:46:22
+-- Date Created: 09/20/2014 22:14:28
 -- Generated from EDMX file: D:\projects\FooBox\FooBox\FooBoxModel.edmx
 -- --------------------------------------------------
 
@@ -26,14 +26,14 @@ GO
 IF OBJECT_ID(N'[dbo].[FK_TokenUser]', 'F') IS NOT NULL
     ALTER TABLE [dbo].[Tokens] DROP CONSTRAINT [FK_TokenUser];
 GO
-IF OBJECT_ID(N'[dbo].[FK_FolderUser]', 'F') IS NOT NULL
-    ALTER TABLE [dbo].[Files_Folder] DROP CONSTRAINT [FK_FolderUser];
+IF OBJECT_ID(N'[dbo].[FK_FolderOwner]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[Files_Folder] DROP CONSTRAINT [FK_FolderOwner];
 GO
-IF OBJECT_ID(N'[dbo].[FK_FolderIdentity_Folder]', 'F') IS NOT NULL
-    ALTER TABLE [dbo].[FolderEditors] DROP CONSTRAINT [FK_FolderIdentity_Folder];
+IF OBJECT_ID(N'[dbo].[FK_FolderEditor_Folder]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[FolderEditors] DROP CONSTRAINT [FK_FolderEditor_Folder];
 GO
-IF OBJECT_ID(N'[dbo].[FK_FolderIdentity_Identity]', 'F') IS NOT NULL
-    ALTER TABLE [dbo].[FolderEditors] DROP CONSTRAINT [FK_FolderIdentity_Identity];
+IF OBJECT_ID(N'[dbo].[FK_FolderEditor_Identity]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[FolderEditors] DROP CONSTRAINT [FK_FolderEditor_Identity];
 GO
 IF OBJECT_ID(N'[dbo].[FK_FolderFile_Folder]', 'F') IS NOT NULL
     ALTER TABLE [dbo].[FolderFile] DROP CONSTRAINT [FK_FolderFile_Folder];
@@ -43,9 +43,6 @@ IF OBJECT_ID(N'[dbo].[FK_FolderFile_File]', 'F') IS NOT NULL
 GO
 IF OBJECT_ID(N'[dbo].[FK_FolderShareFolder]', 'F') IS NOT NULL
     ALTER TABLE [dbo].[Files_Folder] DROP CONSTRAINT [FK_FolderShareFolder];
-GO
-IF OBJECT_ID(N'[dbo].[FK_DocumentBlob]', 'F') IS NOT NULL
-    ALTER TABLE [dbo].[Files_Document] DROP CONSTRAINT [FK_DocumentBlob];
 GO
 IF OBJECT_ID(N'[dbo].[FK_UserClient]', 'F') IS NOT NULL
     ALTER TABLE [dbo].[Clients] DROP CONSTRAINT [FK_UserClient];
@@ -58,6 +55,18 @@ IF OBJECT_ID(N'[dbo].[FK_ChangeFile]', 'F') IS NOT NULL
 GO
 IF OBJECT_ID(N'[dbo].[FK_ChangelistChange]', 'F') IS NOT NULL
     ALTER TABLE [dbo].[Changes] DROP CONSTRAINT [FK_ChangelistChange];
+GO
+IF OBJECT_ID(N'[dbo].[FK_DocumentDocumentVersion]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[DocumentVersions] DROP CONSTRAINT [FK_DocumentDocumentVersion];
+GO
+IF OBJECT_ID(N'[dbo].[FK_DocumentVersionBlob]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[DocumentVersions] DROP CONSTRAINT [FK_DocumentVersionBlob];
+GO
+IF OBJECT_ID(N'[dbo].[FK_ChangeDocumentVersion]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[Changes] DROP CONSTRAINT [FK_ChangeDocumentVersion];
+GO
+IF OBJECT_ID(N'[dbo].[FK_DocumentVersionClient]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[DocumentVersions] DROP CONSTRAINT [FK_DocumentVersionClient];
 GO
 IF OBJECT_ID(N'[dbo].[FK_User_inherits_Identity]', 'F') IS NOT NULL
     ALTER TABLE [dbo].[Identities_User] DROP CONSTRAINT [FK_User_inherits_Identity];
@@ -96,6 +105,9 @@ IF OBJECT_ID(N'[dbo].[Changelists]', 'U') IS NOT NULL
 GO
 IF OBJECT_ID(N'[dbo].[Changes]', 'U') IS NOT NULL
     DROP TABLE [dbo].[Changes];
+GO
+IF OBJECT_ID(N'[dbo].[DocumentVersions]', 'U') IS NOT NULL
+    DROP TABLE [dbo].[DocumentVersions];
 GO
 IF OBJECT_ID(N'[dbo].[Identities_User]', 'U') IS NOT NULL
     DROP TABLE [dbo].[Identities_User];
@@ -143,8 +155,7 @@ GO
 CREATE TABLE [dbo].[Files] (
     [Id] bigint IDENTITY(1,1) NOT NULL,
     [Name] nvarchar(max)  NOT NULL,
-    [State] int  NOT NULL,
-    [TimeStamp] datetime  NOT NULL
+    [State] int  NOT NULL
 );
 GO
 
@@ -176,8 +187,19 @@ GO
 CREATE TABLE [dbo].[Changes] (
     [Id] bigint IDENTITY(1,1) NOT NULL,
     [Type] int  NOT NULL,
+    [ChangelistId] bigint  NOT NULL,
     [FileId] bigint  NOT NULL,
-    [ChangelistId] bigint  NOT NULL
+    [DocumentVersionId] bigint  NULL
+);
+GO
+
+-- Creating table 'DocumentVersions'
+CREATE TABLE [dbo].[DocumentVersions] (
+    [Id] bigint IDENTITY(1,1) NOT NULL,
+    [TimeStamp] nvarchar(max)  NOT NULL,
+    [DocumentId] bigint  NOT NULL,
+    [BlobId] uniqueidentifier  NOT NULL,
+    [ClientId] bigint  NOT NULL
 );
 GO
 
@@ -196,6 +218,7 @@ GO
 -- Creating table 'Identities_Group'
 CREATE TABLE [dbo].[Identities_Group] (
     [Description] nvarchar(max)  NOT NULL,
+    [IsAdmin] bit  NOT NULL,
     [Id] bigint  NOT NULL
 );
 GO
@@ -210,7 +233,6 @@ GO
 
 -- Creating table 'Files_Document'
 CREATE TABLE [dbo].[Files_Document] (
-    [BlobId] uniqueidentifier  NULL,
     [Id] bigint  NOT NULL
 );
 GO
@@ -224,7 +246,7 @@ GO
 
 -- Creating table 'FolderEditors'
 CREATE TABLE [dbo].[FolderEditors] (
-    [FolderIdentity_Identity_Id] bigint  NOT NULL,
+    [FolderEditor_Identity_Id] bigint  NOT NULL,
     [Editors_Id] bigint  NOT NULL
 );
 GO
@@ -282,6 +304,12 @@ ADD CONSTRAINT [PK_Changes]
     PRIMARY KEY CLUSTERED ([Id] ASC);
 GO
 
+-- Creating primary key on [Id] in table 'DocumentVersions'
+ALTER TABLE [dbo].[DocumentVersions]
+ADD CONSTRAINT [PK_DocumentVersions]
+    PRIMARY KEY CLUSTERED ([Id] ASC);
+GO
+
 -- Creating primary key on [Id] in table 'Identities_User'
 ALTER TABLE [dbo].[Identities_User]
 ADD CONSTRAINT [PK_Identities_User]
@@ -312,10 +340,10 @@ ADD CONSTRAINT [PK_UserGroup]
     PRIMARY KEY CLUSTERED ([Users_Id], [Groups_Id] ASC);
 GO
 
--- Creating primary key on [FolderIdentity_Identity_Id], [Editors_Id] in table 'FolderEditors'
+-- Creating primary key on [FolderEditor_Identity_Id], [Editors_Id] in table 'FolderEditors'
 ALTER TABLE [dbo].[FolderEditors]
 ADD CONSTRAINT [PK_FolderEditors]
-    PRIMARY KEY CLUSTERED ([FolderIdentity_Identity_Id], [Editors_Id] ASC);
+    PRIMARY KEY CLUSTERED ([FolderEditor_Identity_Id], [Editors_Id] ASC);
 GO
 
 -- Creating primary key on [ParentFolders_Id], [Files_Id] in table 'FolderFile'
@@ -367,22 +395,22 @@ GO
 
 -- Creating foreign key on [Owner_Id] in table 'Files_Folder'
 ALTER TABLE [dbo].[Files_Folder]
-ADD CONSTRAINT [FK_FolderUser]
+ADD CONSTRAINT [FK_FolderOwner]
     FOREIGN KEY ([Owner_Id])
     REFERENCES [dbo].[Identities_User]
         ([Id])
     ON DELETE NO ACTION ON UPDATE NO ACTION;
 
--- Creating non-clustered index for FOREIGN KEY 'FK_FolderUser'
-CREATE INDEX [IX_FK_FolderUser]
+-- Creating non-clustered index for FOREIGN KEY 'FK_FolderOwner'
+CREATE INDEX [IX_FK_FolderOwner]
 ON [dbo].[Files_Folder]
     ([Owner_Id]);
 GO
 
--- Creating foreign key on [FolderIdentity_Identity_Id] in table 'FolderEditors'
+-- Creating foreign key on [FolderEditor_Identity_Id] in table 'FolderEditors'
 ALTER TABLE [dbo].[FolderEditors]
-ADD CONSTRAINT [FK_FolderIdentity_Folder]
-    FOREIGN KEY ([FolderIdentity_Identity_Id])
+ADD CONSTRAINT [FK_FolderEditor_Folder]
+    FOREIGN KEY ([FolderEditor_Identity_Id])
     REFERENCES [dbo].[Files_Folder]
         ([Id])
     ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -390,14 +418,14 @@ GO
 
 -- Creating foreign key on [Editors_Id] in table 'FolderEditors'
 ALTER TABLE [dbo].[FolderEditors]
-ADD CONSTRAINT [FK_FolderIdentity_Identity]
+ADD CONSTRAINT [FK_FolderEditor_Identity]
     FOREIGN KEY ([Editors_Id])
     REFERENCES [dbo].[Identities]
         ([Id])
     ON DELETE NO ACTION ON UPDATE NO ACTION;
 
--- Creating non-clustered index for FOREIGN KEY 'FK_FolderIdentity_Identity'
-CREATE INDEX [IX_FK_FolderIdentity_Identity]
+-- Creating non-clustered index for FOREIGN KEY 'FK_FolderEditor_Identity'
+CREATE INDEX [IX_FK_FolderEditor_Identity]
 ON [dbo].[FolderEditors]
     ([Editors_Id]);
 GO
@@ -437,20 +465,6 @@ ADD CONSTRAINT [FK_FolderShareFolder]
 CREATE INDEX [IX_FK_FolderShareFolder]
 ON [dbo].[Files_Folder]
     ([ShareFolder_Id]);
-GO
-
--- Creating foreign key on [BlobId] in table 'Files_Document'
-ALTER TABLE [dbo].[Files_Document]
-ADD CONSTRAINT [FK_DocumentBlob]
-    FOREIGN KEY ([BlobId])
-    REFERENCES [dbo].[Blobs]
-        ([Id])
-    ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- Creating non-clustered index for FOREIGN KEY 'FK_DocumentBlob'
-CREATE INDEX [IX_FK_DocumentBlob]
-ON [dbo].[Files_Document]
-    ([BlobId]);
 GO
 
 -- Creating foreign key on [UserId] in table 'Clients'
@@ -507,6 +521,62 @@ ADD CONSTRAINT [FK_ChangelistChange]
 CREATE INDEX [IX_FK_ChangelistChange]
 ON [dbo].[Changes]
     ([ChangelistId]);
+GO
+
+-- Creating foreign key on [DocumentId] in table 'DocumentVersions'
+ALTER TABLE [dbo].[DocumentVersions]
+ADD CONSTRAINT [FK_DocumentDocumentVersion]
+    FOREIGN KEY ([DocumentId])
+    REFERENCES [dbo].[Files_Document]
+        ([Id])
+    ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- Creating non-clustered index for FOREIGN KEY 'FK_DocumentDocumentVersion'
+CREATE INDEX [IX_FK_DocumentDocumentVersion]
+ON [dbo].[DocumentVersions]
+    ([DocumentId]);
+GO
+
+-- Creating foreign key on [BlobId] in table 'DocumentVersions'
+ALTER TABLE [dbo].[DocumentVersions]
+ADD CONSTRAINT [FK_DocumentVersionBlob]
+    FOREIGN KEY ([BlobId])
+    REFERENCES [dbo].[Blobs]
+        ([Id])
+    ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- Creating non-clustered index for FOREIGN KEY 'FK_DocumentVersionBlob'
+CREATE INDEX [IX_FK_DocumentVersionBlob]
+ON [dbo].[DocumentVersions]
+    ([BlobId]);
+GO
+
+-- Creating foreign key on [DocumentVersionId] in table 'Changes'
+ALTER TABLE [dbo].[Changes]
+ADD CONSTRAINT [FK_ChangeDocumentVersion]
+    FOREIGN KEY ([DocumentVersionId])
+    REFERENCES [dbo].[DocumentVersions]
+        ([Id])
+    ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- Creating non-clustered index for FOREIGN KEY 'FK_ChangeDocumentVersion'
+CREATE INDEX [IX_FK_ChangeDocumentVersion]
+ON [dbo].[Changes]
+    ([DocumentVersionId]);
+GO
+
+-- Creating foreign key on [ClientId] in table 'DocumentVersions'
+ALTER TABLE [dbo].[DocumentVersions]
+ADD CONSTRAINT [FK_DocumentVersionClient]
+    FOREIGN KEY ([ClientId])
+    REFERENCES [dbo].[Clients]
+        ([Id])
+    ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- Creating non-clustered index for FOREIGN KEY 'FK_DocumentVersionClient'
+CREATE INDEX [IX_FK_DocumentVersionClient]
+ON [dbo].[DocumentVersions]
+    ([ClientId]);
 GO
 
 -- Creating foreign key on [Id] in table 'Identities_User'

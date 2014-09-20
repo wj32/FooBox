@@ -22,8 +22,7 @@
         <AssociationConnector Association="FooBoxModel.FolderEditor" />
         <AssociationConnector Association="FooBoxModel.FolderFile" />
         <AssociationConnector Association="FooBoxModel.FolderShareFolder" />
-        <EntityTypeShape EntityType="FooBoxModel.Blob" Width="1.5" PointX="9.75" PointY="9.875" />
-        <AssociationConnector Association="FooBoxModel.DocumentBlob" />
+        <EntityTypeShape EntityType="FooBoxModel.Blob" Width="1.5" PointX="10.375" PointY="10.625" />
         <EntityTypeShape EntityType="FooBoxModel.Client" Width="1.5" PointX="3.625" PointY="10.25" />
         <AssociationConnector Association="FooBoxModel.UserClient" />
         <EntityTypeShape EntityType="FooBoxModel.Changelist" Width="1.5" PointX="6.375" PointY="10.75" />
@@ -31,6 +30,11 @@
         <EntityTypeShape EntityType="FooBoxModel.Change" Width="1.5" PointX="6.375" PointY="13" />
         <AssociationConnector Association="FooBoxModel.ChangeFile" />
         <AssociationConnector Association="FooBoxModel.ChangelistChange" />
+        <EntityTypeShape EntityType="FooBoxModel.DocumentVersion" Width="1.5" PointX="8.125" PointY="10" />
+        <AssociationConnector Association="FooBoxModel.DocumentDocumentVersion" />
+        <AssociationConnector Association="FooBoxModel.DocumentVersionBlob" />
+        <AssociationConnector Association="FooBoxModel.ChangeDocumentVersion" />
+        <AssociationConnector Association="FooBoxModel.DocumentVersionClient" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

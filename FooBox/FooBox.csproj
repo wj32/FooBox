@@ -179,6 +179,9 @@
     <Compile Include="Document.cs">
       <DependentUpon>FooBoxModel.tt</DependentUpon>
     </Compile>
+    <Compile Include="DocumentVersion.cs">
+      <DependentUpon>FooBoxModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="File.cs">
       <DependentUpon>FooBoxModel.tt</DependentUpon>
     </Compile>

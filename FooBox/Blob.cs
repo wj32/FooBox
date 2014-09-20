@@ -16,13 +16,13 @@ namespace FooBox
     {
         public Blob()
         {
-            this.Documents = new HashSet<Document>();
+            this.DocumentVersions = new HashSet<DocumentVersion>();
         }
     
         public System.Guid Id { get; set; }
         public long Size { get; set; }
         public string Hash { get; set; }
     
-        public virtual ICollection<Document> Documents { get; set; }
+        public virtual ICollection<DocumentVersion> DocumentVersions { get; set; }
     }
 }

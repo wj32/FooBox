@@ -14,6 +14,7 @@ namespace FooBox
     public enum ChangeType : int
     {
         Add = 0,
-        Modify = 1
+        ModifyState = 1,
+        AddVersion = 2
     }
 }

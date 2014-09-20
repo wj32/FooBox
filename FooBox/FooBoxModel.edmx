@@ -13,12 +13,13 @@
     <EntitySet Name="Clients" EntityType="FooBoxModel.Store.Clients" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="Changelists" EntityType="FooBoxModel.Store.Changelists" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="Changes" EntityType="FooBoxModel.Store.Changes" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="DocumentVersions" EntityType="FooBoxModel.Store.DocumentVersions" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="Identities_User" EntityType="FooBoxModel.Store.Identities_User" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="Identities_Group" EntityType="FooBoxModel.Store.Identities_Group" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="Files_Folder" EntityType="FooBoxModel.Store.Files_Folder" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="Files_Document" EntityType="FooBoxModel.Store.Files_Document" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="UserGroup" EntityType="FooBoxModel.Store.UserGroup" store:Type="Tables" Schema="dbo" />
-    <EntitySet Name="FolderEditors" EntityType="FooBoxModel.Store.FolderIdentity" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="FolderEditors" EntityType="FooBoxModel.Store.FolderEditor" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="FolderFile" EntityType="FooBoxModel.Store.FolderFile" store:Type="Tables" Schema="dbo" />
     <AssociationSet Name="FK_UserGroup_User" Association="FooBoxModel.Store.FK_UserGroup_User">
       <End Role="User" EntitySet="Identities_User" />
@@ -32,17 +33,17 @@
       <End Role="Token" EntitySet="Tokens" />
       <End Role="User" EntitySet="Identities_User" />
     </AssociationSet>
-    <AssociationSet Name="FolderOwner" Association="FooBoxModel.Store.FolderUser">
+    <AssociationSet Name="FolderOwner" Association="FooBoxModel.Store.FolderOwner">
       <End Role="Folder" EntitySet="Files_Folder" />
       <End Role="User" EntitySet="Identities_User" />
     </AssociationSet>
-    <AssociationSet Name="FK_FolderEditors_Folder" Association="FooBoxModel.Store.FK_FolderIdentity_Folder">
+    <AssociationSet Name="FK_FolderEditors_Folder" Association="FooBoxModel.Store.FK_FolderEditor_Folder">
       <End Role="Folder" EntitySet="Files_Folder" />
-      <End Role="FolderIdentity" EntitySet="FolderEditors" />
+      <End Role="FolderEditor" EntitySet="FolderEditors" />
     </AssociationSet>
-    <AssociationSet Name="FK_FolderEditors_Identity" Association="FooBoxModel.Store.FK_FolderIdentity_Identity">
+    <AssociationSet Name="FK_FolderEditors_Identity" Association="FooBoxModel.Store.FK_FolderEditor_Identity">
       <End Role="Identity" EntitySet="Identities" />
-      <End Role="FolderIdentity" EntitySet="FolderEditors" />
+      <End Role="FolderEditor" EntitySet="FolderEditors" />
     </AssociationSet>
     <AssociationSet Name="FK_FolderFile_Folder" Association="FooBoxModel.Store.FK_FolderFile_Folder">
       <End Role="Folder" EntitySet="Files_Folder" />
@@ -55,10 +56,6 @@
     <AssociationSet Name="FolderShareFolder" Association="FooBoxModel.Store.FolderShareFolder">
       <End Role="Folder" EntitySet="Files_Folder" />
       <End Role="ShareSubFolder" EntitySet="Files_Folder" />
-    </AssociationSet>
-    <AssociationSet Name="DocumentBlob" Association="FooBoxModel.Store.DocumentBlob">
-      <End Role="Document" EntitySet="Files_Document" />
-      <End Role="Blob" EntitySet="Blobs" />
     </AssociationSet>
     <AssociationSet Name="UserClient" Association="FooBoxModel.Store.UserClient">
       <End Role="User" EntitySet="Identities_User" />
@@ -75,6 +72,22 @@
     <AssociationSet Name="ChangelistChange" Association="FooBoxModel.Store.ChangelistChange">
       <End Role="Changelist" EntitySet="Changelists" />
       <End Role="Change" EntitySet="Changes" />
+    </AssociationSet>
+    <AssociationSet Name="DocumentDocumentVersion" Association="FooBoxModel.Store.DocumentDocumentVersion">
+      <End Role="Document" EntitySet="Files_Document" />
+      <End Role="DocumentVersion" EntitySet="DocumentVersions" />
+    </AssociationSet>
+    <AssociationSet Name="DocumentVersionBlob" Association="FooBoxModel.Store.DocumentVersionBlob">
+      <End Role="DocumentVersion" EntitySet="DocumentVersions" />
+      <End Role="Blob" EntitySet="Blobs" />
+    </AssociationSet>
+    <AssociationSet Name="ChangeDocumentVersion" Association="FooBoxModel.Store.ChangeDocumentVersion">
+      <End Role="Change" EntitySet="Changes" />
+      <End Role="DocumentVersion" EntitySet="DocumentVersions" />
+    </AssociationSet>
+    <AssociationSet Name="DocumentVersionClient" Association="FooBoxModel.Store.DocumentVersionClient">
+      <End Role="DocumentVersion" EntitySet="DocumentVersions" />
+      <End Role="Client" EntitySet="Clients" />
     </AssociationSet>
     <AssociationSet Name="FK_User_inherits_Identity" Association="FooBoxModel.Store.FK_User_inherits_Identity">
       <End Role="Identity" EntitySet="Identities" />
@@ -116,7 +129,6 @@
     <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
     <Property Name="Name" Type="nvarchar(max)" Nullable="false" />
     <Property Name="State" Type="int" Nullable="false" />
-    <Property Name="TimeStamp" Type="datetime" Nullable="false" />
   </EntityType>
   <EntityType Name="Blobs">
     <Key>
@@ -148,8 +160,19 @@
     </Key>
     <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
     <Property Name="Type" Type="int" Nullable="false" />
-    <Property Name="FileId" Type="bigint" Nullable="false" />
     <Property Name="ChangelistId" Type="bigint" Nullable="false" />
+    <Property Name="FileId" Type="bigint" Nullable="false" />
+    <Property Name="DocumentVersionId" Type="bigint" Nullable="true" />
+  </EntityType>
+  <EntityType Name="DocumentVersions">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="TimeStamp" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="DocumentId" Type="bigint" Nullable="false" />
+    <Property Name="BlobId" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="ClientId" Type="bigint" Nullable="false" />
   </EntityType>
   <EntityType Name="Identities_User">
     <Key>
@@ -168,6 +191,7 @@
       <PropertyRef Name="Id" />
     </Key>
     <Property Name="Description" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="IsAdmin" Type="bit" Nullable="false" />
     <Property Name="Id" Type="bigint" Nullable="false" />
   </EntityType>
   <EntityType Name="Files_Folder">
@@ -182,7 +206,6 @@
     <Key>
       <PropertyRef Name="Id" />
     </Key>
-    <Property Name="BlobId" Type="uniqueidentifier" Nullable="true" />
     <Property Name="Id" Type="bigint" Nullable="false" />
   </EntityType>
   <EntityType Name="UserGroup">
@@ -193,12 +216,12 @@
     <Property Name="Users_Id" Type="bigint" Nullable="false" />
     <Property Name="Groups_Id" Type="bigint" Nullable="false" />
   </EntityType>
-  <EntityType Name="FolderIdentity">
+  <EntityType Name="FolderEditor">
     <Key>
-      <PropertyRef Name="FolderIdentity_Identity_Id" />
+      <PropertyRef Name="FolderEditor_Identity_Id" />
       <PropertyRef Name="Editors_Id" />
     </Key>
-    <Property Name="FolderIdentity_Identity_Id" Type="bigint" Nullable="false" />
+    <Property Name="FolderEditor_Identity_Id" Type="bigint" Nullable="false" />
     <Property Name="Editors_Id" Type="bigint" Nullable="false" />
   </EntityType>
   <EntityType Name="FolderFile">
@@ -221,7 +244,7 @@
       </Dependent>
     </ReferentialConstraint>
   </Association>
-  <Association Name="FolderUser">
+  <Association Name="FolderOwner">
     <End Role="Folder" Type="FooBoxModel.Store.Files_Folder" Multiplicity="*" />
     <End Role="User" Type="FooBoxModel.Store.Identities_User" Multiplicity="1" />
     <ReferentialConstraint>
@@ -242,18 +265,6 @@
       </Principal>
       <Dependent Role="ShareSubFolder">
         <PropertyRef Name="ShareFolder_Id" />
-      </Dependent>
-    </ReferentialConstraint>
-  </Association>
-  <Association Name="DocumentBlob">
-    <End Role="Document" Type="FooBoxModel.Store.Files_Document" Multiplicity="*" />
-    <End Role="Blob" Type="FooBoxModel.Store.Blobs" Multiplicity="0..1" />
-    <ReferentialConstraint>
-      <Principal Role="Blob">
-        <PropertyRef Name="Id" />
-      </Principal>
-      <Dependent Role="Document">
-        <PropertyRef Name="BlobId" />
       </Dependent>
     </ReferentialConstraint>
   </Association>
@@ -305,6 +316,54 @@
       </Dependent>
     </ReferentialConstraint>
   </Association>
+  <Association Name="DocumentDocumentVersion">
+    <End Role="Document" Type="FooBoxModel.Store.Files_Document" Multiplicity="1" />
+    <End Role="DocumentVersion" Type="FooBoxModel.Store.DocumentVersions" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Document">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="DocumentVersion">
+        <PropertyRef Name="DocumentId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="DocumentVersionBlob">
+    <End Role="DocumentVersion" Type="FooBoxModel.Store.DocumentVersions" Multiplicity="*" />
+    <End Role="Blob" Type="FooBoxModel.Store.Blobs" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="Blob">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="DocumentVersion">
+        <PropertyRef Name="BlobId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="ChangeDocumentVersion">
+    <End Role="Change" Type="FooBoxModel.Store.Changes" Multiplicity="*" />
+    <End Role="DocumentVersion" Type="FooBoxModel.Store.DocumentVersions" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="DocumentVersion">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Change">
+        <PropertyRef Name="DocumentVersionId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="DocumentVersionClient">
+    <End Role="DocumentVersion" Type="FooBoxModel.Store.DocumentVersions" Multiplicity="*" />
+    <End Role="Client" Type="FooBoxModel.Store.Clients" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="Client">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="DocumentVersion">
+        <PropertyRef Name="ClientId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
   <Association Name="FK_UserGroup_User">
     <End Role="User" Type="FooBoxModel.Store.Identities_User" Multiplicity="1" />
     <End Role="UserGroup" Type="FooBoxModel.Store.UserGroup" Multiplicity="*" />
@@ -329,26 +388,26 @@
       </Dependent>
     </ReferentialConstraint>
   </Association>
-  <Association Name="FK_FolderIdentity_Folder">
+  <Association Name="FK_FolderEditor_Folder">
     <End Role="Folder" Type="FooBoxModel.Store.Files_Folder" Multiplicity="1" />
-    <End Role="FolderIdentity" Type="FooBoxModel.Store.FolderIdentity" Multiplicity="*" />
+    <End Role="FolderEditor" Type="FooBoxModel.Store.FolderEditor" Multiplicity="*" />
     <ReferentialConstraint>
       <Principal Role="Folder">
         <PropertyRef Name="Id" />
       </Principal>
-      <Dependent Role="FolderIdentity">
-        <PropertyRef Name="FolderIdentity_Identity_Id" />
+      <Dependent Role="FolderEditor">
+        <PropertyRef Name="FolderEditor_Identity_Id" />
       </Dependent>
     </ReferentialConstraint>
   </Association>
-  <Association Name="FK_FolderIdentity_Identity">
-    <End Role="FolderIdentity" Type="FooBoxModel.Store.FolderIdentity" Multiplicity="*" />
+  <Association Name="FK_FolderEditor_Identity">
+    <End Role="FolderEditor" Type="FooBoxModel.Store.FolderEditor" Multiplicity="*" />
     <End Role="Identity" Type="FooBoxModel.Store.Identities" Multiplicity="1" />
     <ReferentialConstraint>
       <Principal Role="Identity">
         <PropertyRef Name="Id" />
       </Principal>
-      <Dependent Role="FolderIdentity">
+      <Dependent Role="FolderEditor">
         <PropertyRef Name="Editors_Id" />
       </Dependent>
     </ReferentialConstraint>
@@ -466,10 +525,6 @@
             <End Role="ShareSubFolder" EntitySet="Files" />
           </AssociationSet>
           <EntitySet Name="Blobs" EntityType="FooBoxModel.Blob" />
-          <AssociationSet Name="DocumentBlob" Association="FooBoxModel.DocumentBlob">
-            <End Role="Document" EntitySet="Files" />
-            <End Role="Blob" EntitySet="Blobs" />
-          </AssociationSet>
           <EntitySet Name="Clients" EntityType="FooBoxModel.Client" />
           <AssociationSet Name="UserClient" Association="FooBoxModel.UserClient">
             <End Role="User" EntitySet="Identities" />
@@ -488,6 +543,23 @@
           <AssociationSet Name="ChangelistChange" Association="FooBoxModel.ChangelistChange">
             <End Role="Changelist" EntitySet="Changelists" />
             <End Role="Change" EntitySet="Changes" />
+          </AssociationSet>
+          <EntitySet Name="DocumentVersions" EntityType="FooBoxModel.DocumentVersion" />
+          <AssociationSet Name="DocumentDocumentVersion" Association="FooBoxModel.DocumentDocumentVersion">
+            <End Role="Document" EntitySet="Files" />
+            <End Role="DocumentVersion" EntitySet="DocumentVersions" />
+          </AssociationSet>
+          <AssociationSet Name="DocumentVersionBlob" Association="FooBoxModel.DocumentVersionBlob">
+            <End Role="DocumentVersion" EntitySet="DocumentVersions" />
+            <End Role="Blob" EntitySet="Blobs" />
+          </AssociationSet>
+          <AssociationSet Name="ChangeDocumentVersion" Association="FooBoxModel.ChangeDocumentVersion">
+            <End Role="Change" EntitySet="Changes" />
+            <End Role="DocumentVersion" EntitySet="DocumentVersions" />
+          </AssociationSet>
+          <AssociationSet Name="DocumentVersionClient" Association="FooBoxModel.DocumentVersionClient">
+            <End Role="DocumentVersion" EntitySet="DocumentVersions" />
+            <End Role="Client" EntitySet="Clients" />
           </AssociationSet>
         </EntityContainer>
         <EntityType Name="User" BaseType="FooBoxModel.Identity">
@@ -521,6 +593,7 @@
         <EntityType Name="Group" BaseType="FooBoxModel.Identity" >
           <Property Name="Description" Type="String" Nullable="false" />
           <NavigationProperty Name="Users" Relationship="FooBoxModel.UserGroup" FromRole="Group" ToRole="User" />
+          <Property Name="IsAdmin" Type="Boolean" Nullable="false" />
         </EntityType>
         <Association Name="UserGroup">
           <End Type="FooBoxModel.User" Role="User" Multiplicity="*" />
@@ -545,7 +618,6 @@
           <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Name" Type="String" Nullable="false" />
           <Property Name="State" Type="FooBoxModel.ObjectState" Nullable="false" />
-          <Property Name="TimeStamp" Type="DateTime" Nullable="false" />
           <NavigationProperty Name="ParentFolders" Relationship="FooBoxModel.FolderFile" FromRole="File" ToRole="Folder" />
         </EntityType>
         <EnumType Name="ObjectState" >
@@ -553,8 +625,7 @@
           <Member Name="Deleted" />
         </EnumType>
         <EntityType Name="Document" BaseType="FooBoxModel.File" >
-          <NavigationProperty Name="Blob" Relationship="FooBoxModel.DocumentBlob" FromRole="Document" ToRole="Blob" />
-          <Property Name="BlobId" Type="Guid" Nullable="true" />
+          <NavigationProperty Name="DocumentVersions" Relationship="FooBoxModel.DocumentDocumentVersion" FromRole="Document" ToRole="DocumentVersion" />
         </EntityType>
         <EntityType Name="Folder" BaseType="FooBoxModel.File" >
           <NavigationProperty Name="Owner" Relationship="FooBoxModel.FolderOwner" FromRole="Folder" ToRole="User" />
@@ -585,20 +656,8 @@
           <Property Name="Id" Type="Guid" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Size" Type="Int64" Nullable="false" />
           <Property Name="Hash" Type="String" Nullable="false" />
-          <NavigationProperty Name="Documents" Relationship="FooBoxModel.DocumentBlob" FromRole="Blob" ToRole="Document" />
+          <NavigationProperty Name="DocumentVersions" Relationship="FooBoxModel.DocumentVersionBlob" FromRole="Blob" ToRole="DocumentVersion" />
         </EntityType>
-        <Association Name="DocumentBlob">
-          <End Type="FooBoxModel.Document" Role="Document" Multiplicity="*" />
-          <End Type="FooBoxModel.Blob" Role="Blob" Multiplicity="0..1" />
-          <ReferentialConstraint>
-            <Principal Role="Blob">
-              <PropertyRef Name="Id" />
-            </Principal>
-            <Dependent Role="Document">
-              <PropertyRef Name="BlobId" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
         <EntityType Name="Client">
           <Key>
             <PropertyRef Name="Id" />
@@ -648,14 +707,17 @@
           </Key>
           <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Type" Type="FooBoxModel.ChangeType" Nullable="false" />
-          <NavigationProperty Name="File" Relationship="FooBoxModel.ChangeFile" FromRole="Change" ToRole="File" />
-          <Property Name="FileId" Type="Int64" Nullable="false" />
           <NavigationProperty Name="Changelist" Relationship="FooBoxModel.ChangelistChange" FromRole="Change" ToRole="Changelist" />
+          <NavigationProperty Name="File" Relationship="FooBoxModel.ChangeFile" FromRole="Change" ToRole="File" />
           <Property Name="ChangelistId" Type="Int64" Nullable="false" />
+          <Property Name="FileId" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="DocumentVersion" Relationship="FooBoxModel.ChangeDocumentVersion" FromRole="Change" ToRole="DocumentVersion" />
+          <Property Name="DocumentVersionId" Type="Int64" Nullable="true" />
         </EntityType>
         <EnumType Name="ChangeType">
           <Member Name="Add" />
-          <Member Name="Modify" />
+          <Member Name="ModifyState" />
+          <Member Name="AddVersion" />
         </EnumType>
         <Association Name="ChangeFile">
           <End Type="FooBoxModel.Change" Role="Change" Multiplicity="*" />
@@ -678,6 +740,67 @@
             </Principal>
             <Dependent Role="Change">
               <PropertyRef Name="ChangelistId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="DocumentVersion">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <NavigationProperty Name="Document" Relationship="FooBoxModel.DocumentDocumentVersion" FromRole="DocumentVersion" ToRole="Document" />
+          <Property Name="TimeStamp" Type="String" Nullable="false" />
+          <Property Name="DocumentId" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="Blob" Relationship="FooBoxModel.DocumentVersionBlob" FromRole="DocumentVersion" ToRole="Blob" />
+          <Property Name="BlobId" Type="Guid" Nullable="false" />
+          <NavigationProperty Name="Client" Relationship="FooBoxModel.DocumentVersionClient" FromRole="DocumentVersion" ToRole="Client" />
+          <Property Name="ClientId" Type="Int64" Nullable="false" />
+        </EntityType>
+        <Association Name="DocumentDocumentVersion">
+          <End Type="FooBoxModel.Document" Role="Document" Multiplicity="1" />
+          <End Type="FooBoxModel.DocumentVersion" Role="DocumentVersion" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Document">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="DocumentVersion">
+              <PropertyRef Name="DocumentId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="DocumentVersionBlob">
+          <End Type="FooBoxModel.DocumentVersion" Role="DocumentVersion" Multiplicity="*" />
+          <End Type="FooBoxModel.Blob" Role="Blob" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="Blob">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="DocumentVersion">
+              <PropertyRef Name="BlobId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="ChangeDocumentVersion">
+          <End Type="FooBoxModel.Change" Role="Change" Multiplicity="*" />
+          <End Type="FooBoxModel.DocumentVersion" Role="DocumentVersion" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="DocumentVersion">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Change">
+              <PropertyRef Name="DocumentVersionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="DocumentVersionClient">
+          <End Type="FooBoxModel.DocumentVersion" Role="DocumentVersion" Multiplicity="*" />
+          <End Type="FooBoxModel.Client" Role="Client" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="Client">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="DocumentVersion">
+              <PropertyRef Name="ClientId" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -710,6 +833,7 @@
         <MappingFragment StoreEntitySet="Identities_Group">
           <ScalarProperty Name="Id" ColumnName="Id" />
           <ScalarProperty Name="Description" ColumnName="Description" />
+          <ScalarProperty Name="IsAdmin" ColumnName="IsAdmin" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>
@@ -728,7 +852,6 @@
           <ScalarProperty Name="Id" ColumnName="Id" />
           <ScalarProperty Name="Name" ColumnName="Name" />
           <ScalarProperty Name="State" ColumnName="State" />
-          <ScalarProperty Name="TimeStamp" ColumnName="TimeStamp" />
         </MappingFragment>
       </EntityTypeMapping>
       <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Folder)">
@@ -739,7 +862,6 @@
       <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Document)">
         <MappingFragment StoreEntitySet="Files_Document">
           <ScalarProperty Name="Id" ColumnName="Id" />
-          <ScalarProperty Name="BlobId" ColumnName="BlobId" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>
@@ -775,8 +897,20 @@
         <MappingFragment StoreEntitySet="Changes">
           <ScalarProperty Name="Id" ColumnName="Id" />
           <ScalarProperty Name="Type" ColumnName="Type" />
-          <ScalarProperty Name="FileId" ColumnName="FileId" />
           <ScalarProperty Name="ChangelistId" ColumnName="ChangelistId" />
+          <ScalarProperty Name="FileId" ColumnName="FileId" />
+          <ScalarProperty Name="DocumentVersionId" ColumnName="DocumentVersionId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="DocumentVersions">
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.DocumentVersion)">
+        <MappingFragment StoreEntitySet="DocumentVersions">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="TimeStamp" ColumnName="TimeStamp" />
+          <ScalarProperty Name="DocumentId" ColumnName="DocumentId" />
+          <ScalarProperty Name="BlobId" ColumnName="BlobId" />
+          <ScalarProperty Name="ClientId" ColumnName="ClientId" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>
@@ -798,7 +932,7 @@
     </AssociationSetMapping>
     <AssociationSetMapping Name="FolderEditors" TypeName="FooBoxModel.FolderEditor" StoreEntitySet="FolderEditors">
       <EndProperty Name="Folder">
-        <ScalarProperty Name="Id" ColumnName="FolderIdentity_Identity_Id" />
+        <ScalarProperty Name="Id" ColumnName="FolderEditor_Identity_Id" />
       </EndProperty>
       <EndProperty Name="Identity">
         <ScalarProperty Name="Id" ColumnName="Editors_Id" />

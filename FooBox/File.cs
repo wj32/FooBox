@@ -22,7 +22,6 @@ namespace FooBox
         public long Id { get; set; }
         public string Name { get; set; }
         public ObjectState State { get; set; }
-        public System.DateTime TimeStamp { get; set; }
     
         public virtual ICollection<Folder> ParentFolders { get; set; }
     }

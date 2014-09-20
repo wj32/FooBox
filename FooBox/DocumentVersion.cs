@@ -12,14 +12,16 @@ namespace FooBox
     using System;
     using System.Collections.Generic;
     
-    public partial class Document : File
+    public partial class DocumentVersion
     {
-        public Document()
-        {
-            this.DocumentVersions = new HashSet<DocumentVersion>();
-        }
+        public long Id { get; set; }
+        public string TimeStamp { get; set; }
+        public long DocumentId { get; set; }
+        public System.Guid BlobId { get; set; }
+        public long ClientId { get; set; }
     
-    
-        public virtual ICollection<DocumentVersion> DocumentVersions { get; set; }
+        public virtual Document Document { get; set; }
+        public virtual Blob Blob { get; set; }
+        public virtual Client Client { get; set; }
     }
 }

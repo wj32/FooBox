@@ -32,5 +32,6 @@ namespace FooBox
         public virtual DbSet<Client> Clients { get; set; }
         public virtual DbSet<Changelist> Changelists { get; set; }
         public virtual DbSet<Change> Changes { get; set; }
+        public virtual DbSet<DocumentVersion> DocumentVersions { get; set; }
     }
 }
