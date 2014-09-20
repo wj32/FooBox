@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="b2da6bbc3e104f0aa3dfa265956148b2" Name="MainDiagram" >
+        <EntityTypeShape EntityType="FooBoxModel.User" Width="1.5" PointX="2.625" PointY="7" />
+        <EntityTypeShape EntityType="FooBoxModel.Identity" Width="1.5" PointX="4.125" PointY="4.375" />
+        <InheritanceConnector EntityType="FooBoxModel.User" />
+        <EntityTypeShape EntityType="FooBoxModel.Token" Width="1.5" PointX="1.5" PointY="10.25" />
+        <EntityTypeShape EntityType="FooBoxModel.Group" Width="1.5" PointX="5.375" PointY="7" IsExpanded="true" />
+        <InheritanceConnector EntityType="FooBoxModel.Group" />
+        <AssociationConnector Association="FooBoxModel.UserGroup" />
+        <AssociationConnector Association="FooBoxModel.TokenUser" />
+        <EntityTypeShape EntityType="FooBoxModel.File" Width="1.5" PointX="9.5" PointY="5.25" />
+        <EntityTypeShape EntityType="FooBoxModel.Document" Width="1.5" PointX="7.375" PointY="7.875" />
+        <InheritanceConnector EntityType="FooBoxModel.Document" />
+        <EntityTypeShape EntityType="FooBoxModel.Folder" Width="1.5" PointX="11.625" PointY="8.25" />
+        <InheritanceConnector EntityType="FooBoxModel.Folder" />
+        <AssociationConnector Association="FooBoxModel.FolderOwner" />
+        <AssociationConnector Association="FooBoxModel.FolderEditor" />
+        <AssociationConnector Association="FooBoxModel.FolderFile" />
+        <AssociationConnector Association="FooBoxModel.FolderShareFolder" />
+        <EntityTypeShape EntityType="FooBoxModel.Blob" Width="1.5" PointX="9.75" PointY="9.875" />
+        <AssociationConnector Association="FooBoxModel.DocumentBlob" />
+        <EntityTypeShape EntityType="FooBoxModel.Client" Width="1.5" PointX="3.625" PointY="10.25" />
+        <AssociationConnector Association="FooBoxModel.UserClient" />
+        <EntityTypeShape EntityType="FooBoxModel.Changelist" Width="1.5" PointX="6.375" PointY="10.75" />
+        <AssociationConnector Association="FooBoxModel.ChangelistClient" />
+        <EntityTypeShape EntityType="FooBoxModel.Change" Width="1.5" PointX="6.375" PointY="13" />
+        <AssociationConnector Association="FooBoxModel.ChangeFile" />
+        <AssociationConnector Association="FooBoxModel.ChangelistChange" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

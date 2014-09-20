@@ -1,0 +1,846 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="FooBoxModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2012" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityContainer Name="FooBoxModelStoreContainer">
+    <EntitySet Name="Identities" EntityType="FooBoxModel.Store.Identities" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Tokens" EntityType="FooBoxModel.Store.Tokens" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Files" EntityType="FooBoxModel.Store.Files" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Blobs" EntityType="FooBoxModel.Store.Blobs" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Clients" EntityType="FooBoxModel.Store.Clients" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Changelists" EntityType="FooBoxModel.Store.Changelists" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Changes" EntityType="FooBoxModel.Store.Changes" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Identities_User" EntityType="FooBoxModel.Store.Identities_User" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Identities_Group" EntityType="FooBoxModel.Store.Identities_Group" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Files_Folder" EntityType="FooBoxModel.Store.Files_Folder" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Files_Document" EntityType="FooBoxModel.Store.Files_Document" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="UserGroup" EntityType="FooBoxModel.Store.UserGroup" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="FolderEditors" EntityType="FooBoxModel.Store.FolderIdentity" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="FolderFile" EntityType="FooBoxModel.Store.FolderFile" store:Type="Tables" Schema="dbo" />
+    <AssociationSet Name="FK_UserGroup_User" Association="FooBoxModel.Store.FK_UserGroup_User">
+      <End Role="User" EntitySet="Identities_User" />
+      <End Role="UserGroup" EntitySet="UserGroup" />
+    </AssociationSet>
+    <AssociationSet Name="FK_UserGroup_Group" Association="FooBoxModel.Store.FK_UserGroup_Group">
+      <End Role="Group" EntitySet="Identities_Group" />
+      <End Role="UserGroup" EntitySet="UserGroup" />
+    </AssociationSet>
+    <AssociationSet Name="TokenUser" Association="FooBoxModel.Store.TokenUser">
+      <End Role="Token" EntitySet="Tokens" />
+      <End Role="User" EntitySet="Identities_User" />
+    </AssociationSet>
+    <AssociationSet Name="FolderOwner" Association="FooBoxModel.Store.FolderUser">
+      <End Role="Folder" EntitySet="Files_Folder" />
+      <End Role="User" EntitySet="Identities_User" />
+    </AssociationSet>
+    <AssociationSet Name="FK_FolderEditors_Folder" Association="FooBoxModel.Store.FK_FolderIdentity_Folder">
+      <End Role="Folder" EntitySet="Files_Folder" />
+      <End Role="FolderIdentity" EntitySet="FolderEditors" />
+    </AssociationSet>
+    <AssociationSet Name="FK_FolderEditors_Identity" Association="FooBoxModel.Store.FK_FolderIdentity_Identity">
+      <End Role="Identity" EntitySet="Identities" />
+      <End Role="FolderIdentity" EntitySet="FolderEditors" />
+    </AssociationSet>
+    <AssociationSet Name="FK_FolderFile_Folder" Association="FooBoxModel.Store.FK_FolderFile_Folder">
+      <End Role="Folder" EntitySet="Files_Folder" />
+      <End Role="FolderFile" EntitySet="FolderFile" />
+    </AssociationSet>
+    <AssociationSet Name="FK_FolderFile_File" Association="FooBoxModel.Store.FK_FolderFile_File">
+      <End Role="File" EntitySet="Files" />
+      <End Role="FolderFile" EntitySet="FolderFile" />
+    </AssociationSet>
+    <AssociationSet Name="FolderShareFolder" Association="FooBoxModel.Store.FolderShareFolder">
+      <End Role="Folder" EntitySet="Files_Folder" />
+      <End Role="ShareSubFolder" EntitySet="Files_Folder" />
+    </AssociationSet>
+    <AssociationSet Name="DocumentBlob" Association="FooBoxModel.Store.DocumentBlob">
+      <End Role="Document" EntitySet="Files_Document" />
+      <End Role="Blob" EntitySet="Blobs" />
+    </AssociationSet>
+    <AssociationSet Name="UserClient" Association="FooBoxModel.Store.UserClient">
+      <End Role="User" EntitySet="Identities_User" />
+      <End Role="Client" EntitySet="Clients" />
+    </AssociationSet>
+    <AssociationSet Name="ChangelistClient" Association="FooBoxModel.Store.ChangelistClient">
+      <End Role="Changelist" EntitySet="Changelists" />
+      <End Role="Client" EntitySet="Clients" />
+    </AssociationSet>
+    <AssociationSet Name="ChangeFile" Association="FooBoxModel.Store.ChangeFile">
+      <End Role="Change" EntitySet="Changes" />
+      <End Role="File" EntitySet="Files" />
+    </AssociationSet>
+    <AssociationSet Name="ChangelistChange" Association="FooBoxModel.Store.ChangelistChange">
+      <End Role="Changelist" EntitySet="Changelists" />
+      <End Role="Change" EntitySet="Changes" />
+    </AssociationSet>
+    <AssociationSet Name="FK_User_inherits_Identity" Association="FooBoxModel.Store.FK_User_inherits_Identity">
+      <End Role="Identity" EntitySet="Identities" />
+      <End Role="User" EntitySet="Identities_User" />
+    </AssociationSet>
+    <AssociationSet Name="FK_Group_inherits_Identity" Association="FooBoxModel.Store.FK_Group_inherits_Identity">
+      <End Role="Identity" EntitySet="Identities" />
+      <End Role="Group" EntitySet="Identities_Group" />
+    </AssociationSet>
+    <AssociationSet Name="FK_Folder_inherits_File" Association="FooBoxModel.Store.FK_Folder_inherits_File">
+      <End Role="File" EntitySet="Files" />
+      <End Role="Folder" EntitySet="Files_Folder" />
+    </AssociationSet>
+    <AssociationSet Name="FK_Document_inherits_File" Association="FooBoxModel.Store.FK_Document_inherits_File">
+      <End Role="File" EntitySet="Files" />
+      <End Role="Document" EntitySet="Files_Document" />
+    </AssociationSet>
+  </EntityContainer>
+  <EntityType Name="Identities">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="Name" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="State" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Tokens">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ExpiryTime" Type="datetime" Nullable="false" />
+    <Property Name="UserId" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Files">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="Name" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="State" Type="int" Nullable="false" />
+    <Property Name="TimeStamp" Type="datetime" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Blobs">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="uniqueidentifier" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="Size" Type="bigint" Nullable="false" />
+    <Property Name="Hash" Type="nvarchar(max)" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Clients">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="Name" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="State" Type="int" Nullable="false" />
+    <Property Name="UserId" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Changelists">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="ClientId" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Changes">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="Type" Type="int" Nullable="false" />
+    <Property Name="FileId" Type="bigint" Nullable="false" />
+    <Property Name="ChangelistId" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Identities_User">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="PasswordHash" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="PasswordSalt" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="FirstName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="LastName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="QuotaLimit" Type="bigint" Nullable="false" />
+    <Property Name="QuotaCharged" Type="bigint" Nullable="false" />
+    <Property Name="Id" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Identities_Group">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Description" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Id" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Files_Folder">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="bigint" Nullable="false" />
+    <Property Name="Owner_Id" Type="bigint" Nullable="false" />
+    <Property Name="ShareFolder_Id" Type="bigint" Nullable="true" />
+  </EntityType>
+  <EntityType Name="Files_Document">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="BlobId" Type="uniqueidentifier" Nullable="true" />
+    <Property Name="Id" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="UserGroup">
+    <Key>
+      <PropertyRef Name="Users_Id" />
+      <PropertyRef Name="Groups_Id" />
+    </Key>
+    <Property Name="Users_Id" Type="bigint" Nullable="false" />
+    <Property Name="Groups_Id" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="FolderIdentity">
+    <Key>
+      <PropertyRef Name="FolderIdentity_Identity_Id" />
+      <PropertyRef Name="Editors_Id" />
+    </Key>
+    <Property Name="FolderIdentity_Identity_Id" Type="bigint" Nullable="false" />
+    <Property Name="Editors_Id" Type="bigint" Nullable="false" />
+  </EntityType>
+  <EntityType Name="FolderFile">
+    <Key>
+      <PropertyRef Name="ParentFolders_Id" />
+      <PropertyRef Name="Files_Id" />
+    </Key>
+    <Property Name="ParentFolders_Id" Type="bigint" Nullable="false" />
+    <Property Name="Files_Id" Type="bigint" Nullable="false" />
+  </EntityType>
+  <Association Name="TokenUser">
+    <End Role="Token" Type="FooBoxModel.Store.Tokens" Multiplicity="*" />
+    <End Role="User" Type="FooBoxModel.Store.Identities_User" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="User">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Token">
+        <PropertyRef Name="UserId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FolderUser">
+    <End Role="Folder" Type="FooBoxModel.Store.Files_Folder" Multiplicity="*" />
+    <End Role="User" Type="FooBoxModel.Store.Identities_User" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="User">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Folder">
+        <PropertyRef Name="Owner_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FolderShareFolder">
+    <End Role="Folder" Type="FooBoxModel.Store.Files_Folder" Multiplicity="0..1" />
+    <End Role="ShareSubFolder" Type="FooBoxModel.Store.Files_Folder" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Folder">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="ShareSubFolder">
+        <PropertyRef Name="ShareFolder_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="DocumentBlob">
+    <End Role="Document" Type="FooBoxModel.Store.Files_Document" Multiplicity="*" />
+    <End Role="Blob" Type="FooBoxModel.Store.Blobs" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="Blob">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Document">
+        <PropertyRef Name="BlobId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="UserClient">
+    <End Role="User" Type="FooBoxModel.Store.Identities_User" Multiplicity="1" />
+    <End Role="Client" Type="FooBoxModel.Store.Clients" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="User">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Client">
+        <PropertyRef Name="UserId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="ChangelistClient">
+    <End Role="Changelist" Type="FooBoxModel.Store.Changelists" Multiplicity="*" />
+    <End Role="Client" Type="FooBoxModel.Store.Clients" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="Client">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Changelist">
+        <PropertyRef Name="ClientId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="ChangeFile">
+    <End Role="Change" Type="FooBoxModel.Store.Changes" Multiplicity="*" />
+    <End Role="File" Type="FooBoxModel.Store.Files" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="File">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Change">
+        <PropertyRef Name="FileId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="ChangelistChange">
+    <End Role="Changelist" Type="FooBoxModel.Store.Changelists" Multiplicity="1" />
+    <End Role="Change" Type="FooBoxModel.Store.Changes" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Changelist">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Change">
+        <PropertyRef Name="ChangelistId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_UserGroup_User">
+    <End Role="User" Type="FooBoxModel.Store.Identities_User" Multiplicity="1" />
+    <End Role="UserGroup" Type="FooBoxModel.Store.UserGroup" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="User">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="UserGroup">
+        <PropertyRef Name="Users_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_UserGroup_Group">
+    <End Role="UserGroup" Type="FooBoxModel.Store.UserGroup" Multiplicity="*" />
+    <End Role="Group" Type="FooBoxModel.Store.Identities_Group" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="Group">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="UserGroup">
+        <PropertyRef Name="Groups_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_FolderIdentity_Folder">
+    <End Role="Folder" Type="FooBoxModel.Store.Files_Folder" Multiplicity="1" />
+    <End Role="FolderIdentity" Type="FooBoxModel.Store.FolderIdentity" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Folder">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="FolderIdentity">
+        <PropertyRef Name="FolderIdentity_Identity_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_FolderIdentity_Identity">
+    <End Role="FolderIdentity" Type="FooBoxModel.Store.FolderIdentity" Multiplicity="*" />
+    <End Role="Identity" Type="FooBoxModel.Store.Identities" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="Identity">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="FolderIdentity">
+        <PropertyRef Name="Editors_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_FolderFile_Folder">
+    <End Role="Folder" Type="FooBoxModel.Store.Files_Folder" Multiplicity="1" />
+    <End Role="FolderFile" Type="FooBoxModel.Store.FolderFile" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Folder">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="FolderFile">
+        <PropertyRef Name="ParentFolders_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_FolderFile_File">
+    <End Role="FolderFile" Type="FooBoxModel.Store.FolderFile" Multiplicity="*" />
+    <End Role="File" Type="FooBoxModel.Store.Files" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="File">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="FolderFile">
+        <PropertyRef Name="Files_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_User_inherits_Identity">
+    <End Role="Identity" Type="FooBoxModel.Store.Identities" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="User" Type="FooBoxModel.Store.Identities_User" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="Identity">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="User">
+        <PropertyRef Name="Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_Group_inherits_Identity">
+    <End Role="Identity" Type="FooBoxModel.Store.Identities" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="Group" Type="FooBoxModel.Store.Identities_Group" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="Identity">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Group">
+        <PropertyRef Name="Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_Folder_inherits_File">
+    <End Role="File" Type="FooBoxModel.Store.Files" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="Folder" Type="FooBoxModel.Store.Files_Folder" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="File">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Folder">
+        <PropertyRef Name="Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_Document_inherits_File">
+    <End Role="File" Type="FooBoxModel.Store.Files" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="Document" Type="FooBoxModel.Store.Files_Document" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="File">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Document">
+        <PropertyRef Name="Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+</Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="FooBoxModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="FooBoxEntities" annotation:LazyLoadingEnabled="true" >
+          <EntitySet Name="Identities" EntityType="FooBoxModel.Identity" />
+          <EntitySet Name="Tokens" EntityType="FooBoxModel.Token" />
+          <AssociationSet Name="UserGroup" Association="FooBoxModel.UserGroup">
+            <End Role="User" EntitySet="Identities" />
+            <End Role="Group" EntitySet="Identities" />
+          </AssociationSet>
+          <AssociationSet Name="TokenUser" Association="FooBoxModel.TokenUser">
+            <End Role="Token" EntitySet="Tokens" />
+            <End Role="User" EntitySet="Identities" />
+          </AssociationSet>
+          <EntitySet Name="Files" EntityType="FooBoxModel.File" />
+          <AssociationSet Name="FolderOwner" Association="FooBoxModel.FolderOwner">
+            <End Role="Folder" EntitySet="Files" />
+            <End Role="User" EntitySet="Identities" />
+          </AssociationSet>
+          <AssociationSet Name="FolderEditors" Association="FooBoxModel.FolderEditor">
+            <End Role="Folder" EntitySet="Files" />
+            <End Role="Identity" EntitySet="Identities" />
+          </AssociationSet>
+          <AssociationSet Name="FolderFile" Association="FooBoxModel.FolderFile">
+            <End Role="Folder" EntitySet="Files" />
+            <End Role="File" EntitySet="Files" />
+          </AssociationSet>
+          <AssociationSet Name="FolderShareFolder" Association="FooBoxModel.FolderShareFolder">
+            <End Role="Folder" EntitySet="Files" />
+            <End Role="ShareSubFolder" EntitySet="Files" />
+          </AssociationSet>
+          <EntitySet Name="Blobs" EntityType="FooBoxModel.Blob" />
+          <AssociationSet Name="DocumentBlob" Association="FooBoxModel.DocumentBlob">
+            <End Role="Document" EntitySet="Files" />
+            <End Role="Blob" EntitySet="Blobs" />
+          </AssociationSet>
+          <EntitySet Name="Clients" EntityType="FooBoxModel.Client" />
+          <AssociationSet Name="UserClient" Association="FooBoxModel.UserClient">
+            <End Role="User" EntitySet="Identities" />
+            <End Role="Client" EntitySet="Clients" />
+          </AssociationSet>
+          <EntitySet Name="Changelists" EntityType="FooBoxModel.Changelist" />
+          <AssociationSet Name="ChangelistClient" Association="FooBoxModel.ChangelistClient">
+            <End Role="Changelist" EntitySet="Changelists" />
+            <End Role="Client" EntitySet="Clients" />
+          </AssociationSet>
+          <EntitySet Name="Changes" EntityType="FooBoxModel.Change" />
+          <AssociationSet Name="ChangeFile" Association="FooBoxModel.ChangeFile">
+            <End Role="Change" EntitySet="Changes" />
+            <End Role="File" EntitySet="Files" />
+          </AssociationSet>
+          <AssociationSet Name="ChangelistChange" Association="FooBoxModel.ChangelistChange">
+            <End Role="Changelist" EntitySet="Changelists" />
+            <End Role="Change" EntitySet="Changes" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="User" BaseType="FooBoxModel.Identity">
+          <Property Name="PasswordHash" Type="String" Nullable="false" />
+          <Property Name="PasswordSalt" Type="String" Nullable="false" />
+          <Property Name="FirstName" Type="String" Nullable="false" />
+          <Property Name="LastName" Type="String" Nullable="false" />
+          <Property Name="QuotaLimit" Type="Int64" Nullable="false" />
+          <Property Name="QuotaCharged" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="Groups" Relationship="FooBoxModel.UserGroup" FromRole="User" ToRole="Group" />
+          <NavigationProperty Name="Tokens" Relationship="FooBoxModel.TokenUser" FromRole="User" ToRole="Token" />
+          <NavigationProperty Name="Clients" Relationship="FooBoxModel.UserClient" FromRole="User" ToRole="Client" />
+        </EntityType>
+        <EntityType Name="Identity">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" />
+          <Property Name="State" Type="FooBoxModel.ObjectState" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Token">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="String" Nullable="false" annotation:StoreGeneratedPattern="None" />
+          <Property Name="ExpiryTime" Type="DateTime" Nullable="false" />
+          <NavigationProperty Name="User" Relationship="FooBoxModel.TokenUser" FromRole="Token" ToRole="User" />
+          <Property Name="UserId" Type="Int64" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Group" BaseType="FooBoxModel.Identity" >
+          <Property Name="Description" Type="String" Nullable="false" />
+          <NavigationProperty Name="Users" Relationship="FooBoxModel.UserGroup" FromRole="Group" ToRole="User" />
+        </EntityType>
+        <Association Name="UserGroup">
+          <End Type="FooBoxModel.User" Role="User" Multiplicity="*" />
+          <End Type="FooBoxModel.Group" Role="Group" Multiplicity="*" />
+        </Association>
+        <Association Name="TokenUser">
+          <End Type="FooBoxModel.Token" Role="Token" Multiplicity="*" />
+          <End Type="FooBoxModel.User" Role="User" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Token">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="File">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" />
+          <Property Name="State" Type="FooBoxModel.ObjectState" Nullable="false" />
+          <Property Name="TimeStamp" Type="DateTime" Nullable="false" />
+          <NavigationProperty Name="ParentFolders" Relationship="FooBoxModel.FolderFile" FromRole="File" ToRole="Folder" />
+        </EntityType>
+        <EnumType Name="ObjectState" >
+          <Member Name="Normal" />
+          <Member Name="Deleted" />
+        </EnumType>
+        <EntityType Name="Document" BaseType="FooBoxModel.File" >
+          <NavigationProperty Name="Blob" Relationship="FooBoxModel.DocumentBlob" FromRole="Document" ToRole="Blob" />
+          <Property Name="BlobId" Type="Guid" Nullable="true" />
+        </EntityType>
+        <EntityType Name="Folder" BaseType="FooBoxModel.File" >
+          <NavigationProperty Name="Owner" Relationship="FooBoxModel.FolderOwner" FromRole="Folder" ToRole="User" />
+          <NavigationProperty Name="Editors" Relationship="FooBoxModel.FolderEditor" FromRole="Folder" ToRole="Identity" />
+          <NavigationProperty Name="Files" Relationship="FooBoxModel.FolderFile" FromRole="Folder" ToRole="File" />
+          <NavigationProperty Name="ShareFolder" Relationship="FooBoxModel.FolderShareFolder" FromRole="ShareSubFolder" ToRole="Folder" />
+        </EntityType>
+        <Association Name="FolderOwner">
+          <End Type="FooBoxModel.Folder" Role="Folder" Multiplicity="*" />
+          <End Type="FooBoxModel.User" Role="User" Multiplicity="1" />
+        </Association>
+        <Association Name="FolderEditor">
+          <End Type="FooBoxModel.Folder" Role="Folder" Multiplicity="*" />
+          <End Type="FooBoxModel.Identity" Role="Identity" Multiplicity="*" />
+        </Association>
+        <Association Name="FolderFile">
+          <End Type="FooBoxModel.Folder" Role="Folder" Multiplicity="*" />
+          <End Type="FooBoxModel.File" Role="File" Multiplicity="*" />
+        </Association>
+        <Association Name="FolderShareFolder">
+          <End Type="FooBoxModel.Folder" Role="Folder" Multiplicity="0..1" />
+          <End Type="FooBoxModel.Folder" Role="ShareSubFolder" Multiplicity="*" />
+        </Association>
+        <EntityType Name="Blob">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Guid" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Size" Type="Int64" Nullable="false" />
+          <Property Name="Hash" Type="String" Nullable="false" />
+          <NavigationProperty Name="Documents" Relationship="FooBoxModel.DocumentBlob" FromRole="Blob" ToRole="Document" />
+        </EntityType>
+        <Association Name="DocumentBlob">
+          <End Type="FooBoxModel.Document" Role="Document" Multiplicity="*" />
+          <End Type="FooBoxModel.Blob" Role="Blob" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Blob">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Document">
+              <PropertyRef Name="BlobId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="Client">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" />
+          <Property Name="State" Type="FooBoxModel.ObjectState" Nullable="false" />
+          <NavigationProperty Name="User" Relationship="FooBoxModel.UserClient" FromRole="Client" ToRole="User" />
+          <Property Name="UserId" Type="Int64" Nullable="false" />
+        </EntityType>
+        <Association Name="UserClient">
+          <End Type="FooBoxModel.User" Role="User" Multiplicity="1" />
+          <End Type="FooBoxModel.Client" Role="Client" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Client">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="Changelist">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <NavigationProperty Name="Client" Relationship="FooBoxModel.ChangelistClient" FromRole="Changelist" ToRole="Client" />
+          <Property Name="ClientId" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="Changes" Relationship="FooBoxModel.ChangelistChange" FromRole="Changelist" ToRole="Change" />
+        </EntityType>
+        <Association Name="ChangelistClient">
+          <End Type="FooBoxModel.Changelist" Role="Changelist" Multiplicity="*" />
+          <End Type="FooBoxModel.Client" Role="Client" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="Client">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Changelist">
+              <PropertyRef Name="ClientId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="Change">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Type" Type="FooBoxModel.ChangeType" Nullable="false" />
+          <NavigationProperty Name="File" Relationship="FooBoxModel.ChangeFile" FromRole="Change" ToRole="File" />
+          <Property Name="FileId" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="Changelist" Relationship="FooBoxModel.ChangelistChange" FromRole="Change" ToRole="Changelist" />
+          <Property Name="ChangelistId" Type="Int64" Nullable="false" />
+        </EntityType>
+        <EnumType Name="ChangeType">
+          <Member Name="Add" />
+          <Member Name="Modify" />
+        </EnumType>
+        <Association Name="ChangeFile">
+          <End Type="FooBoxModel.Change" Role="Change" Multiplicity="*" />
+          <End Type="FooBoxModel.File" Role="File" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="File">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Change">
+              <PropertyRef Name="FileId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="ChangelistChange">
+          <End Type="FooBoxModel.Changelist" Role="Changelist" Multiplicity="1" />
+          <End Type="FooBoxModel.Change" Role="Change" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Changelist">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Change">
+              <PropertyRef Name="ChangelistId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+    <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="FooBoxModelStoreContainer" CdmEntityContainer="FooBoxEntities">
+    <EntitySetMapping Name="Identities">
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Identity)">
+        <MappingFragment StoreEntitySet="Identities">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="Name" ColumnName="Name" />
+          <ScalarProperty Name="State" ColumnName="State" />
+        </MappingFragment>
+      </EntityTypeMapping>
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.User)">
+        <MappingFragment StoreEntitySet="Identities_User">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="PasswordHash" ColumnName="PasswordHash" />
+          <ScalarProperty Name="PasswordSalt" ColumnName="PasswordSalt" />
+          <ScalarProperty Name="FirstName" ColumnName="FirstName" />
+          <ScalarProperty Name="LastName" ColumnName="LastName" />
+          <ScalarProperty Name="QuotaLimit" ColumnName="QuotaLimit" />
+          <ScalarProperty Name="QuotaCharged" ColumnName="QuotaCharged" />
+        </MappingFragment>
+      </EntityTypeMapping>
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Group)">
+        <MappingFragment StoreEntitySet="Identities_Group">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="Description" ColumnName="Description" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Tokens">
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Token)">
+        <MappingFragment StoreEntitySet="Tokens">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="ExpiryTime" ColumnName="ExpiryTime" />
+          <ScalarProperty Name="UserId" ColumnName="UserId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Files">
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.File)">
+        <MappingFragment StoreEntitySet="Files">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="Name" ColumnName="Name" />
+          <ScalarProperty Name="State" ColumnName="State" />
+          <ScalarProperty Name="TimeStamp" ColumnName="TimeStamp" />
+        </MappingFragment>
+      </EntityTypeMapping>
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Folder)">
+        <MappingFragment StoreEntitySet="Files_Folder">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+        </MappingFragment>
+      </EntityTypeMapping>
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Document)">
+        <MappingFragment StoreEntitySet="Files_Document">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="BlobId" ColumnName="BlobId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Blobs">
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Blob)">
+        <MappingFragment StoreEntitySet="Blobs">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="Size" ColumnName="Size" />
+          <ScalarProperty Name="Hash" ColumnName="Hash" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Clients">
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Client)">
+        <MappingFragment StoreEntitySet="Clients">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="Name" ColumnName="Name" />
+          <ScalarProperty Name="State" ColumnName="State" />
+          <ScalarProperty Name="UserId" ColumnName="UserId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Changelists">
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Changelist)">
+        <MappingFragment StoreEntitySet="Changelists">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="ClientId" ColumnName="ClientId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Changes">
+      <EntityTypeMapping TypeName="IsTypeOf(FooBoxModel.Change)">
+        <MappingFragment StoreEntitySet="Changes">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="Type" ColumnName="Type" />
+          <ScalarProperty Name="FileId" ColumnName="FileId" />
+          <ScalarProperty Name="ChangelistId" ColumnName="ChangelistId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <AssociationSetMapping Name="UserGroup" TypeName="FooBoxModel.UserGroup" StoreEntitySet="UserGroup">
+      <EndProperty Name="User">
+        <ScalarProperty Name="Id" ColumnName="Users_Id" />
+      </EndProperty>
+      <EndProperty Name="Group">
+        <ScalarProperty Name="Id" ColumnName="Groups_Id" />
+      </EndProperty>
+    </AssociationSetMapping>
+    <AssociationSetMapping Name="FolderOwner" TypeName="FooBoxModel.FolderOwner" StoreEntitySet="Files_Folder">
+      <EndProperty Name="User">
+        <ScalarProperty Name="Id" ColumnName="Owner_Id" />
+      </EndProperty>
+      <EndProperty Name="Folder">
+        <ScalarProperty Name="Id" ColumnName="Id" />
+      </EndProperty>
+    </AssociationSetMapping>
+    <AssociationSetMapping Name="FolderEditors" TypeName="FooBoxModel.FolderEditor" StoreEntitySet="FolderEditors">
+      <EndProperty Name="Folder">
+        <ScalarProperty Name="Id" ColumnName="FolderIdentity_Identity_Id" />
+      </EndProperty>
+      <EndProperty Name="Identity">
+        <ScalarProperty Name="Id" ColumnName="Editors_Id" />
+      </EndProperty>
+    </AssociationSetMapping>
+    <AssociationSetMapping Name="FolderFile" TypeName="FooBoxModel.FolderFile" StoreEntitySet="FolderFile">
+      <EndProperty Name="Folder">
+        <ScalarProperty Name="Id" ColumnName="ParentFolders_Id" />
+      </EndProperty>
+      <EndProperty Name="File">
+        <ScalarProperty Name="Id" ColumnName="Files_Id" />
+      </EndProperty>
+    </AssociationSetMapping>
+    <AssociationSetMapping Name="FolderShareFolder" TypeName="FooBoxModel.FolderShareFolder" StoreEntitySet="Files_Folder">
+      <EndProperty Name="Folder">
+        <ScalarProperty Name="Id" ColumnName="ShareFolder_Id" />
+      </EndProperty>
+      <EndProperty Name="ShareSubFolder">
+        <ScalarProperty Name="Id" ColumnName="Id" />
+      </EndProperty>
+      <Condition ColumnName="ShareFolder_Id" IsNull="false" />
+    </AssociationSetMapping>
+  </EntityContainerMapping>
+</Mapping></edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="False" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

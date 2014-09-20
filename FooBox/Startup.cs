@@ -8,7 +8,7 @@ namespace FooBox
     {
         public void Configuration(IAppBuilder app)
         {
-            ConfigureAuth(app);
+            // Nothing
         }
     }
 }
