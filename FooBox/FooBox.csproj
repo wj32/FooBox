@@ -176,6 +176,7 @@
     </Compile>
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\SetupController.cs" />
     <Compile Include="Document.cs">
       <DependentUpon>FooBoxModel.tt</DependentUpon>
     </Compile>
@@ -214,6 +215,7 @@
     </Compile>
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="Models\SetupModels.cs" />
     <Compile Include="ObjectState.cs">
       <DependentUpon>FooBoxModel.tt</DependentUpon>
     </Compile>
@@ -290,6 +292,7 @@
     <Content Include="Views\Account\Manage.cshtml" />
     <Content Include="Views\Account\Register.cshtml" />
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
+    <Content Include="Views\Setup\SetUp.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

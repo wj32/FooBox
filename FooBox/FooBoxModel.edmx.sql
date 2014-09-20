@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 09/20/2014 22:14:28
+-- Date Created: 09/20/2014 23:31:54
 -- Generated from EDMX file: D:\projects\FooBox\FooBox\FooBoxModel.edmx
 -- --------------------------------------------------
 
@@ -145,7 +145,7 @@ GO
 
 -- Creating table 'Tokens'
 CREATE TABLE [dbo].[Tokens] (
-    [Id] nvarchar(max)  NOT NULL,
+    [Id] varchar(64)  NOT NULL,
     [ExpiryTime] datetime  NOT NULL,
     [UserId] bigint  NOT NULL
 );

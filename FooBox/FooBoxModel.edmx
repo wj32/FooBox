@@ -118,7 +118,7 @@
     <Key>
       <PropertyRef Name="Id" />
     </Key>
-    <Property Name="Id" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Id" Type="varchar" Nullable="false" MaxLength="64" />
     <Property Name="ExpiryTime" Type="datetime" Nullable="false" />
     <Property Name="UserId" Type="bigint" Nullable="false" />
   </EntityType>
@@ -585,7 +585,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="String" Nullable="false" annotation:StoreGeneratedPattern="None" />
+          <Property Name="Id" Type="String" Nullable="false" annotation:StoreGeneratedPattern="None" MaxLength="64" Unicode="false" />
           <Property Name="ExpiryTime" Type="DateTime" Nullable="false" />
           <NavigationProperty Name="User" Relationship="FooBoxModel.TokenUser" FromRole="Token" ToRole="User" />
           <Property Name="UserId" Type="Int64" Nullable="false" />

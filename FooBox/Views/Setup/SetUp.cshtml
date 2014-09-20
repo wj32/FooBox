@@ -1,0 +1,43 @@
+﻿@model FooBox.Models.SetupViewModel
+@{
+    ViewBag.Title = "Setup";
+}
+
+<h2>@ViewBag.Title.</h2>
+<h3>@ViewBag.Message</h3>
+
+<p>Before using FooBox, you need to set up the database with an initial configuration.</p>
+
+@using (Html.BeginForm("SetUp", "Setup", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+{
+    <h4>Initial FooBox configuration.</h4>
+    <hr />
+    @Html.ValidationSummary()
+    <div class="form-group">
+        @Html.LabelFor(m => m.AdminUserName, new { @class = "col-md-2 control-label" })
+        <div class="col-md-10">
+            @Html.TextBoxFor(m => m.AdminUserName, new { @class = "form-control" })
+        </div>
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.AdminPassword, new { @class = "col-md-2 control-label" })
+        <div class="col-md-10">
+            @Html.PasswordFor(m => m.AdminPassword, new { @class = "form-control" })
+        </div>
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.ConfirmAdminPassword, new { @class = "col-md-2 control-label" })
+        <div class="col-md-10">
+            @Html.PasswordFor(m => m.ConfirmAdminPassword, new { @class = "form-control" })
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <input type="submit" class="btn btn-default" value="Set up" />
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
