@@ -39,6 +39,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -109,20 +117,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework">
-      <HintPath>..\packages\EntityFramework.6.0.0\lib\net45\EntityFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\packages\EntityFramework.6.0.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Core">
       <HintPath>..\packages\Microsoft.AspNet.Identity.Core.1.0.0\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Owin">
       <HintPath>..\packages\Microsoft.AspNet.Identity.Owin.1.0.0\lib\net45\Microsoft.AspNet.Identity.Owin.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.AspNet.Identity.EntityFramework">
-      <HintPath>..\packages\Microsoft.AspNet.Identity.EntityFramework.1.0.0\lib\net45\Microsoft.AspNet.Identity.EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="Owin">
       <HintPath>..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
@@ -159,102 +158,28 @@
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
-    <Compile Include="Blob.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="Change.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="Changelist.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="ChangeType.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="Client.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SetupController.cs" />
-    <Compile Include="Document.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="DocumentVersion.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="File.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="Folder.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="FooBoxModel.Context.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>FooBoxModel.Context.tt</DependentUpon>
-    </Compile>
-    <Compile Include="FooBoxModel.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="FooBoxModel.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>FooBoxModel.edmx</DependentUpon>
-    </Compile>
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Group.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="Identity.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
+    <Compile Include="Model.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
-    <Compile Include="Models\SetupModels.cs" />
-    <Compile Include="ObjectState.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
+    <Compile Include="Models\SetupViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
-    <Compile Include="Token.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
-    <Compile Include="User.cs">
-      <DependentUpon>FooBoxModel.tt</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
-    <Content Include="FooBoxModel.edmx.sql" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
-    <EntityDeploy Include="FooBoxModel.edmx">
-      <Generator>EntityModelCodeGenerator</Generator>
-      <LastGenOutput>FooBoxModel.Designer.cs</LastGenOutput>
-    </EntityDeploy>
-    <Content Include="FooBoxModel.Context.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <DependentUpon>FooBoxModel.edmx</DependentUpon>
-      <LastGenOutput>FooBoxModel.Context.cs</LastGenOutput>
-    </Content>
-    <Content Include="FooBoxModel.edmx.diagram">
-      <DependentUpon>FooBoxModel.edmx</DependentUpon>
-    </Content>
-    <Content Include="FooBoxModel.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <DependentUpon>FooBoxModel.edmx</DependentUpon>
-      <LastGenOutput>FooBoxModel.cs</LastGenOutput>
-    </Content>
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
     <Content Include="Scripts\jquery-1.10.2.min.js" />
@@ -283,11 +208,7 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Scripts\jquery-1.10.2.min.map" />
     <Content Include="Views\Account\_ChangePasswordPartial.cshtml" />
-    <Content Include="Views\Account\_ExternalLoginsListPartial.cshtml" />
-    <Content Include="Views\Account\_RemoveAccountPartial.cshtml" />
     <Content Include="Views\Account\_SetPasswordPartial.cshtml" />
-    <Content Include="Views\Account\ExternalLoginConfirmation.cshtml" />
-    <Content Include="Views\Account\ExternalLoginFailure.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Account\Manage.cshtml" />
     <Content Include="Views\Account\Register.cshtml" />

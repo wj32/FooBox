@@ -33,23 +33,10 @@ namespace FooBox.Controllers
         {
             if (ModelState.IsValid)
             {
-                using (var db = new FooBoxEntities())
+                using (var db = new FooBoxContext())
                 {
                     try
                     {
-                        await db.Database.Connection.OpenAsync();
-
-                        // Create the data model tables.
-
-                        var command = db.Database.Connection.CreateCommand();
-                        var script = System.IO.File.ReadAllText(Server.MapPath("~/FooBoxModel.edmx.sql"));
-
-                        foreach (var statement in script.Split(new string[] { "\r\nGO\r\n" }, StringSplitOptions.None))
-                        {
-                            command.CommandText = statement;
-                            await command.ExecuteNonQueryAsync();
-                        }
-
                         // Create the admin group.
 
                         var adminGroup = new Group { Name = "Administrators", Description = "Administrators", IsAdmin = true };
@@ -63,7 +50,7 @@ namespace FooBox.Controllers
                     }
                     catch (Exception ex)
                     {
-                        ModelState.AddModelError("", ex);
+                        ModelState.AddModelError("", "Error setting up the database: " + ex.Message);
                     }
                 }
             }
