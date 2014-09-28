@@ -37,12 +37,16 @@ namespace FooBox.Controllers
                 {
                     try
                     {
-                        // Create the admin group.
+                        // Create the admin group and admin user.
 
                         var adminGroup = new Group { Name = "Administrators", Description = "Administrators", IsAdmin = true };
-                        var adminUser = new User { Name = model.AdminUserName, PasswordHash = "test", PasswordSalt = "test", FirstName = model.AdminUserName, LastName = "", QuotaLimit = long.MaxValue };
-                        adminUser.Groups.Add(adminGroup);
-                        db.Identities.AddRange(new Identity[] { adminGroup, adminUser });
+                        db.Groups.Add(adminGroup);
+
+                        using (var userManager = new UserManager(db))
+                        {
+                            await userManager.CreateAsync(new User { Name = model.AdminUserName, QuotaLimit = long.MaxValue }, model.AdminPassword);
+                            (await userManager.FindAsync(model.AdminUserName)).Groups.Add(adminGroup);
+                        }
 
                         await db.SaveChangesAsync();
 

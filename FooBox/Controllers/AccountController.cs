@@ -8,6 +8,7 @@ using System.Web.Mvc;
 using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security;
 using FooBox.Models;
+using System.Web.Security;
 
 namespace FooBox.Controllers
 {
@@ -15,16 +16,16 @@ namespace FooBox.Controllers
     public class AccountController : Controller
     {
         public AccountController()
-            : this(null)
+            : this(new UserManager())
         {
         }
 
-        public AccountController(object userManager)
+        public AccountController(UserManager userManager)
         {
             UserManager = userManager;
         }
 
-        public object UserManager { get; private set; }
+        public UserManager UserManager { get; private set; }
 
         //
         // GET: /Account/Login
@@ -42,19 +43,19 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
         {
-            //if (ModelState.IsValid)
-            //{
-            //    var user = await UserManager.FindAsync(model.UserName, model.Password);
-            //    if (user != null)
-            //    {
-            //        await SignInAsync(user, model.RememberMe);
-            //        return RedirectToLocal(returnUrl);
-            //    }
-            //    else
-            //    {
-            //        ModelState.AddModelError("", "Invalid username or password.");
-            //    }
-            //}
+            if (ModelState.IsValid)
+            {
+                var user = await UserManager.FindAsync(model.UserName, model.Password);
+                if (user != null)
+                {
+                    SignIn(user, model.RememberMe);
+                    return RedirectToLocal(returnUrl);
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Invalid username or password.");
+                }
+            }
 
             // If we got this far, something failed, redisplay form
             return View(model);
@@ -75,20 +76,20 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Register(RegisterViewModel model)
         {
-            //if (ModelState.IsValid)
-            //{
-            //    var user = new ApplicationUser() { UserName = model.UserName };
-            //    var result = await UserManager.CreateAsync(user, model.Password);
-            //    if (result.Succeeded)
-            //    {
-            //        await SignInAsync(user, isPersistent: false);
-            //        return RedirectToAction("Index", "Home");
-            //    }
-            //    else
-            //    {
-            //        AddErrors(result);
-            //    }
-            //}
+            if (ModelState.IsValid)
+            {
+                var user = new User { Name = model.UserName };
+                var result = await UserManager.CreateAsync(user, model.Password);
+                if (result)
+                {
+                    SignIn(user, isPersistent: false);
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Unable to create the user. The user name may already be in use.");
+                }
+            }
 
             // If we got this far, something failed, redisplay form
             return View(model);
@@ -101,10 +102,8 @@ namespace FooBox.Controllers
             ViewBag.StatusMessage =
                 message == ManageMessageId.ChangePasswordSuccess ? "Your password has been changed."
                 : message == ManageMessageId.SetPasswordSuccess ? "Your password has been set."
-                : message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
                 : message == ManageMessageId.Error ? "An error has occurred."
                 : "";
-            ViewBag.HasLocalPassword = HasPassword();
             ViewBag.ReturnUrl = Url.Action("Manage");
             return View();
         }
@@ -115,46 +114,19 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Manage(ManageUserViewModel model)
         {
-            //bool hasPassword = HasPassword();
-            //ViewBag.HasLocalPassword = hasPassword;
-            //ViewBag.ReturnUrl = Url.Action("Manage");
-            //if (hasPassword)
-            //{
-            //    if (ModelState.IsValid)
-            //    {
-            //        IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword, model.NewPassword);
-            //        if (result.Succeeded)
-            //        {
-            //            return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
-            //        }
-            //        else
-            //        {
-            //            AddErrors(result);
-            //        }
-            //    }
-            //}
-            //else
-            //{
-            //    // User does not have a password so remove any validation errors caused by a missing OldPassword field
-            //    ModelState state = ModelState["OldPassword"];
-            //    if (state != null)
-            //    {
-            //        state.Errors.Clear();
-            //    }
-
-            //    if (ModelState.IsValid)
-            //    {
-            //        IdentityResult result = await UserManager.AddPasswordAsync(User.Identity.GetUserId(), model.NewPassword);
-            //        if (result.Succeeded)
-            //        {
-            //            return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
-            //        }
-            //        else
-            //        {
-            //            AddErrors(result);
-            //        }
-            //    }
-            //}
+            ViewBag.ReturnUrl = Url.Action("Manage");
+            if (ModelState.IsValid)
+            {
+                bool result = await UserManager.ChangePasswordAsync(User.Identity.Name, model.OldPassword, model.NewPassword);
+                if (result)
+                {
+                    return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
+                }
+                else
+                {
+                    ModelState.AddModelError("", "The old password is incorrect.");
+                }
+            }
 
             // If we got this far, something failed, redisplay form
             return View(model);
@@ -174,7 +146,7 @@ namespace FooBox.Controllers
         {
             if (disposing && UserManager != null)
             {
-                //UserManager.Dispose();
+                UserManager.Dispose();
                 UserManager = null;
             }
             base.Dispose(disposing);
@@ -190,36 +162,16 @@ namespace FooBox.Controllers
             }
         }
 
-        private async Task SignInAsync(object user, bool isPersistent)
+        private void SignIn(User user, bool isPersistent)
         {
-            //AuthenticationManager.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-            //var identity = await UserManager.CreateIdentityAsync(user, DefaultAuthenticationTypes.ApplicationCookie);
-            //AuthenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, identity);
-        }
-
-        private void AddErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error);
-            }
-        }
-
-        private bool HasPassword()
-        {
-            //var user = UserManager.FindById(User.Identity.GetUserId());
-            //if (user != null)
-            //{
-            //    return user.PasswordHash != null;
-            //}
-            return false;
+            var identity = UserManager.CreateIdentity(user, DefaultAuthenticationTypes.ApplicationCookie);
+            AuthenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, identity);
         }
 
         public enum ManageMessageId
         {
             ChangePasswordSuccess,
             SetPasswordSuccess,
-            RemoveLoginSuccess,
             Error
         }
 

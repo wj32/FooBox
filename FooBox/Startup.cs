@@ -1,4 +1,6 @@
-﻿using Microsoft.Owin;
+﻿using Microsoft.AspNet.Identity;
+using Microsoft.Owin;
+using Microsoft.Owin.Security.Cookies;
 using Owin;
 
 [assembly: OwinStartupAttribute(typeof(FooBox.Startup))]
@@ -8,7 +10,11 @@ namespace FooBox
     {
         public void Configuration(IAppBuilder app)
         {
-            // Nothing
+            app.UseCookieAuthentication(new CookieAuthenticationOptions
+            {
+                AuthenticationType = DefaultAuthenticationTypes.ApplicationCookie,
+                LoginPath = new PathString("/Account/Login")
+            });
         }
     }
 }
