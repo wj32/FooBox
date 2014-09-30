@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FooBox.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -10,6 +11,9 @@ namespace FooBox.Controllers
     {
         public ActionResult Index()
         {
+            if (!FileManager.IsFooBoxSetUp())
+                return RedirectToAction("SetUp", "Setup");
+
             return View();
         }
 

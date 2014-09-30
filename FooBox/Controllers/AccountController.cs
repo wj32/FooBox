@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security;
 using FooBox.Models;
 using System.Web.Security;
@@ -41,11 +40,11 @@ namespace FooBox.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
+        public ActionResult Login(LoginViewModel model, string returnUrl)
         {
             if (ModelState.IsValid)
             {
-                var user = await UserManager.FindAsync(model.UserName, model.Password);
+                var user = UserManager.FindUser(model.UserName, model.Password);
                 if (user != null)
                 {
                     SignIn(user, model.RememberMe);
@@ -74,13 +73,13 @@ namespace FooBox.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Register(RegisterViewModel model)
+        public ActionResult Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var user = new User { Name = model.UserName };
-                var result = await UserManager.CreateAsync(user, model.Password);
-                if (result)
+                var template = new User { Name = model.UserName };
+                var user = UserManager.CreateUser(template, model.Password);
+                if (user != null)
                 {
                     SignIn(user, isPersistent: false);
                     return RedirectToAction("Index", "Home");
@@ -112,12 +111,12 @@ namespace FooBox.Controllers
         // POST: /Account/Manage
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Manage(ManageUserViewModel model)
+        public ActionResult Manage(ManageUserViewModel model)
         {
             ViewBag.ReturnUrl = Url.Action("Manage");
             if (ModelState.IsValid)
             {
-                bool result = await UserManager.ChangePasswordAsync(User.Identity.Name, model.OldPassword, model.NewPassword);
+                bool result = UserManager.ChangeUserPassword(User.Identity.GetUserId(), model.OldPassword, model.NewPassword);
                 if (result)
                 {
                     return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
@@ -164,7 +163,7 @@ namespace FooBox.Controllers
 
         private void SignIn(User user, bool isPersistent)
         {
-            var identity = UserManager.CreateIdentity(user, DefaultAuthenticationTypes.ApplicationCookie);
+            var identity = UserManager.CreateIdentity(user, "ApplicationCookie");
             AuthenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, identity);
         }
 

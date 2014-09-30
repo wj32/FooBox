@@ -27,14 +27,18 @@ namespace FooBox
 
     public class Blob
     {
+        public const int IdLength = 32;
+        public const int HashBits = 512;
+
         public Blob()
         {
             this.DocumentVersions = new HashSet<DocumentVersion>();
         }
 
-        public System.Guid Id { get; set; }
+        [MaxLength(IdLength)]
+        public string Id { get; set; }
         public long Size { get; set; }
-        [MaxLength(128)]
+        [MaxLength(HashBits / 4)]
         [Index]
         public string Hash { get; set; }
 
@@ -70,8 +74,10 @@ namespace FooBox
 
     public class Client
     {
+        public const int NameMaxLength = 128;
+
         public long Id { get; set; }
-        [MaxLength(128)]
+        [MaxLength(NameMaxLength)]
         [Index]
         public string Name { get; set; }
         public ObjectState State { get; set; }
@@ -98,7 +104,8 @@ namespace FooBox
         [Index]
         public DateTime TimeStamp { get; set; }
         public long DocumentId { get; set; }
-        public System.Guid BlobId { get; set; }
+        [MaxLength(Blob.IdLength)]
+        public string BlobId { get; set; }
         public long ClientId { get; set; }
 
         public virtual Document Document { get; set; }
@@ -108,16 +115,22 @@ namespace FooBox
 
     public abstract class File
     {
+        public const int NameMaxLength = 512;
+
         public File()
         {
             this.ParentFolders = new HashSet<Folder>();
         }
 
         public long Id { get; set; }
-        [MaxLength(512)]
+        [MaxLength(NameMaxLength)]
         [Index]
         public string Name { get; set; }
+        [Index]
         public ObjectState State { get; set; }
+        [MaxLength(16)]
+        [Index]
+        public string Tag { get; set; }
 
         public virtual ICollection<Folder> ParentFolders { get; set; }
     }
@@ -138,6 +151,7 @@ namespace FooBox
         public virtual ICollection<File> Files { get; set; }
         public virtual Folder ShareFolder { get; set; }
         public virtual ICollection<Folder> ShareSubFolders { get; set; }
+        public virtual ICollection<User> RootOfUsers { get; set; }
     }
 
     public class Group : Identity
@@ -155,10 +169,13 @@ namespace FooBox
 
     public abstract class Identity
     {
+        public const int NameMaxLength = 32;
+
         public long Id { get; set; }
-        [MaxLength(32)]
-        [Index(IsUnique = true)]
+        [MaxLength(NameMaxLength)]
+        [Index("IX_IdentityNameState", 1)]
         public string Name { get; set; }
+        [Index("IX_IdentityNameState", 2)]
         public ObjectState State { get; set; }
     }
 
@@ -179,6 +196,7 @@ namespace FooBox
 
         public virtual ICollection<Group> Groups { get; set; }
         public virtual ICollection<Client> Clients { get; set; }
+        public virtual Folder RootFolder { get; set; }
     }
 
     #endregion
@@ -205,6 +223,7 @@ namespace FooBox
             modelBuilder.Entity<Folder>().HasOptional(t => t.ShareFolder).WithMany(t => t.ShareSubFolders);
             modelBuilder.Entity<Group>().ToTable("Groups"); // Force TPT
             modelBuilder.Entity<User>().ToTable("Users"); // Force TPT
+            modelBuilder.Entity<User>().HasOptional(t => t.RootFolder).WithMany(t => t.RootOfUsers);
         }
 
         public virtual DbSet<Blob> Blobs { get; set; }

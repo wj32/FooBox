@@ -22,6 +22,9 @@ namespace FooBox.Controllers
         [AllowAnonymous]
         public ActionResult SetUp()
         {
+            if (FileManager.IsFooBoxSetUp())
+                return RedirectToAction("Index", "Home");
+
             return View();
         }
 
@@ -34,21 +37,23 @@ namespace FooBox.Controllers
             if (ModelState.IsValid)
             {
                 using (var db = new FooBoxContext())
+                using (var transaction = db.Database.BeginTransaction())
                 {
                     try
                     {
-                        // Create the admin group and admin user.
-
-                        var adminGroup = new Group { Name = "Administrators", Description = "Administrators", IsAdmin = true };
-                        db.Groups.Add(adminGroup);
-
+                        using (var fileManager = new FileManager(db))
                         using (var userManager = new UserManager(db))
                         {
-                            await userManager.CreateAsync(new User { Name = model.AdminUserName, QuotaLimit = long.MaxValue }, model.AdminPassword);
-                            (await userManager.FindAsync(model.AdminUserName)).Groups.Add(adminGroup);
+                            userManager.InitialSetup();
+                            fileManager.InitialSetup();
+
+                            // Create the admin user.
+                            userManager.CreateUser(new User { Name = model.AdminUserName, QuotaLimit = long.MaxValue }, model.AdminPassword);
+                            userManager.FindUser(model.AdminUserName).Groups.Add(userManager.FindGroup(UserManager.AdministratorsGroupName));
+                            await db.SaveChangesAsync();
                         }
 
-                        await db.SaveChangesAsync();
+                        transaction.Commit();
 
                         return RedirectToAction("Index", "Home");
                     }
