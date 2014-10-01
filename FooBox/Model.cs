@@ -11,9 +11,10 @@ namespace FooBox
     public enum ChangeType : int
     {
         Add = 0,
-        ModifyDisplayName = 1,
-        ModifyState = 2,
-        AddVersion = 3
+        AddVersion = 1,
+        SetDisplayName = 2,
+        Delete = 3,
+        Undelete = 4
     }
 
     public enum ObjectState : int

@@ -254,6 +254,8 @@ namespace FooBox.Models
                         if (currentNode.Nodes == null)
                             currentNode.Nodes = new Dictionary<string, ClientChangeNode>();
 
+                        // TODO: Add support for links (Link). This will allow shared folders to work properly.
+
                         ClientChangeNode newNode = new ClientChangeNode
                         {
                             Name = nameKey,
@@ -314,6 +316,7 @@ namespace FooBox.Models
         public bool IsFolder { get; set; }
         public ClientChangeType Type { get; set; }
 
+        public long Size { get; set; }
         public string UploadFileName { get; set; }
         public FileStream UploadStream { get; set; }
     }
