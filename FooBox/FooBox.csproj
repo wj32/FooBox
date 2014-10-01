@@ -170,6 +170,7 @@
     <Compile Include="Models\FileModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\SetupViewModels.cs" />
+    <Compile Include="Models\SyncEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>

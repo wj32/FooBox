@@ -241,7 +241,7 @@ namespace FooBox.Models
             {
                 ClientChangeNode currentNode = root;
 
-                foreach (var name in change.FileName.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
+                foreach (var name in change.FullFileName.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     var nameKey = name.ToUpperInvariant();
 
@@ -301,20 +301,11 @@ namespace FooBox.Models
         #endregion
     }
 
-    public enum ClientChangeType
-    {
-        None,
-        Add,
-        Delete,
-        ModifyDisplayName,
-        AddVersion
-    }
-
     public class ClientChange
     {
-        public string FileName { get; set; }
+        public string FullFileName { get; set; }
         public bool IsFolder { get; set; }
-        public ClientChangeType Type { get; set; }
+        public SyncChangeType Type { get; set; }
 
         public long Size { get; set; }
         public string UploadFileName { get; set; }

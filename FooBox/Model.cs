@@ -52,6 +52,7 @@ namespace FooBox
     {
         public long Id { get; set; }
         public ChangeType Type { get; set; }
+        public string FullFileName { get; set; }
         public long ChangelistId { get; set; }
         public long FileId { get; set; }
         public long? DocumentVersionId { get; set; }
