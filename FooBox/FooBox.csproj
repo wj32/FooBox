@@ -166,6 +166,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Model.cs" />
+    <Compile Include="Models\UserViewModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\FileModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
@@ -220,6 +221,7 @@
     <Content Include="Views\User\UserEdit.cshtml" />
     <Content Include="Views\User\UserEditForm.cshtml" />
     <Content Include="Views\User\Index.cshtml" />
+    <Content Include="Views\User\UserNewForm.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

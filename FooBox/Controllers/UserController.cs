@@ -49,17 +49,25 @@ namespace FooBox.Controllers
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult UserCreate([Bind(Include = "Id,Name,State,PasswordHash,PasswordSalt,FirstName,LastName,QuotaLimit,QuotaCharged,Clients,Groups,RootFolder")] User user)
+        public ActionResult UserCreate(AdminNewUserViewModel model)
         {
+            User template;
             if (ModelState.IsValid)
             {
-                um.CreateUser(user, "");
+                template = new User
+                {
+                    Name = model.Name,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    QuotaLimit = model.QuotaLimit
+                };
+                um.CreateUser(template, model.Password);
                 DisplaySuccessMessage("User created");
                 return RedirectToAction("Index");
             }
 
             DisplayErrorMessage();
-            return View(user);
+            return View();
         }
 
         // GET: User/UserEdit/5
