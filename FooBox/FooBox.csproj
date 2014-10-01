@@ -168,7 +168,6 @@
     <Compile Include="Model.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\FileModels.cs" />
-    <Compile Include="Models\GroupMetadata.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\SetupViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
