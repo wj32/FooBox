@@ -7,18 +7,19 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using FooBox;
+using FooBox.Models;
 
 namespace FooBox.Controllers
 {
     public class UserController : Controller
     {
-        private FooBoxContext db = new FooBoxContext();
+        private UserManager um = new UserManager();
 
+        
         // GET: User/Index
         public ActionResult Index()
         {
- 
-            return View(db.Users.ToList());
+            return View(um.Context.Users.ToList());
         }
 
         /*
@@ -52,9 +53,8 @@ namespace FooBox.Controllers
         {
             if (ModelState.IsValid)
             {
-                db.Identities.Add(user);
-                db.SaveChanges();
-                DisplaySuccessMessage("Has append a User record");
+                um.CreateUser(user, "");
+                DisplaySuccessMessage("User created");
                 return RedirectToAction("Index");
             }
 
@@ -69,7 +69,8 @@ namespace FooBox.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            User user = (User) db.Identities.Find(id);
+            User user = um.FindUser(id.Value);
+
             if (user == null)
             {
                 return HttpNotFound();
@@ -85,8 +86,8 @@ namespace FooBox.Controllers
         {
             if (ModelState.IsValid)
             {
-                db.Entry(user).State = EntityState.Modified;
-                db.SaveChanges();
+                um.Context.Entry(user).State = EntityState.Modified;
+                um.Context.SaveChanges();
                 DisplaySuccessMessage("User details updated");
                 return RedirectToAction("Index");
             }
@@ -101,7 +102,7 @@ namespace FooBox.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            User user = (User) db.Identities.Find(id);
+            User user = um.FindUser(id.Value);
             if (user == null)
             {
                 return HttpNotFound();
@@ -114,17 +115,9 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult UserDeleteConfirmed(long id)
         {
-            if (ModelState.IsValid)
-            {
-                Identity user = db.Identities.Find(id);
-                db.Entry(user).State = EntityState.Modified;
-                
-                user.State = ObjectState.Deleted;
-                db.SaveChanges();
-            }
             
-           
-            
+            um.DeleteUser(id);
+
             DisplaySuccessMessage("User deleted");
             return RedirectToAction("Index");
         }
@@ -143,7 +136,7 @@ namespace FooBox.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                um.Dispose();
             }
             base.Dispose(disposing);
         }
