@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
@@ -181,9 +182,12 @@ namespace FooBox
         public const int NameMaxLength = 32;
 
         public long Id { get; set; }
+
+        [DisplayName("Name")]
         [MaxLength(NameMaxLength)]
         [Index("IX_IdentityNameState", 1)]
         public string Name { get; set; }
+
         [Index("IX_IdentityNameState", 2)]
         public ObjectState State { get; set; }
     }
@@ -205,9 +209,17 @@ namespace FooBox
 
         public string PasswordHash { get; set; }
         public string PasswordSalt { get; set; }
+
+        [DisplayName("First Name")]
         public string FirstName { get; set; }
+
+        [DisplayName("Last Name")]
         public string LastName { get; set; }
+
+        [DisplayName("Quota Limit")]
         public long QuotaLimit { get; set; }
+
+        [DisplayName("Quota Charged")]
         public long QuotaCharged { get; set; }
 
         public virtual ICollection<Group> Groups { get; set; }
