@@ -136,7 +136,12 @@ namespace FooBox.Models
                 _context.SaveChanges();
 
                 using (var fileManager = new FileManager(_context))
+                {
+                    // Create the user's root folder.
                     fileManager.CreateUserRootFolder(newUser);
+                    // Create the user's default internal client.
+                    fileManager.CreateClient(newUser.Id, "Internal", FileManager.InternalClientTag);
+                }
             }
             catch
             {

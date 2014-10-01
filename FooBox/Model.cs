@@ -11,8 +11,9 @@ namespace FooBox
     public enum ChangeType : int
     {
         Add = 0,
-        ModifyState = 1,
-        AddVersion = 2
+        ModifyDisplayName = 1,
+        ModifyState = 2,
+        AddVersion = 3
     }
 
     public enum ObjectState : int
@@ -35,7 +36,7 @@ namespace FooBox
             this.DocumentVersions = new HashSet<DocumentVersion>();
         }
 
-        [MaxLength(IdLength)]
+        [StringLength(IdLength)]
         public string Id { get; set; }
         public long Size { get; set; }
         [MaxLength(HashBits / 4)]
@@ -67,6 +68,7 @@ namespace FooBox
 
         public long Id { get; set; }
         public long ClientId { get; set; }
+        public DateTime TimeStamp { get; set; }
 
         public virtual Client Client { get; set; }
         public virtual ICollection<Change> Changes { get; set; }
@@ -81,8 +83,12 @@ namespace FooBox
         [Index]
         public string Name { get; set; }
         public ObjectState State { get; set; }
+        [MaxLength(16)]
+        [Index]
+        public string Tag { get; set; }
         public long UserId { get; set; }
         public string Secret { get; set; }
+        public DateTime AccessTime { get; set; }
 
         public virtual User User { get; set; }
     }
@@ -117,22 +123,22 @@ namespace FooBox
     {
         public const int NameMaxLength = 512;
 
-        public File()
-        {
-            this.ParentFolders = new HashSet<Folder>();
-        }
-
         public long Id { get; set; }
         [MaxLength(NameMaxLength)]
-        [Index]
+        [Index("IX_FileName")]
+        [Index("IX_FileParentFolderName", 2, IsUnique = true)]
         public string Name { get; set; }
+        [MaxLength(NameMaxLength)]
+        public string DisplayName { get; set; }
         [Index]
         public ObjectState State { get; set; }
         [MaxLength(16)]
         [Index]
         public string Tag { get; set; }
+        [Index("IX_FileParentFolderName", 1, IsUnique = true)]
+        public long? ParentFolderId { get; set; }
 
-        public virtual ICollection<Folder> ParentFolders { get; set; }
+        public virtual Folder ParentFolder { get; set; }
     }
 
     public class Folder : File
@@ -142,6 +148,8 @@ namespace FooBox
             this.Editors = new HashSet<Identity>();
             this.Files = new HashSet<File>();
             this.ShareSubFolders = new HashSet<Folder>();
+            this.RootOfUsers = new HashSet<User>();
+            this.TargetOfLinks = new HashSet<Link>();
         }
 
         public long OwnerId { get; set; }
@@ -152,6 +160,7 @@ namespace FooBox
         public virtual Folder ShareFolder { get; set; }
         public virtual ICollection<Folder> ShareSubFolders { get; set; }
         public virtual ICollection<User> RootOfUsers { get; set; }
+        public virtual ICollection<Link> TargetOfLinks { get; set; }
     }
 
     public class Group : Identity
@@ -177,6 +186,13 @@ namespace FooBox
         public string Name { get; set; }
         [Index("IX_IdentityNameState", 2)]
         public ObjectState State { get; set; }
+    }
+
+    public class Link : File
+    {
+        public long? TargetId { get; set; }
+
+        public virtual Folder Target { get; set; }
     }
 
     public class User : Identity
@@ -214,15 +230,12 @@ namespace FooBox
         {
             modelBuilder.Entity<Change>().HasRequired(t => t.File).WithMany().HasForeignKey(t => t.FileId);
             modelBuilder.Entity<Change>().HasOptional(t => t.DocumentVersion).WithMany().HasForeignKey(t => t.DocumentVersionId);
-            modelBuilder.Entity<Document>().ToTable("Documents"); // Force TPT
             modelBuilder.Entity<DocumentVersion>().HasRequired(t => t.Client).WithMany().HasForeignKey(t => t.ClientId);
-            modelBuilder.Entity<Folder>().ToTable("Folders"); // Force TPT
-            modelBuilder.Entity<Folder>().HasMany(t => t.Files).WithMany(t => t.ParentFolders);
-            modelBuilder.Entity<Folder>().HasRequired(t => t.Owner).WithMany().HasForeignKey(t => t.OwnerId);
+            modelBuilder.Entity<Folder>().HasMany(t => t.Files).WithOptional(t => t.ParentFolder).HasForeignKey(t => t.ParentFolderId);
+            modelBuilder.Entity<Folder>().HasRequired(t => t.Owner).WithMany().HasForeignKey(t => t.OwnerId).WillCascadeOnDelete(false);
             modelBuilder.Entity<Folder>().HasMany(t => t.Editors).WithMany();
             modelBuilder.Entity<Folder>().HasOptional(t => t.ShareFolder).WithMany(t => t.ShareSubFolders);
-            modelBuilder.Entity<Group>().ToTable("Groups"); // Force TPT
-            modelBuilder.Entity<User>().ToTable("Users"); // Force TPT
+            modelBuilder.Entity<Link>().HasOptional(t => t.Target).WithMany(t => t.TargetOfLinks).HasForeignKey(t => t.TargetId);
             modelBuilder.Entity<User>().HasOptional(t => t.RootFolder).WithMany(t => t.RootOfUsers);
         }
 
@@ -236,6 +249,7 @@ namespace FooBox
         public virtual DbSet<Folder> Folders { get; set; }
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<Identity> Identities { get; set; }
+        public virtual DbSet<Link> Links { get; set; }
         public virtual DbSet<User> Users { get; set; }
     }
 
