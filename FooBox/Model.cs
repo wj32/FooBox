@@ -107,8 +107,6 @@ namespace FooBox
         [Index]
         public DateTime TimeStamp { get; set; }
         public long DocumentId { get; set; }
-        [MaxLength(Blob.KeyLength)]
-        public string BlobId { get; set; }
         public long ClientId { get; set; }
 
         public virtual Document Document { get; set; }
