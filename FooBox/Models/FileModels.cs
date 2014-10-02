@@ -88,7 +88,7 @@ namespace FooBox.Models
             return new DirectoryInfo(BlobDataDirectory);
         }
 
-        public string GenerateBlobId()
+        public string GenerateBlobKey()
         {
             Random r = new Random();
             char[] c = new char[32];
@@ -99,22 +99,15 @@ namespace FooBox.Models
             return new string(c);
         }
 
-        public string GetBlobFileName(string blobId)
+        public string GetBlobFileName(string blobKey)
         {
-            return BlobDataDirectory + "\\" + blobId;
-        }
-
-        public string CreateBlob(string hash, long size)
-        {
-            var blob = _context.Blobs.Add(new Blob { Id = GenerateBlobId(), Size = size, Hash = hash });
-            _context.SaveChanges();
-
-            return blob.Id;
+            return BlobDataDirectory + "\\" + blobKey;
         }
 
         public string FindBlob(string hash)
         {
-            return (from blob in _context.Blobs where blob.Hash == hash select blob.Id).SingleOrDefault();
+            var upperHash = hash.ToUpperInvariant();
+            return (from blob in _context.Blobs where blob.Hash == upperHash select blob.Key).SingleOrDefault();
         }
 
         #endregion
@@ -216,111 +209,182 @@ namespace FooBox.Models
 
         #region Client upload
 
-        public static readonly string ClientUploadDataDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Uploads");
+        public static readonly string ClientUploadDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Uploads");
+
+        private DirectoryInfo AccessClientUploadDirectory(long clientId)
+        {
+            string path = ClientUploadDirectory + "\\" + clientId.ToString();
+
+            if (!Directory.Exists(path))
+                return Directory.CreateDirectory(path);
+
+            return new DirectoryInfo(path);
+        }
 
         #endregion
 
         #region Synchronization
 
-        private class ClientChangeNode
+        public ClientSyncResult SyncClientChanges(ClientSyncData clientData)
         {
-            public string Name;
-            public ClientChange Change;
-            public File File;
-
-            public Dictionary<string, ClientChangeNode> Nodes;
-        }
-
-        private ClientChangeNode CreateChangeNodes(IEnumerable<ClientChange> changes, Client client)
-        {
-            ClientChangeNode root = new ClientChangeNode();
-            root.File = client.User.RootFolder;
-            root.Nodes = new Dictionary<string, ClientChangeNode>();
-
-            foreach (var change in changes)
-            {
-                ClientChangeNode currentNode = root;
-
-                foreach (var name in change.FullFileName.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    var nameKey = name.ToUpperInvariant();
-
-                    if (currentNode.Nodes != null && currentNode.Nodes.ContainsKey(nameKey))
-                    {
-                        currentNode = currentNode.Nodes[nameKey];
-                    }
-                    else
-                    {
-                        if (currentNode.Nodes == null)
-                            currentNode.Nodes = new Dictionary<string, ClientChangeNode>();
-
-                        // TODO: Add support for links (Link). This will allow shared folders to work properly.
-
-                        ClientChangeNode newNode = new ClientChangeNode
-                        {
-                            Name = nameKey,
-                            File = (currentNode.File is Folder) ? ((Folder)currentNode.File).Files.AsQueryable().Where(file => file.Name == nameKey).SingleOrDefault() : null
-                        };
-
-                        currentNode.Nodes.Add(newNode.Name, newNode);
-                        currentNode = newNode;
-                    }
-                }
-
-                if (currentNode != root)
-                    currentNode.Change = change;
-            }
-
-            return root;
-        }
-
-        public void SyncClientChanges(ClientChangelist clientChangelist)
-        {
-            var client = FindClient(clientChangelist.ClientId);
-
-            if (client == null)
-                throw new Exception("Invalid client.");
-            if (client.Secret != clientChangelist.Secret)
-                throw new Exception("Incorrect client secret.");
+            var clientNodes = ChangeNode.FromItems(clientData.Changes);
 
             using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.Serializable))
             using (var userManager = new UserManager(_context))
             {
-                var changeNodes = CreateChangeNodes(clientChangelist.Changes, client);
+                // Construct the list of changes that have occurred from the client's base changelist ID up to now.
+
                 var intermediateChanges =
                     from changelist in _context.Changelists
-                    where changelist.Id > clientChangelist.BaseChangelistId
-                    join change in _context.Changes on changelist.Id equals change.ChangelistId
-                    join file in _context.Files on change.FileId equals file.Id
+                    where changelist.Id > clientData.BaseChangelistId
+                    join change in _context.Changes on changelist.Id equals change.ChangelistId into changes
                     orderby changelist.Id
-                    select new { Type = change.Type, FileId = change.FileId, IsFolder = file is Folder };
-                var intermediateChangesByFile = intermediateChanges.ToDictionary(x => x.FileId);
+                    select new { ChangeListId = changelist.Id, Changes = changes };
+                var intermediateNodes =
+                    from x in intermediateChanges
+                    select new
+                    {
+                        ChangelistId = x.ChangeListId,
+                        Nodes = ChangeNode.FromItems(from change in x.Changes
+                                                     select new ChangeItem
+                                                         {
+                                                             FullName = change.FullFileName,
+                                                             Type = change.Type,
+                                                             IsFolder = change.IsFolder
+                                                         })
+                    };
+
+                var mergedNodes = ChangeNode.CreateRoot();
+                long lastChangelistId = clientData.BaseChangelistId;
+
+                foreach (var changelist in intermediateNodes)
+                {
+                    mergedNodes.SequentialMerge(changelist.Nodes);
+                    lastChangelistId = changelist.ChangelistId;
+                }
+
+                // Check if the client's changes conflict with ours.
+
+                if (mergedNodes.PreservingConflicts(clientNodes))
+                {
+                    return new ClientSyncResult
+                    {
+                        State = ClientSyncResultState.Conflict,
+                        LastChangelistId = lastChangelistId,
+                        Changes = mergedNodes.ToItems()
+                    };
+                }
+
+                // The client's changes don't conflict, so turn it into a sequential changelist.
+
+                mergedNodes.MakeSequentialByPreserving(clientNodes);
+
+                // Check for all required data.
+
+                var clientChangesByFullName = clientData.Changes.ToDictionary(change => change.FullName);
+                var uploadDirectory = AccessClientUploadDirectory(clientData.ClientId);
+                var presentHashes = new Dictionary<string, Blob>();
+                var missingHashes = new HashSet<string>();
+                var missingBlobHashes = new Dictionary<string, ClientChange>();
+
+                foreach (var addNode in clientNodes.RecursiveEnumerate())
+                {
+                    if (addNode.Type != ChangeType.Add || !addNode.IsFolder)
+                        continue;
+
+                    var clientChange = clientChangesByFullName[addNode.FullName];
+                    var hash = clientChange.Hash.ToUpperInvariant();
+
+                    if (presentHashes.ContainsKey(hash) || missingHashes.Contains(hash))
+                        continue;
+
+                    var blobForHash = (from blob in _context.Blobs where blob.Hash == hash select blob).SingleOrDefault();
+
+                    if (blobForHash != null || System.IO.File.Exists(uploadDirectory.FullName + "\\" + hash))
+                    {
+                        presentHashes.Add(hash, blobForHash);
+
+                        if (blobForHash == null)
+                            missingBlobHashes.Add(hash, clientChange);
+                    }
+                    else
+                    {
+                        missingHashes.Add(hash);
+                    }
+                }
+
+                if (missingHashes.Count != 0)
+                {
+                    return new ClientSyncResult
+                    {
+                        State = ClientSyncResultState.UploadRequired,
+                        LastChangelistId = lastChangelistId,
+                        Changes = mergedNodes.ToItems(),
+                        UploadRequiredFor = missingHashes
+                    };
+                }
+
+                // Create blobs for hashes with no associated blobs.
+
+                foreach (var hash in missingBlobHashes.Keys)
+                {
+                    var clientChange = missingBlobHashes[hash];
+                    var blobKey = GenerateBlobKey();
+
+                    try
+                    {
+                        System.IO.File.Copy(uploadDirectory.FullName + "\\" + hash, GetBlobFileName(blobKey));
+                    }
+                    catch (Exception ex)
+                    {
+                        try
+                        {
+                            System.IO.File.Delete(GetBlobFileName(blobKey));
+                        }
+                        catch
+                        { }
+
+                        return new ClientSyncResult
+                        {
+                            State = ClientSyncResultState.Error,
+                            Exception = ex
+                        };
+                    }
+
+                    presentHashes[hash] = _context.Blobs.Add(new Blob { Key = blobKey, Size = clientChange.Size, Hash = hash });
+                }
+
+                // Apply the changes to the database.
+
+                return null;
             }
         }
 
         #endregion
     }
 
-    public class ClientChange
+    public class ClientChange : ChangeItem
     {
-        public string FullFileName { get; set; }
-        public bool IsFolder { get; set; }
-        public SyncChangeType Type { get; set; }
-
         public long Size { get; set; }
+        public string Hash { get; set; }
         public string UploadFileName { get; set; }
         public FileStream UploadStream { get; set; }
+        public string DisplayName { get; set; }
+
+        public Blob AssociatedBlob { get; set; }
     }
 
-    public class ClientChangelist
+    public class ClientSyncData
     {
-        public ClientChangelist()
+        public ClientSyncData()
         {
             this.Changes = new HashSet<ClientChange>();
         }
 
+        /// <summary>
+        /// The client that is making the changes.
+        /// </summary>
         public long ClientId { get; set; }
-        public string Secret { get; set; }
 
         /// <summary>
         /// The changelist that the client is currently synchronized to.
@@ -328,5 +392,32 @@ namespace FooBox.Models
         public long BaseChangelistId { get; set; }
 
         public ICollection<ClientChange> Changes { get; set; }
+    }
+
+    public enum ClientSyncResultState
+    {
+        Error,
+        Conflict,
+        UploadRequired,
+        Success
+    }
+
+    public class ClientSyncResult
+    {
+        public ClientSyncResultState State { get; set; }
+        public Exception Exception { get; set; }
+
+        // >= Conflict
+
+        public long LastChangelistId { get; set; }
+        public ICollection<ChangeItem> Changes { get; set; }
+
+        // >= UploadRequired
+
+        public ICollection<string> UploadRequiredFor { get; set; }
+
+        // >= Success
+
+        public long NewChangelistId { get; set; }
     }
 }

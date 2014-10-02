@@ -5,7 +5,7 @@ using System.Web;
 
 namespace FooBox.Models
 {
-    public enum SyncChangeType
+    public enum ChangeType
     {
         /// <summary>
         /// No change.
@@ -33,33 +33,44 @@ namespace FooBox.Models
         Undelete
     }
 
-    public class SyncItem
+    public class ChangeItem
     {
         public string FullName { get; set; }
-        public SyncChangeType Type { get; set; }
+        public ChangeType Type { get; set; }
+
+        /// <summary>
+        /// Whether we are adding a document or a folder.
+        /// </summary>
         public bool IsFolder { get; set; }
     }
 
-    public class SyncNode
+    public class ChangeNode : ChangeItem
     {
-        public static SyncNode FromItems(IEnumerable<SyncItem> list)
+        public static ChangeNode CreateRoot()
         {
-            SyncNode root = new SyncNode
+            return new ChangeNode
             {
                 Name = "",
                 FullName = "",
-                Type = SyncChangeType.Add,
+                Type = ChangeType.Add,
                 IsFolder = true,
-                Nodes = new Dictionary<string, SyncNode>()
+                Nodes = new Dictionary<string, ChangeNode>()
             };
+        }
+
+        public static ChangeNode FromItems(IEnumerable<ChangeItem> list)
+        {
+            ChangeNode root = CreateRoot();
 
             foreach (var item in list)
             {
                 var components = item.FullName.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-                SyncNode currentNode = root;
+                ChangeNode currentNode = root;
 
                 if (components.Length == 0)
                     throw new Exception("Invalid file name '" + item.FullName + "'");
+
+                // Find the direct parent to the file.
 
                 for (int i = 0; i < components.Length - 1; i++)
                 {
@@ -70,63 +81,65 @@ namespace FooBox.Models
                         currentNode = currentNode.Nodes[name];
 
                         if (!currentNode.IsFolder)
-                            throw new Exception("Inconsistent sync item '" + currentNode.FullName + "'");
+                            throw new Exception("Inconsistent change item '" + currentNode.FullName + "'");
                     }
                     else
                     {
-                        SyncNode newNode = new SyncNode
+                        ChangeNode newNode = new ChangeNode
                         {
                             Name = name,
                             FullName = currentNode.FullName + "/" + name,
-                            Type = SyncChangeType.None,
+                            Type = ChangeType.None,
                             IsFolder = true
                         };
 
                         if (currentNode.Nodes == null)
-                            currentNode.Nodes = new Dictionary<string, SyncNode>();
+                            currentNode.Nodes = new Dictionary<string, ChangeNode>();
 
                         currentNode.Nodes.Add(newNode.Name, newNode);
                         currentNode = newNode;
                     }
 
-                    if (currentNode.Type == SyncChangeType.Delete)
+                    if (currentNode.Type == ChangeType.Delete)
                     {
                         currentNode = null;
                         break;
                     }
 
                     if (currentNode.Nodes == null)
-                        currentNode.Nodes = new Dictionary<string, SyncNode>();
+                        currentNode.Nodes = new Dictionary<string, ChangeNode>();
                 }
+
+                // Add the node to direct parent.
 
                 if (currentNode != null)
                 {
                     var name = components[components.Length - 1];
-                    SyncNode node = null;
+                    ChangeNode node = null;
 
                     if (currentNode.Nodes.TryGetValue(name, out node))
                     {
                         bool inconsistent = false;
 
-                        if (item.IsFolder && item.Type == SyncChangeType.Add)
-                            inconsistent = node.Type != SyncChangeType.None && node.Type != SyncChangeType.Add;
+                        if (item.IsFolder && item.Type == ChangeType.Add)
+                            inconsistent = node.Type != ChangeType.None && node.Type != ChangeType.Add;
                         else
-                            inconsistent = node.Type != SyncChangeType.None;
+                            inconsistent = node.Type != ChangeType.None;
 
                         if (node.IsFolder != item.IsFolder)
                             inconsistent = true;
 
                         if (inconsistent)
-                            throw new Exception("Duplicate sync item '" + node.FullName + "'.");
+                            throw new Exception("Duplicate change item '" + node.FullName + "'.");
 
                         node.Type = item.Type;
 
-                        if (node.Type == SyncChangeType.Delete)
+                        if (node.Type == ChangeType.Delete)
                             node.Nodes = null;
                     }
                     else
                     {
-                        node = new SyncNode
+                        node = new ChangeNode
                         {
                             Name = name,
                             FullName = currentNode.FullName + "/" + name,
@@ -144,19 +157,12 @@ namespace FooBox.Models
         }
 
         public string Name { get; set; }
-        public string FullName { get; set; }
-        public SyncChangeType Type { get; set; }
 
-        /// <summary>
-        /// Whether we are adding a document or a folder.
-        /// </summary>
-        public bool IsFolder { get; set; }
+        public Dictionary<string, ChangeNode> Nodes { get; set; }
 
-        public Dictionary<string, SyncNode> Nodes { get; set; }
-
-        public SyncNode ShallowClone()
+        public ChangeNode ShallowClone()
         {
-            return new SyncNode { Name = Name, FullName = FullName, Type = Type, IsFolder = IsFolder };
+            return new ChangeNode { Name = Name, FullName = FullName, Type = Type, IsFolder = IsFolder };
         }
 
         public void PropagateAdd()
@@ -170,12 +176,12 @@ namespace FooBox.Models
             {
                 node.PropagateAdd();
 
-                if (node.Type == SyncChangeType.Add || node.Type == SyncChangeType.Undelete)
+                if (node.Type == ChangeType.Add || node.Type == ChangeType.Undelete)
                     add = true;
             }
 
             if (add)
-                Type = SyncChangeType.Add;
+                Type = ChangeType.Add;
         }
 
         /// <summary>
@@ -183,21 +189,21 @@ namespace FooBox.Models
         /// <paramref name="other"/> occurred after the changes specified by this node.
         /// </summary>
         /// <param name="other">The more recent node.</param>
-        public void SequentialMerge(SyncNode other)
+        public void SequentialMerge(ChangeNode other)
         {
             if (other.Nodes == null)
                 return;
 
             foreach (var otherNode in other.Nodes.Values)
             {
-                SyncNode ourNode = null;
+                ChangeNode ourNode = null;
 
-                if (Nodes.TryGetValue(otherNode.Name, out ourNode))
+                if (Nodes != null && Nodes.TryGetValue(otherNode.Name, out ourNode))
                 {
                     switch (otherNode.Type)
                     {
-                        case SyncChangeType.Add:
-                            ourNode.Type = SyncChangeType.Add;
+                        case ChangeType.Add:
+                            ourNode.Type = ChangeType.Add;
 
                             if (ourNode.IsFolder != otherNode.IsFolder)
                             {
@@ -206,133 +212,73 @@ namespace FooBox.Models
                                 ourNode.Nodes = null;
                             }
                             break;
-                        case SyncChangeType.SetDisplayName:
-                            if (ourNode.Type == SyncChangeType.None)
-                                ourNode.Type = SyncChangeType.SetDisplayName;
+                        case ChangeType.SetDisplayName:
+                            if (ourNode.Type == ChangeType.None)
+                                ourNode.Type = ChangeType.SetDisplayName;
                             break;
-                        case SyncChangeType.Delete:
-                            ourNode.Type = SyncChangeType.Delete;
+                        case ChangeType.Delete:
+                            ourNode.Type = ChangeType.Delete;
                             // Recursive delete.
                             ourNode.Nodes = null;
                             break;
-                        case SyncChangeType.Undelete:
-                            if (ourNode.Type == SyncChangeType.None ||
-                                ourNode.Type == SyncChangeType.SetDisplayName ||
-                                ourNode.Type == SyncChangeType.Delete)
+                        case ChangeType.Undelete:
+                            if (ourNode.Type == ChangeType.None ||
+                                ourNode.Type == ChangeType.SetDisplayName ||
+                                ourNode.Type == ChangeType.Delete)
                             {
-                                ourNode.Type = SyncChangeType.Undelete;
+                                ourNode.Type = ChangeType.Undelete;
                             }
                             break;
                     }
                 }
                 else
                 {
+                    if (Nodes == null)
+                        Nodes = new Dictionary<string, ChangeNode>();
+
                     ourNode = otherNode.ShallowClone();
                     Nodes.Add(otherNode.Name, ourNode);
                 }
 
-                if (ourNode.Type != SyncChangeType.Delete && ourNode.IsFolder)
+                if (ourNode.Type != ChangeType.Delete && ourNode.IsFolder)
                     ourNode.SequentialMerge(otherNode);
             }
         }
 
         /// <summary>
-        /// Merges <paramref name="other"/> with this node, attempting to preserve
-        /// data where possible. There are no assumptions about which changes were
-        /// made first. It is assumed that <see cref="PreservingConflicts"/> returns
-        /// true.
-        /// </summary>
-        /// <param name="other">The other node.</param>
-        public void PreservingMerge(SyncNode other)
-        {
-            if (other.Nodes == null)
-                return;
-
-            foreach (var otherNode in other.Nodes.Values)
-            {
-                SyncNode ourNode = null;
-
-                if (Nodes.TryGetValue(otherNode.Name, out ourNode))
-                {
-                    switch (otherNode.Type)
-                    {
-                        case SyncChangeType.Add:
-                            if (ourNode.Type == SyncChangeType.Add && (!ourNode.IsFolder || !otherNode.IsFolder))
-                                throw new Exception("Add conflicts with Add.");
-                            if (ourNode.Type == SyncChangeType.Undelete && otherNode.IsFolder)
-                                throw new Exception("Add folder conflicts with Undelete file.");
-
-                            ourNode.Type = SyncChangeType.Add;
-                            ourNode.IsFolder = otherNode.IsFolder;
-                            break;
-                        case SyncChangeType.SetDisplayName:
-                            if (ourNode.Type == SyncChangeType.None)
-                                ourNode.Type = SyncChangeType.SetDisplayName;
-                            break;
-                        case SyncChangeType.Delete:
-                            if (ourNode.Type == SyncChangeType.None || ourNode.Type == SyncChangeType.SetDisplayName)
-                                ourNode.Type = SyncChangeType.Delete;
-                            break;
-                        case SyncChangeType.Undelete:
-                            if (ourNode.Type == SyncChangeType.Add && ourNode.IsFolder)
-                                throw new Exception("Add folder conflicts with Undelete file.");
-
-                            if (ourNode.Type == SyncChangeType.None ||
-                                ourNode.Type == SyncChangeType.SetDisplayName ||
-                                ourNode.Type == SyncChangeType.Delete)
-                            {
-                                ourNode.Type = SyncChangeType.Undelete;
-                            }
-                            break;
-                    }
-                }
-                else
-                {
-                    ourNode = otherNode.ShallowClone();
-                    Nodes.Add(otherNode.Name, ourNode);
-                }
-
-                if (ourNode.IsFolder && otherNode.IsFolder &&
-                    ourNode.Type != SyncChangeType.Delete && otherNode.Type != SyncChangeType.Delete)
-                {
-                    ourNode.PreservingMerge(otherNode);
-                }
-            }
-        }
-
-        /// <summary>
         /// Determines if a preserving merge will succeed.
+        /// 
         /// Note: a.PreservingConflicts(b) is always equal to b.PreservingConflicts(a).
         /// </summary>
         /// <param name="other">The other node.</param>
-        public bool PreservingConflicts(SyncNode other)
+        public bool PreservingConflicts(ChangeNode other)
         {
-            if (other.Nodes == null)
+            if (Nodes == null || other.Nodes == null)
                 return false;
 
             foreach (var otherNode in other.Nodes.Values)
             {
-                SyncNode ourNode = null;
+                ChangeNode ourNode = null;
 
                 if (!Nodes.TryGetValue(otherNode.Name, out ourNode))
                     continue;
 
                 switch (otherNode.Type)
                 {
-                    case SyncChangeType.Add:
-                        if (ourNode.Type == SyncChangeType.Add && (!ourNode.IsFolder || !otherNode.IsFolder))
+                    case ChangeType.Add:
+                        if (ourNode.Type == ChangeType.Add && (!ourNode.IsFolder || !otherNode.IsFolder))
                             return true;
-                        if (ourNode.Type == SyncChangeType.Undelete && otherNode.IsFolder)
+                        if (ourNode.Type == ChangeType.Undelete && otherNode.IsFolder)
                             return true;
                         break;
-                    case SyncChangeType.Undelete:
-                        if (ourNode.Type == SyncChangeType.Add && ourNode.IsFolder)
+                    case ChangeType.Undelete:
+                        if (ourNode.Type == ChangeType.Add && ourNode.IsFolder)
                             return true;
                         break;
                 }
 
                 if (ourNode.IsFolder && otherNode.IsFolder &&
-                    ourNode.Type != SyncChangeType.Delete && otherNode.Type != SyncChangeType.Delete)
+                    ourNode.Type != ChangeType.Delete && otherNode.Type != ChangeType.Delete)
                 {
                     if (ourNode.PreservingConflicts(otherNode))
                         return true;
@@ -340,6 +286,179 @@ namespace FooBox.Models
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Merges <paramref name="other"/> with this node, attempting to preserve
+        /// data where possible. No assumptions are made about which changes were
+        /// made first. It is assumed that <see cref="PreservingConflicts"/> returns
+        /// true.
+        /// 
+        /// Note: (a.PreservingMerge(b), a) is always equal to (b.PreservingMerge(a), b).
+        /// </summary>
+        /// <param name="other">The other node.</param>
+        public void PreservingMerge(ChangeNode other)
+        {
+            if (other.Nodes == null)
+                return;
+
+            foreach (var otherNode in other.Nodes.Values)
+            {
+                ChangeNode ourNode = null;
+
+                if (Nodes != null && Nodes.TryGetValue(otherNode.Name, out ourNode))
+                {
+                    switch (otherNode.Type)
+                    {
+                        case ChangeType.Add:
+                            if (ourNode.Type == ChangeType.Add && (!ourNode.IsFolder || !otherNode.IsFolder))
+                                throw new Exception("Add conflicts with Add.");
+                            if (ourNode.Type == ChangeType.Undelete && otherNode.IsFolder)
+                                throw new Exception("Add folder conflicts with Undelete file.");
+
+                            ourNode.Type = ChangeType.Add;
+                            ourNode.IsFolder = otherNode.IsFolder;
+                            break;
+                        case ChangeType.SetDisplayName:
+                            if (ourNode.Type == ChangeType.None)
+                                ourNode.Type = ChangeType.SetDisplayName;
+                            break;
+                        case ChangeType.Delete:
+                            if (ourNode.Type == ChangeType.None || ourNode.Type == ChangeType.SetDisplayName)
+                                ourNode.Type = ChangeType.Delete;
+                            break;
+                        case ChangeType.Undelete:
+                            if (ourNode.Type == ChangeType.Add && ourNode.IsFolder)
+                                throw new Exception("Add folder conflicts with Undelete file.");
+
+                            if (ourNode.Type == ChangeType.None ||
+                                ourNode.Type == ChangeType.SetDisplayName ||
+                                ourNode.Type == ChangeType.Delete)
+                            {
+                                ourNode.Type = ChangeType.Undelete;
+                            }
+                            break;
+                    }
+                }
+                else
+                {
+                    if (Nodes == null)
+                        Nodes = new Dictionary<string, ChangeNode>();
+
+                    ourNode = otherNode.ShallowClone();
+                    Nodes.Add(otherNode.Name, ourNode);
+                }
+
+                if (ourNode.IsFolder && otherNode.IsFolder &&
+                    ourNode.Type != ChangeType.Delete && otherNode.Type != ChangeType.Delete)
+                {
+                    ourNode.PreservingMerge(otherNode);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Makes <paramref name="other"/> sequential with respect to this node, so that
+        /// <code>this.MakePreserving(other); this.SequentialMerge(other);</code> has the
+        /// same effect as <code>this.PreservingMerge(other)</code>. It is assumed that
+        /// <see cref="PreservingConflicts"/> returns true.
+        /// </summary>
+        /// <param name="other">The other node.</param>
+        public void MakeSequentialByPreserving(ChangeNode other)
+        {
+            if (other.Nodes == null)
+                return;
+
+            foreach (var otherNode in other.Nodes.Values)
+            {
+                ChangeNode ourNode = null;
+
+                if (Nodes != null && Nodes.TryGetValue(otherNode.Name, out ourNode))
+                {
+                    switch (otherNode.Type)
+                    {
+                        case ChangeType.Add:
+                            if (ourNode.Type == ChangeType.Add && (!ourNode.IsFolder || !otherNode.IsFolder))
+                                throw new Exception("Add conflicts with Add.");
+                            if (ourNode.Type == ChangeType.Undelete && otherNode.IsFolder)
+                                throw new Exception("Add folder conflicts with Undelete file.");
+                            break;
+                        case ChangeType.SetDisplayName:
+                            if (ourNode.Type == ChangeType.Delete)
+                                otherNode.Type = ChangeType.None;
+                            break;
+                        case ChangeType.Delete:
+                            if (ourNode.Type == ChangeType.Add ||
+                                ourNode.Type == ChangeType.Delete ||
+                                ourNode.Type == ChangeType.Undelete)
+                            {
+                                otherNode.Type = ChangeType.None;
+                            }
+                            break;
+                        case ChangeType.Undelete:
+                            if (ourNode.Type == ChangeType.Add && ourNode.IsFolder)
+                                throw new Exception("Add folder conflicts with Undelete file.");
+
+                            if (ourNode.Type == ChangeType.Add ||
+                                ourNode.Type == ChangeType.Undelete)
+                            {
+                                otherNode.Type = ChangeType.None;
+                            }
+                            break;
+                    }
+                }
+                
+                if (ourNode.IsFolder && otherNode.IsFolder &&
+                    ourNode.Type != ChangeType.Delete && otherNode.Type != ChangeType.Delete)
+                {
+                    ourNode.MakeSequentialByPreserving(otherNode);
+                }
+            }
+        }
+
+        public IEnumerable<ChangeNode> RecursiveEnumerate()
+        {
+            Stack<ChangeNode> stack = new Stack<ChangeNode>();
+
+            if (Nodes != null)
+            {
+                foreach (var node in Nodes.Values)
+                    stack.Push(node);
+            }
+
+            while (stack.Count != 0)
+            {
+                var node = stack.Pop();
+
+                yield return node;
+
+                if (node.Nodes != null)
+                {
+                    foreach (var subNode in node.Nodes.Values)
+                        stack.Push(subNode);
+                }
+            }
+        }
+
+        private void ToItems(List<ChangeItem> list)
+        {
+            if (Nodes == null)
+                return;
+
+            foreach (var node in Nodes.Values)
+            {
+                if (node.Type != ChangeType.None)
+                    list.Add(new ChangeItem { FullName = node.FullName, Type = node.Type, IsFolder = node.IsFolder });
+
+                node.ToItems(list);
+            }
+        }
+
+        public List<ChangeItem> ToItems()
+        {
+            List<ChangeItem> list = new List<ChangeItem>();
+            this.ToItems(list);
+            return list;
         }
     }
 }
