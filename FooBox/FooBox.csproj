@@ -159,6 +159,7 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\GroupsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SetupController.cs" />
     <Compile Include="Controllers\UserController.cs" />
@@ -171,6 +172,7 @@
     <Compile Include="Models\FileModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\SetupViewModels.cs" />
+    <Compile Include="Models\SyncEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>
@@ -221,6 +223,9 @@
     <Content Include="Views\User\UserEdit.cshtml" />
     <Content Include="Views\User\UserEditForm.cshtml" />
     <Content Include="Views\User\Index.cshtml" />
+    <Content Include="Views\Groups\Index.cshtml" />
+    <Content Include="Views\Groups\GroupCreate.cshtml" />
+    <Content Include="Views\Groups\GroupDelete.cshtml" />
     <Content Include="Views\User\UserNewForm.cshtml" />
   </ItemGroup>
   <ItemGroup>

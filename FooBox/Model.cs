@@ -9,14 +9,6 @@ namespace FooBox
 {
     #region Enumerations
 
-    public enum ChangeType : int
-    {
-        Add = 0,
-        ModifyDisplayName = 1,
-        ModifyState = 2,
-        AddVersion = 3
-    }
-
     public enum ObjectState : int
     {
         Normal = 0,
@@ -29,7 +21,7 @@ namespace FooBox
 
     public class Blob
     {
-        public const int IdLength = 32;
+        public const int KeyLength = 32;
         public const int HashBits = 512;
 
         public Blob()
@@ -37,8 +29,10 @@ namespace FooBox
             this.DocumentVersions = new HashSet<DocumentVersion>();
         }
 
-        [StringLength(IdLength)]
-        public string Id { get; set; }
+        public long Id { get; set; }
+        [StringLength(KeyLength)]
+        [Index(IsUnique = true)]
+        public string Key { get; set; }
         public long Size { get; set; }
         [MaxLength(HashBits / 4)]
         [Index]
@@ -50,7 +44,9 @@ namespace FooBox
     public class Change
     {
         public long Id { get; set; }
-        public ChangeType Type { get; set; }
+        public FooBox.Models.ChangeType Type { get; set; }
+        public string FullFileName { get; set; }
+        public bool IsFolder { get; set; }
         public long ChangelistId { get; set; }
         public long FileId { get; set; }
         public long? DocumentVersionId { get; set; }
@@ -111,7 +107,7 @@ namespace FooBox
         [Index]
         public DateTime TimeStamp { get; set; }
         public long DocumentId { get; set; }
-        [MaxLength(Blob.IdLength)]
+        [MaxLength(Blob.KeyLength)]
         public string BlobId { get; set; }
         public long ClientId { get; set; }
 
@@ -146,7 +142,6 @@ namespace FooBox
     {
         public Folder()
         {
-            this.Editors = new HashSet<Identity>();
             this.Files = new HashSet<File>();
             this.ShareSubFolders = new HashSet<Folder>();
             this.RootOfUsers = new HashSet<User>();
@@ -156,7 +151,6 @@ namespace FooBox
         public long OwnerId { get; set; }
 
         public virtual User Owner { get; set; }
-        public virtual ICollection<Identity> Editors { get; set; }
         public virtual ICollection<File> Files { get; set; }
         public virtual Folder ShareFolder { get; set; }
         public virtual ICollection<Folder> ShareSubFolders { get; set; }
@@ -245,7 +239,6 @@ namespace FooBox
             modelBuilder.Entity<DocumentVersion>().HasRequired(t => t.Client).WithMany().HasForeignKey(t => t.ClientId);
             modelBuilder.Entity<Folder>().HasMany(t => t.Files).WithOptional(t => t.ParentFolder).HasForeignKey(t => t.ParentFolderId);
             modelBuilder.Entity<Folder>().HasRequired(t => t.Owner).WithMany().HasForeignKey(t => t.OwnerId).WillCascadeOnDelete(false);
-            modelBuilder.Entity<Folder>().HasMany(t => t.Editors).WithMany();
             modelBuilder.Entity<Folder>().HasOptional(t => t.ShareFolder).WithMany(t => t.ShareSubFolders);
             modelBuilder.Entity<Link>().HasOptional(t => t.Target).WithMany(t => t.TargetOfLinks).HasForeignKey(t => t.TargetId);
             modelBuilder.Entity<User>().HasOptional(t => t.RootFolder).WithMany(t => t.RootOfUsers);
