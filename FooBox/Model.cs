@@ -48,11 +48,9 @@ namespace FooBox
         public string FullFileName { get; set; }
         public bool IsFolder { get; set; }
         public long ChangelistId { get; set; }
-        public long FileId { get; set; }
         public long? DocumentVersionId { get; set; }
 
         public virtual Changelist Changelist { get; set; }
-        public virtual File File { get; set; }
         public virtual DocumentVersion DocumentVersion { get; set; }
     }
 
@@ -232,7 +230,6 @@ namespace FooBox
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Change>().HasRequired(t => t.File).WithMany().HasForeignKey(t => t.FileId);
             modelBuilder.Entity<Change>().HasOptional(t => t.DocumentVersion).WithMany().HasForeignKey(t => t.DocumentVersionId);
             modelBuilder.Entity<DocumentVersion>().HasRequired(t => t.Client).WithMany().HasForeignKey(t => t.ClientId);
             modelBuilder.Entity<Folder>().HasMany(t => t.Files).WithOptional(t => t.ParentFolder).HasForeignKey(t => t.ParentFolderId);

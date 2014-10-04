@@ -74,7 +74,7 @@ namespace FooBox.Models
 
                 for (int i = 0; i < components.Length - 1; i++)
                 {
-                    var name = components[i];
+                    var name = components[i].ToUpperInvariant();
 
                     if (currentNode.Nodes.ContainsKey(name))
                     {
@@ -90,7 +90,8 @@ namespace FooBox.Models
                             Name = name,
                             FullName = currentNode.FullName + "/" + name,
                             Type = ChangeType.None,
-                            IsFolder = true
+                            IsFolder = true,
+                            Parent = currentNode
                         };
 
                         if (currentNode.Nodes == null)
@@ -144,7 +145,8 @@ namespace FooBox.Models
                             Name = name,
                             FullName = currentNode.FullName + "/" + name,
                             Type = item.Type,
-                            IsFolder = item.IsFolder
+                            IsFolder = item.IsFolder,
+                            Parent = currentNode
                         };
                         currentNode.Nodes.Add(node.Name, node);
                     }
@@ -158,11 +160,13 @@ namespace FooBox.Models
 
         public string Name { get; set; }
 
+        public ChangeNode Parent { get; set; }
+
         public Dictionary<string, ChangeNode> Nodes { get; set; }
 
-        public ChangeNode ShallowClone()
+        public ChangeNode ShallowClone(ChangeNode newParent)
         {
-            return new ChangeNode { Name = Name, FullName = FullName, Type = Type, IsFolder = IsFolder };
+            return new ChangeNode { Name = Name, FullName = FullName, Type = Type, IsFolder = IsFolder, Parent = newParent };
         }
 
         public void PropagateAdd()
@@ -236,8 +240,8 @@ namespace FooBox.Models
                     if (Nodes == null)
                         Nodes = new Dictionary<string, ChangeNode>();
 
-                    ourNode = otherNode.ShallowClone();
-                    Nodes.Add(otherNode.Name, ourNode);
+                    ourNode = otherNode.ShallowClone(this);
+                    Nodes.Add(ourNode.Name, ourNode);
                 }
 
                 if (ourNode.Type != ChangeType.Delete && ourNode.IsFolder)
@@ -345,8 +349,8 @@ namespace FooBox.Models
                     if (Nodes == null)
                         Nodes = new Dictionary<string, ChangeNode>();
 
-                    ourNode = otherNode.ShallowClone();
-                    Nodes.Add(otherNode.Name, ourNode);
+                    ourNode = otherNode.ShallowClone(this);
+                    Nodes.Add(ourNode.Name, ourNode);
                 }
 
                 if (ourNode.IsFolder && otherNode.IsFolder &&
