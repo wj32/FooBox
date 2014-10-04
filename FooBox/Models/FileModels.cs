@@ -287,7 +287,7 @@ namespace FooBox.Models
                         Nodes = ChangeNode.FromItems(from change in x.Changes
                                                         select new ChangeItem
                                                             {
-                                                                FullName = change.FullFileName,
+                                                                FullName = change.FullName,
                                                                 Type = change.Type,
                                                                 IsFolder = change.IsFolder
                                                             })
@@ -463,10 +463,11 @@ namespace FooBox.Models
             foreach (var node in clientNode.Nodes.Values)
                 queue.Enqueue(node);
 
-            Changelist changelist = new Changelist();
-
-            changelist.ClientId = clientId;
-            changelist.TimeStamp = DateTime.UtcNow;
+            Changelist changelist = _context.Changelists.Add(new Changelist
+            {
+                ClientId = clientId,
+                TimeStamp = DateTime.UtcNow
+            });
 
             while (queue.Count != 0)
             {
@@ -482,6 +483,18 @@ namespace FooBox.Models
                     parentFolder.Files.AsQueryable()
                     .Where(f => f.Name == node.Name)
                     .FirstOrDefault();
+
+                if (node.Type != ChangeType.None)
+                {
+                    // Create the associated change object.
+                    _context.Changes.Add(new Change
+                    {
+                        Type = node.Type,
+                        FullName = node.FullName,
+                        IsFolder = node.IsFolder,
+                        Changelist = changelist
+                    });
+                }
 
                 switch (node.Type)
                 {

@@ -45,13 +45,11 @@ namespace FooBox
     {
         public long Id { get; set; }
         public FooBox.Models.ChangeType Type { get; set; }
-        public string FullFileName { get; set; }
+        public string FullName { get; set; }
         public bool IsFolder { get; set; }
         public long ChangelistId { get; set; }
-        public long? DocumentVersionId { get; set; }
 
         public virtual Changelist Changelist { get; set; }
-        public virtual DocumentVersion DocumentVersion { get; set; }
     }
 
     public class Changelist
@@ -230,7 +228,6 @@ namespace FooBox
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Change>().HasOptional(t => t.DocumentVersion).WithMany().HasForeignKey(t => t.DocumentVersionId);
             modelBuilder.Entity<DocumentVersion>().HasRequired(t => t.Client).WithMany().HasForeignKey(t => t.ClientId);
             modelBuilder.Entity<Folder>().HasMany(t => t.Files).WithOptional(t => t.ParentFolder).HasForeignKey(t => t.ParentFolderId);
             modelBuilder.Entity<Folder>().HasRequired(t => t.Owner).WithMany().HasForeignKey(t => t.OwnerId).WillCascadeOnDelete(false);
