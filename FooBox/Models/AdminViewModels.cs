@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 
+
 namespace FooBox.Models
 {
 
@@ -46,6 +47,7 @@ namespace FooBox.Models
         [DisplayName("Name")]
         public string Name { get; set; }
 
+        public long Id { get; set; }
 
         [DataType(DataType.MultilineText)]
         [DisplayName("Description")]
@@ -54,11 +56,10 @@ namespace FooBox.Models
         [DisplayName("Admin")]
         public bool IsAdmin { get; set; }
 
-        [DisplayName("Users in group")]
-        public IEnumerable<User> Users { get; set; }
-        
-        public System.Web.Mvc.MultiSelectList Items { get; set; }
+        //[DisplayName("Users in group")]
+        //public IEnumerable<User> Users { get; set; }
 
+        public List<UserSelectedViewModel> Users { get; set; }
     }
 
 
@@ -80,11 +81,15 @@ namespace FooBox.Models
         [DisplayName("Admin")]
         public bool IsAdmin { get; set; }
 
-        [DisplayName("Users in group")]
-        public IEnumerable<User> Users { get; set; }
-
-        public System.Web.Mvc.MultiSelectList Items { get; set; }
+        public List<UserSelectedViewModel> Users { get; set; }
 
     }
+    public class UserSelectedViewModel
+    {
+        public long Id { get; set; }
 
+        public bool IsSelected { get; set; }
+
+        public string Name { get; set; }
+    }
 }

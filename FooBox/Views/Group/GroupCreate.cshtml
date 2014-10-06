@@ -34,8 +34,15 @@
         <div class="form-group">
             @Html.LabelFor(model => model.Users, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
-                @Html.ListBoxFor(model => model.Users, Model.Items, new { @class = "control-label col-md-2" })
-            </div>
+                @for (int i = 0; i < Model.Users.Count(); ++i)
+                {
+                    @Html.HiddenFor(model => model.Users[i].Id)
+                    @Html.CheckBoxFor(model => model.Users[i].IsSelected)
+                    @Html.DisplayFor(model => model.Users[i].Name)
+                    <br>
+                }
+
+             </div>
         </div>
 
         <div class="checkbox">

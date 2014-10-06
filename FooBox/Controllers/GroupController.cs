@@ -21,10 +21,19 @@ namespace FooBox.Controllers
         // GET: Group/GroupCreate
         public ActionResult GroupCreate()
         {
-            var mod = new AdminNewGroupViewModel
+            var mod = new AdminNewGroupViewModel();
+            List<UserSelectedViewModel> users = new List<UserSelectedViewModel>();
+
+
+            foreach (User u in um.Context.Users) 
             {
-                Items = new MultiSelectList(um.Context.Users, "Id", "Name", null)
-            };
+                var a = new UserSelectedViewModel();
+                a.Id = u.Id;
+                a.IsSelected = false;
+                a.Name = u.Name;
+                users.Add(a);
+            }
+            mod.Users = users;
             return View(mod);
         }
 
@@ -33,6 +42,8 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult GroupCreate(AdminNewGroupViewModel model)
         {
+
+            
             Group template = null;
             if (ModelState.IsValid)
             {
@@ -42,7 +53,17 @@ namespace FooBox.Controllers
                     Description = model.Description,
                     IsAdmin = model.IsAdmin
                 };
-                um.CreateGroup(template);
+                var actual = um.CreateGroup(template);
+                foreach (var item in model.Users) 
+                {
+                    if (item.IsSelected)
+                    {
+                        FooBox.User u = um.FindUser(item.Id);
+                        if (u != null) actual.Users.Add(u);
+                        um.Context.SaveChanges();
+                    }
+                }
+
                 DisplaySuccessMessage("User created");
                 return RedirectToAction("Index");
             }
@@ -68,15 +89,24 @@ namespace FooBox.Controllers
             {
                 return HttpNotFound();
             }
-            var mod = new AdminEditGroupViewModel
-            {
-                Id = grp.Id,
-                Name = grp.Name,
-                Description = grp.Description,
-                IsAdmin = grp.IsAdmin,
-                Items = new MultiSelectList(um.Context.Users, "Id", "Name", grp.Users)
-            };
 
+            List<UserSelectedViewModel> users = new List<UserSelectedViewModel>();
+
+            var mod = new AdminEditGroupViewModel();   
+            mod.Id = grp.Id;
+            mod.Name = grp.Name;
+            mod.Description = grp.Description;
+            mod.IsAdmin = grp.IsAdmin;
+            var userList = um.Context.Users.ToList();
+            foreach (User u in userList)
+            {
+                var a = new UserSelectedViewModel();
+                a.Id = u.Id;
+                a.IsSelected = grp.Users.Contains(u);
+                a.Name = u.Name;
+                users.Add(a);
+            }
+            mod.Users = users;
             return View(mod);
         }
 
@@ -91,8 +121,14 @@ namespace FooBox.Controllers
                 Group g = um.FindGroup(model.Id);
                 g.Name = model.Name;
                 g.IsAdmin = model.IsAdmin;
-                if (model.Users != null) {
-                    g.Users = model.Users.ToList();
+                g.Users.Clear();
+                foreach (var item in model.Users)
+                {
+                    if (item.IsSelected)
+                    {
+                        FooBox.User u = um.FindUser(item.Id);
+                        if (u != null) g.Users.Add(u);
+                    }
                 } 
                 g.Description = model.Description;
                 try
