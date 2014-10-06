@@ -1,4 +1,4 @@
-﻿@model FooBox.User
+﻿
 
 @{
     ViewBag.Title = "Create";
@@ -7,11 +7,12 @@
 <h2>Create</h2>
 
 
-@using (Html.BeginForm()) 
+@using (Html.BeginForm("UserCreate", "User", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
 {
+
     @Html.AntiForgeryToken()
-    
-    <div class="form-horizontal">
+
+   
         <h4>User</h4>
         <hr />
         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
@@ -21,13 +22,13 @@
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>
         </div>
+
+}
+
+    <div>
+        @Html.ActionLink("Back to List", "Index")
     </div>
-}
 
-<div>
-    @Html.ActionLink("Back to List", "Index")
-</div>
-
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-}
+    @section Scripts {
+        @Scripts.Render("~/bundles/jqueryval")
+    }

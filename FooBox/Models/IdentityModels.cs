@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
@@ -160,6 +161,8 @@ namespace FooBox.Models
         {
             return (from user in _context.Users where user.Name == userName && user.State == ObjectState.Normal select user).SingleOrDefault();
         }
+
+       
 
         public User FindUser(string userName, string password)
         {

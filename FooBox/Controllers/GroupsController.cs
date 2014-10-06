@@ -21,24 +21,35 @@ namespace FooBox.Controllers
         // GET: Groups/GroupCreate
         public ActionResult GroupCreate()
         {
-            return View();
+            var mod = new AdminNewGroupViewModel
+            {
+                Items = new MultiSelectList(um.Context.Users, "Id", "Name", null)
+            };
+            return View(mod);
         }
 
         // POST: Groups/GroupCreate
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult GroupCreate([Bind(Include = "Name,State,Description,IsAdmin")] Group group)
+        public ActionResult GroupCreate(AdminNewGroupViewModel model)
         {
+            Group template = null;
             if (ModelState.IsValid)
             {
-                um.CreateGroup(group);
-                DisplaySuccessMessage("Group created");
+                template = new Group
+                {
+                    Name = model.Name,
+                    Description = model.Description,
+                    IsAdmin = model.IsAdmin
+                };
+                um.CreateGroup(template);
+                DisplaySuccessMessage("User created");
                 return RedirectToAction("Index");
             }
+         
 
             DisplayErrorMessage();
-            return View(group);
+            return View(template);
         }
 
         // GET: Groups/GroupDelete/5

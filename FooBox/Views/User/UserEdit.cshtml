@@ -1,5 +1,4 @@
-﻿@model FooBox.User
-
+﻿
 @{
     ViewBag.Title = "Edit";
 }
@@ -7,7 +6,7 @@
 <h2>Edit</h2>
 
 
-@using (Html.BeginForm())
+@using (Html.BeginForm("UserEdit", "User", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
 {
     @Html.AntiForgeryToken()
     
