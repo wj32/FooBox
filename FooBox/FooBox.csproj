@@ -159,7 +159,7 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
-    <Compile Include="Controllers\GroupsController.cs" />
+    <Compile Include="Controllers\GroupController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SetupController.cs" />
     <Compile Include="Controllers\UserController.cs" />
@@ -167,7 +167,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Model.cs" />
-    <Compile Include="Models\UserViewModels.cs" />
+    <Compile Include="Models\AdminViewModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\FileModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
@@ -224,10 +224,11 @@
     <Content Include="Views\User\UserEdit.cshtml" />
     <Content Include="Views\User\UserEditForm.cshtml" />
     <Content Include="Views\User\Index.cshtml" />
-    <Content Include="Views\Groups\Index.cshtml" />
-    <Content Include="Views\Groups\GroupCreate.cshtml" />
-    <Content Include="Views\Groups\GroupDelete.cshtml" />
+    <Content Include="Views\Group\Index.cshtml" />
+    <Content Include="Views\Group\GroupCreate.cshtml" />
+    <Content Include="Views\Group\GroupDelete.cshtml" />
     <Content Include="Views\User\UserNewForm.cshtml" />
+    <Content Include="Views\Group\GroupEdit.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

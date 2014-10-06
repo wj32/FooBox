@@ -8,17 +8,17 @@ using System.Web.Mvc;
 
 namespace FooBox.Controllers
 {
-    public class GroupsController : Controller
+    public class GroupController : Controller
     {
         private UserManager um = new UserManager();
 
-        // GET: Groups/Index
+        // GET: Group/Index
         public ActionResult Index()
         {
             return View(um.Context.Groups);
         }
 
-        // GET: Groups/GroupCreate
+        // GET: Group/GroupCreate
         public ActionResult GroupCreate()
         {
             var mod = new AdminNewGroupViewModel
@@ -28,7 +28,7 @@ namespace FooBox.Controllers
             return View(mod);
         }
 
-        // POST: Groups/GroupCreate
+        // POST: Group/GroupCreate
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult GroupCreate(AdminNewGroupViewModel model)
@@ -49,10 +49,74 @@ namespace FooBox.Controllers
          
 
             DisplayErrorMessage();
-            return View(template);
+            return View(model);
         }
 
-        // GET: Groups/GroupDelete/5
+
+
+
+        // GET: Group/GroupEdit/5
+        public ActionResult GroupEdit(long? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Group grp = um.FindGroup(id.Value);
+
+            if (grp == null)
+            {
+                return HttpNotFound();
+            }
+            var mod = new AdminEditGroupViewModel
+            {
+                Id = grp.Id,
+                Name = grp.Name,
+                Description = grp.Description,
+                IsAdmin = grp.IsAdmin,
+                Items = new MultiSelectList(um.Context.Users, "Id", "Name", grp.Users)
+            };
+
+            return View(mod);
+        }
+
+        // POST: Group/GroupEdit/5
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult GroupEdit(AdminEditGroupViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                Group g = um.FindGroup(model.Id);
+                g.Name = model.Name;
+                g.IsAdmin = model.IsAdmin;
+                if (model.Users != null) {
+                    g.Users = model.Users.ToList();
+                } 
+                g.Description = model.Description;
+                try
+                {
+                    um.Context.SaveChanges();
+                }
+                catch
+                {
+                    DisplayErrorMessage();
+                    return View(model);
+                }
+                DisplaySuccessMessage("Group edited");
+                return RedirectToAction("Index");
+            }
+
+
+           
+            DisplayErrorMessage();
+            return View(model);
+        }
+
+
+
+        // GET: Group/GroupDelete/5
         public ActionResult GroupDelete(long? id)
         {
             if (id == null)

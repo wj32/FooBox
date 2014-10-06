@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<FooBox.Group>
 
 @{
-    ViewBag.Title = "Groups";
+    ViewBag.Title = "Group";
 }
 
 <h2>Index</h2>
@@ -27,12 +27,11 @@
     </tr>
 
 @foreach (var item in Model) {
+    if (item.State == ObjectState.Normal) 
+    {   
     <tr>
         <td>
             @Html.DisplayFor(modelItem => item.Name)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.State)
         </td>
         <td>
             @Html.DisplayFor(modelItem => item.Description)
@@ -41,11 +40,11 @@
             @Html.DisplayFor(modelItem => item.IsAdmin)
         </td>
         <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.Id }) |
-            @Html.ActionLink("Details", "Details", new { id=item.Id }) |
+            @Html.ActionLink("Edit", "GroupEdit", new { id=item.Id }) |
             @Html.ActionLink("Delete", "GroupDelete", new { id=item.Id })
         </td>
     </tr>
+    }
 }
 
 </table>

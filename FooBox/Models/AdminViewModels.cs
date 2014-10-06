@@ -60,4 +60,31 @@ namespace FooBox.Models
         public System.Web.Mvc.MultiSelectList Items { get; set; }
 
     }
+
+
+    public class AdminEditGroupViewModel
+    {
+        public long Id { get; set; }
+
+
+        [Required]
+        [DataType(DataType.Text)]
+        [DisplayName("Name")]
+        public string Name { get; set; }
+
+
+        [DataType(DataType.MultilineText)]
+        [DisplayName("Description")]
+        public string Description { get; set; }
+
+        [DisplayName("Admin")]
+        public bool IsAdmin { get; set; }
+
+        [DisplayName("Users in group")]
+        public IEnumerable<User> Users { get; set; }
+
+        public System.Web.Mvc.MultiSelectList Items { get; set; }
+
+    }
+
 }

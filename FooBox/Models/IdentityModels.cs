@@ -257,7 +257,8 @@ namespace FooBox.Models
             {
                 Name = template.Name,
                 Description = template.Description,
-                IsAdmin = template.IsAdmin
+                IsAdmin = template.IsAdmin,
+                Users = template.Users
             };
 
             try

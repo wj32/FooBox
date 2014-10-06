@@ -3,11 +3,7 @@
 @{
     ViewBag.Title = "Index";
 }
-<style type='text/css'>
-    td:nth-child(1n){text-align: right;}
-    td:nth-child(8n){text-align: right;}
-    td:nth-child(9n){text-align: right;}
-</style>
+
 <h2>Index</h2>
 <h4>User</h4>
 <p>
@@ -15,7 +11,6 @@
 </p>
 <table class="table">
     <tr>
-        <th></th>
         <th>
             @Html.DisplayNameFor(model => model.Name)
         </th>
@@ -31,14 +26,13 @@
         <th>
             @Html.DisplayNameFor(model => model.QuotaCharged)
         </th>
+        <th></th>
     </tr>
 
 @foreach (var item in Model) {
     if (item.State == ObjectState.Normal) { 
         <tr>
-            <td>
-                @Html.ActionLink("Edit", "UserEdit", new { id=item.Id })
-            </td>
+
             <td>
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
@@ -54,9 +48,14 @@
             <td>
                 @Html.DisplayFor(modelItem => item.QuotaCharged)
             </td>
-
+            <td>
+                @Html.ActionLink("Edit", "UserEdit", new { id = item.Id })  
+            </td>
         </tr>
     }
 }
 
 </table>
+
+
+
