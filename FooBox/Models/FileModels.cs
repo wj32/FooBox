@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Web;
 
 namespace FooBox.Models
@@ -66,6 +67,7 @@ namespace FooBox.Models
                 var rootFolder = _context.Folders.Add(new Folder
                 {
                     Name = "",
+                    DisplayName = "",
                     Tag = RootFolderTag,
                     Owner = userManager.GetDefaultUser()
                 });
@@ -145,6 +147,74 @@ namespace FooBox.Models
 
         #region Files
 
+        public File FindFile(long fileId)
+        {
+            return (from file in _context.Files where file.Id == fileId select file).SingleOrDefault();
+        }
+
+        public File FindFile(string fullName)
+        {
+            string fullDisplayName;
+            return FindFile(fullName, out fullDisplayName);
+        }
+
+        public File FindFile(string fullName, out string fullDisplayName)
+        {
+            File file = GetRootFolder();
+            string[] names = fullName.ToUpperInvariant().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            StringBuilder fullDisplayNameSb = new StringBuilder();
+
+            foreach (var name in names)
+            {
+                if (!(file is Folder))
+                {
+                    fullDisplayName = null;
+                    return null;
+                }
+
+                file = ((Folder)file).Files.AsQueryable().Where(subFile => subFile.Name == name).SingleOrDefault();
+
+                if (file == null)
+                {
+                    fullDisplayName = null;
+                    return null;
+                }
+
+                fullDisplayNameSb.Append('/');
+                fullDisplayNameSb.Append(file.DisplayName);
+            }
+
+            fullDisplayName = fullDisplayNameSb.ToString();
+
+            return file;
+        }
+
+        public string GetFullDisplayName(File file)
+        {
+            List<string> displayNames = new List<string>();
+            StringBuilder fullDisplayNameSb = new StringBuilder();
+            Folder parentFolder;
+
+            displayNames.Add(file.DisplayName);
+            parentFolder = file.ParentFolder;
+
+            while (parentFolder != null)
+            {
+                if (parentFolder.Name.Length != 0)
+                    displayNames.Add(parentFolder.DisplayName);
+
+                parentFolder = parentFolder.ParentFolder;
+            }
+
+            for (int i = displayNames.Count - 1; i >= 0; i--)
+            {
+                fullDisplayNameSb.Append('/');
+                fullDisplayNameSb.Append(displayNames[i]);
+            }
+
+            return fullDisplayNameSb.ToString();
+        }
+
         public Document FindDocument(long documentId)
         {
             return (from document in _context.Documents where document.Id == documentId select document).SingleOrDefault();
@@ -165,6 +235,7 @@ namespace FooBox.Models
             var userRootFolder = _context.Folders.Add(new Folder
             {
                 Name = user.Id.ToString(),
+                DisplayName = user.Id.ToString(),
                 Owner = user
             });
             user.RootFolder = userRootFolder;

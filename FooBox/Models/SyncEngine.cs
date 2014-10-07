@@ -64,7 +64,7 @@ namespace FooBox.Models
 
             foreach (var item in list)
             {
-                var components = item.FullName.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                var components = item.FullName.ToUpperInvariant().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
                 ChangeNode currentNode = root;
 
                 if (components.Length == 0)
@@ -74,7 +74,7 @@ namespace FooBox.Models
 
                 for (int i = 0; i < components.Length - 1; i++)
                 {
-                    var name = components[i].ToUpperInvariant();
+                    var name = components[i];
 
                     if (currentNode.Nodes.ContainsKey(name))
                     {

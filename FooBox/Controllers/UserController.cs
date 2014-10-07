@@ -11,6 +11,7 @@ using FooBox.Models;
 
 namespace FooBox.Controllers
 {
+    [Authorize]
     public class UserController : Controller
     {
         private UserManager um = new UserManager();

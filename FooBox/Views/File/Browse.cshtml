@@ -1,0 +1,44 @@
+﻿@using FooBox.Models;
+@model FileBrowseViewModel
+
+@{
+    ViewBag.Title = Model.DisplayName;
+}
+
+<h2>
+    @foreach (var parent in Model.Parents)
+    {
+        <strong>@Html.ActionLink(parent.Item1, "Browse", new { path = parent.Item2 })</strong>
+        @:&gt;
+    }
+    <strong>@Html.Encode(Model.DisplayName)</strong>
+</h2>
+<p>@Html.ValidationSummary(true)</p>
+<table class="table">
+    <tr>
+        <th>
+            Name
+        </th>
+        <th>
+            Size
+        </th>
+        <th>
+            Last Modified
+        </th>
+    </tr>
+
+    @foreach (var item in Model.Files)
+    {
+        <tr>
+            <td>
+                @Html.ActionLink(item.DisplayName, "Browse", new { path = item.FullDisplayName })
+            </td>
+            <td>
+                @Html.Encode(item.IsFolder ? "-" : Utilities.SizeToString(item.Size))
+            </td>
+            <td>
+                @Html.Encode(item.IsFolder ? "-" : item.TimeStamp.ToLocalTime().ToString("F"))
+            </td>
+        </tr>
+    }
+</table>

@@ -8,6 +8,7 @@ using System.Web.Mvc;
 
 namespace FooBox.Controllers
 {
+    [Authorize]
     public class GroupController : Controller
     {
         private UserManager um = new UserManager();

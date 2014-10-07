@@ -14,10 +14,16 @@ namespace FooBox
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
             routes.MapRoute(
+                name: "FileBrowse",
+                url: "Home/{path}",
+                defaults: new { controller = "File", action = "Browse", path = "" }
+                );
+
+            routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
-            );
+                );
         }
     }
 }

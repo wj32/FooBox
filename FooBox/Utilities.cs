@@ -7,6 +7,8 @@ namespace FooBox
 {
     public static class Utilities
     {
+        private static string[] _sizeUnits = new string[] { "B", "KB", "MB", "GB" };
+
         public static string GenerateRandomString(string alphabet, int length)
         {
             Random r = new Random();
@@ -16,6 +18,31 @@ namespace FooBox
                 c[i] = alphabet[r.Next(0, alphabet.Length)];
 
             return new string(c);
+        }
+
+        public static string GetParentFullName(string fullName)
+        {
+            if (fullName.Length != 0)
+                return fullName.Remove(fullName.LastIndexOf('/'));
+
+            return fullName;
+        }
+
+        public static string SizeToString(long size)
+        {
+            if (size == 0)
+                return "0";
+
+            double s = size;
+            int i = 0;
+
+            while (s >= 1024 && i < _sizeUnits.Length)
+            {
+                s /= 1024;
+                i++;
+            }
+
+            return s.ToString("{0:0.##}") + " " + _sizeUnits[i];
         }
     }
 }
