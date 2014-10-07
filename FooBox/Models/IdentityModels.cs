@@ -85,7 +85,7 @@ namespace FooBox.Models
 
         public void InitialSetup()
         {
-            if (_context.Identities.Count() != 0)
+            if (_context.Identities.Any())
                 throw new Exception("The database is already set up.");
 
             var adminGroup = new Group { Name = "Administrators", Description = "Administrators", IsAdmin = true };

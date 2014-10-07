@@ -16,7 +16,7 @@ namespace FooBox.Models
         public static bool IsFooBoxSetUp()
         {
             using (var context = new FooBoxContext())
-                return context.Files.Count() != 0;
+                return context.Files.Any();
         }
 
         private FooBoxContext _context;
@@ -59,7 +59,7 @@ namespace FooBox.Models
         {
             using (var userManager = new UserManager(_context))
             {
-                if (_context.Files.Count() != 0)
+                if (_context.Files.Any())
                     throw new Exception("The database is already set up.");
 
                 // Create the root folder.
