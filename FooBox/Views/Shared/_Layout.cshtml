@@ -22,8 +22,14 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("Users", "Index", "User")</li>
-                    <li>@Html.ActionLink("Groups", "Index", "Group")</li>
+                    @using (var userManager = new FooBox.Models.UserManager())
+                    {
+                        if (!string.IsNullOrEmpty(User.Identity.Name) && userManager.IsUserAdmin(long.Parse(User.Identity.Name)))
+                        {
+                            <li>@Html.ActionLink("Users", "Index", "User")</li>
+                            <li>@Html.ActionLink("Groups", "Index", "Group")</li>
+                        }
+                    }
                 </ul>
                 @Html.Partial("_LoginPartial")
             </div>
@@ -33,7 +39,7 @@
         @RenderBody()
         <hr />
         <footer>
-            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+            <p>&copy; @DateTime.Now.Year - FooBox</p>
         </footer>
     </div>
 
