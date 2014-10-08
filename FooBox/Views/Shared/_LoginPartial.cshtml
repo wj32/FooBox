@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNet.Identity
+﻿@using FooBox.Models;
 @if (Request.IsAuthenticated)
 {
     using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
@@ -7,7 +7,10 @@
 
     <ul class="nav navbar-nav navbar-right">
         <li>
-            @Html.ActionLink("Hello " + User.Identity.GetUserName() + "!", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "Manage" })
+            @using (var userManager = new UserManager())
+            {
+                @Html.ActionLink("Hello " + userManager.FindUser(User.Identity.GetUserId()).Name + "!", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "Manage" })
+            }
         </li>
         <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
     </ul>

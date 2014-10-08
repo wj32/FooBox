@@ -41,4 +41,17 @@
             </td>
         </tr>
     }
+
+    @if (Model.Files.Count == 0)
+    {
+        <tr>
+            <td>
+                <em>No files to display.</em>
+            </td>
+            <td>
+            </td>
+            <td>
+            </td>
+        </tr>
+    }
 </table>

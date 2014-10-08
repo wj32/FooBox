@@ -24,16 +24,18 @@ namespace FooBox.Controllers
 
         private FileBrowseViewModel CreateBrowseModelForFolder(Folder folder, string fullDisplayName)
         {
+            Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+
             if (folder == null)
             {
-                folder = _fileManager.GetRootFolder();
+                folder = userRootFolder;
                 fullDisplayName = "";
             }
 
             FileBrowseViewModel model = new FileBrowseViewModel();
 
             model.FullDisplayName = fullDisplayName;
-            model.DisplayName = folder.DisplayName.Length == 0 ? "Home" : folder.DisplayName;
+            model.DisplayName = folder == userRootFolder ? "Home" : folder.DisplayName;
             model.Files = (
                 from file in folder.Files.AsQueryable()
                 where file.State == ObjectState.Normal
@@ -52,20 +54,22 @@ namespace FooBox.Controllers
                 ).ToList();
             model.Parents = new List<Tuple<string, string>>();
 
-            Folder parentFolder = folder.ParentFolder;
             List<Folder> parentFolders = new List<Folder>();
 
-            while (parentFolder != null)
+            if (folder != userRootFolder)
             {
-                if (parentFolder.Name.Length != 0)
-                    parentFolders.Add(parentFolder);
+                Folder parentFolder = folder.ParentFolder;
 
-                parentFolder = parentFolder.ParentFolder;
+                while (parentFolder != userRootFolder)
+                {
+                    parentFolders.Add(parentFolder);
+                    parentFolder = parentFolder.ParentFolder;
+                }
             }
 
             parentFolders.Reverse();
 
-            if (folder.ParentFolder != null)
+            if (folder != userRootFolder)
                 model.Parents.Add(new Tuple<string, string>("Home", ""));
 
             StringBuilder sb = new StringBuilder();
@@ -83,9 +87,9 @@ namespace FooBox.Controllers
 
         public ActionResult Browse()
         {
-            string path = (string)RouteData.Values["path"];
+            string path = (string)RouteData.Values["path"] ?? "";
             string fullDisplayName = null;
-            File file = path != null ? _fileManager.FindFile(path, out fullDisplayName) : null;
+            File file = _fileManager.FindFile(path, _fileManager.GetUserRootFolder(User.Identity.GetUserId()), out fullDisplayName);
 
             if (file == null || !(file is Folder))
             {

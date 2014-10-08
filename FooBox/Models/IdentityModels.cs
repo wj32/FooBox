@@ -162,8 +162,6 @@ namespace FooBox.Models
             return (from user in _context.Users where user.Name == userName && user.State == ObjectState.Normal select user).SingleOrDefault();
         }
 
-       
-
         public User FindUser(string userName, string password)
         {
             var user = FindUser(userName);

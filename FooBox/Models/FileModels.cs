@@ -155,12 +155,12 @@ namespace FooBox.Models
         public File FindFile(string fullName)
         {
             string fullDisplayName;
-            return FindFile(fullName, out fullDisplayName);
+            return FindFile(fullName, null, out fullDisplayName);
         }
 
-        public File FindFile(string fullName, out string fullDisplayName)
+        public File FindFile(string fullName, Folder root, out string fullDisplayName)
         {
-            File file = GetRootFolder();
+            File file = root != null ? root : GetRootFolder();
             string[] names = fullName.ToUpperInvariant().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             StringBuilder fullDisplayNameSb = new StringBuilder();
 
@@ -189,20 +189,24 @@ namespace FooBox.Models
             return file;
         }
 
-        public string GetFullDisplayName(File file)
+        public string GetFullDisplayName(File file, Folder root = null)
         {
             List<string> displayNames = new List<string>();
             StringBuilder fullDisplayNameSb = new StringBuilder();
             Folder parentFolder;
+
+            if (file.Name.Length == 0 || file == root)
+                return "";
 
             displayNames.Add(file.DisplayName);
             parentFolder = file.ParentFolder;
 
             while (parentFolder != null)
             {
-                if (parentFolder.Name.Length != 0)
-                    displayNames.Add(parentFolder.DisplayName);
+                if (parentFolder.Name.Length == 0 || parentFolder == root)
+                    break;
 
+                displayNames.Add(parentFolder.DisplayName);
                 parentFolder = parentFolder.ParentFolder;
             }
 
@@ -244,6 +248,12 @@ namespace FooBox.Models
             _context.SaveChanges();
 
             return userRootFolder;
+        }
+
+        public Folder GetUserRootFolder(long userId)
+        {
+            using (var userManager = new UserManager(_context))
+                return userManager.FindUser(userId).RootFolder;
         }
 
         #endregion
