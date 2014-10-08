@@ -11,7 +11,7 @@ namespace FooBox.Models
     {
         public const string RootFolderTag = "Root";
         public const string InternalClientTag = "Internal";
-        private const string IdChars = "abcdefghijklmnopqrstuvwxyz0123456789!@^_-";
+        public const string IdChars = "abcdefghijklmnopqrstuvwxyz0123456789!@^_-";
 
         public static bool IsFooBoxSetUp()
         {
@@ -21,7 +21,6 @@ namespace FooBox.Models
 
         private FooBoxContext _context;
         private bool _contextOwned;
-        private System.Security.Cryptography.HashAlgorithm _sha512Algorithm = System.Security.Cryptography.SHA512.Create();
 
         #region Class
 
@@ -43,7 +42,6 @@ namespace FooBox.Models
         {
             if (_contextOwned)
                 _context.Dispose();
-            _sha512Algorithm.Dispose();
         }
 
         public FooBoxContext Context
@@ -317,7 +315,7 @@ namespace FooBox.Models
 
         public static readonly string ClientUploadDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Uploads");
 
-        private DirectoryInfo AccessClientUploadDirectory(long clientId)
+        public DirectoryInfo AccessClientUploadDirectory(long clientId)
         {
             string path = ClientUploadDirectory + "\\" + clientId.ToString();
 
@@ -330,6 +328,13 @@ namespace FooBox.Models
         #endregion
 
         #region Synchronization
+
+        public long GetLastChangelistId()
+        {
+            return (from changelist in _context.Changelists
+                    orderby changelist.Id descending
+                    select changelist.Id).SingleOrDefault();
+        }
 
         public ClientSyncResult SyncClientChanges(ClientSyncData clientData)
         {
@@ -463,14 +468,11 @@ namespace FooBox.Models
                     _context.Database.ExecuteSqlCommand("SELECT TOP 1 Id FROM dbo.Changelists WITH (TABLOCKX, HOLDLOCK)");
 
                     // Make sure no one changed anything since we started computing changes.
-                    var newLastChangelistId = (from changelist in _context.Changelists
-                                               where changelist.Id > clientData.BaseChangelistId
-                                               orderby changelist.Id descending
-                                               select changelist.Id).SingleOrDefault();
+                    var moreChangelists = (from changelist in _context.Changelists
+                                           where changelist.Id > lastChangelistId
+                                           select changelist.Id).Any();
 
-                    if (newLastChangelistId == 0)
-                        newLastChangelistId = clientData.BaseChangelistId;
-                    if (newLastChangelistId != lastChangelistId)
+                    if (moreChangelists)
                         return new ClientSyncResult { State = ClientSyncResultState.Retry };
 
                     var newChangelist = ApplyClientChanges(clientData.ClientId, clientNode, clientChangesByFullName, presentHashes);

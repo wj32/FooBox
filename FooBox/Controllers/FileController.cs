@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using FooBox;
 using FooBox.Models;
 using System.Text;
+using System.IO;
 
 namespace FooBox.Controllers
 {
@@ -98,6 +99,59 @@ namespace FooBox.Controllers
             }
 
             return View(CreateBrowseModelForFolder((Folder)file, fullDisplayName));
+        }
+
+        private void UploadBlob(Client client, Stream stream, out string hash, out long size)
+        {
+            var clientUploadDirectory = _fileManager.AccessClientUploadDirectory(client.Id);
+            var randomName = Utilities.GenerateRandomString(FileManager.IdChars, 32);
+
+            hash = "";
+            size = 0;
+
+            using (var hashAlgorithm = System.Security.Cryptography.SHA512.Create())
+            using (var fileStream = new FileStream(clientUploadDirectory.FullName + "\\" + randomName, FileMode.Create))
+            {
+                // TODO
+            }
+        }
+
+        [HttpPost]
+        public ActionResult Upload(string fromPath, HttpPostedFile uploadFile)
+        {
+            if (fromPath == null)
+                return RedirectToAction("Browse");
+
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            string fullDisplayName = null;
+            File file = _fileManager.FindFile(fromPath, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+
+            if (file == null || !(file is Folder))
+                return RedirectToAction("Browse");
+
+            string hash;
+            long fileSize;
+
+            UploadBlob(internalClient, uploadFile.InputStream, out hash, out fileSize);
+
+            ClientSyncData data = new ClientSyncData();
+
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            data.Changes.Add(new ClientChange
+            {
+                FullName = "/" + userId + "/" + fromPath + "/" + uploadFile.FileName,
+                Type = ChangeType.Add,
+                IsFolder = false,
+                Size = fileSize,
+                Hash = hash,
+                DisplayName = uploadFile.FileName
+            });
+
+            _fileManager.SyncClientChanges(data);
+
+            return RedirectToAction("Browse", new { path = fromPath });
         }
 
         protected override void Dispose(bool disposing)

@@ -14,6 +14,12 @@
     <strong>@Html.Encode(Model.DisplayName)</strong>
 </h2>
 <p>@Html.ValidationSummary(true)</p>
+<div>
+    @using (var form = @Html.BeginForm("Upload", "File", new { FromPath = Model.FullDisplayName }, FormMethod.Post, new { id = "UploadForm", enctype = "multipart/form-data" }))
+    {
+        <strong>Upload:</strong> <input type="file" id="UploadFile" name="UploadFile" style="display: inline">
+    }
+</div>
 <table class="table">
     <tr>
         <th>
@@ -55,3 +61,16 @@
         </tr>
     }
 </table>
+
+<script>
+    $("document").ready(function () {
+        $("#UploadFile").change(function () {
+            var files = $("#UploadFile").prop("files");
+
+            if (files.length < 1)
+                return;
+
+            $("#UploadForm").submit();
+        })
+    });
+</script>
