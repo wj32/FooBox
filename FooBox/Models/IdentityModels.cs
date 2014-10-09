@@ -13,6 +13,7 @@ namespace FooBox.Models
     {
         public const string AdministratorsGroupName = "Administrators";
         public const string DefaultUserName = "__DEFAULT__";
+        private const string DeletedPrefix = "deleted-";
 
         public class UserIdentity : IIdentity
         {
@@ -187,6 +188,8 @@ namespace FooBox.Models
             if (user == null)
                 return false;
 
+            // Change the name to something random.
+            user.Name = DeletedPrefix + Utilities.GenerateRandomString(FileManager.IdChars, Identity.NameMaxLength - DeletedPrefix.Length);
             user.State = ObjectState.Deleted;
 
             try
@@ -289,6 +292,8 @@ namespace FooBox.Models
             if (group == null)
                 return false;
 
+            // Change the name to something random.
+            group.Name = DeletedPrefix + Utilities.GenerateRandomString(FileManager.IdChars, Identity.NameMaxLength - DeletedPrefix.Length);
             group.State = ObjectState.Deleted;
 
             try

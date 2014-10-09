@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Web;
 
 namespace FooBox
@@ -26,6 +27,19 @@ namespace FooBox
                 return fullName.Remove(fullName.LastIndexOf('/'));
 
             return fullName;
+        }
+
+        public static string NormalizeFullName(string fullName)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var name in fullName.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                sb.Append('/');
+                sb.Append(name);
+            }
+
+            return sb.ToString();
         }
 
         public static string SizeToString(long size)

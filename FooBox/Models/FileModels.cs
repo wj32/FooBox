@@ -102,6 +102,11 @@ namespace FooBox.Models
             return new DirectoryInfo(BlobDataDirectory);
         }
 
+        public System.Security.Cryptography.HashAlgorithm CreateBlobHashAlgorithm()
+        {
+            return System.Security.Cryptography.SHA256.Create();
+        }
+
         public string GenerateBlobKey()
         {
             return Utilities.GenerateRandomString(IdChars, Blob.KeyLength);
@@ -124,6 +129,7 @@ namespace FooBox.Models
 
             try
             {
+                AccessBlobDataDirectory();
                 System.IO.File.Copy(fileName, GetBlobFileName(blobKey));
             }
             catch
@@ -341,19 +347,31 @@ namespace FooBox.Models
             try
             {
                 var clientNode = ChangeNode.FromItems(clientData.Changes);
-                var clientChangesByFullName = clientData.Changes.ToDictionary(change => change.FullName);
+                var clientChangesByFullName = clientData.Changes.ToDictionary(change => Utilities.NormalizeFullName(change.FullName).ToUpperInvariant());
 
-                // Verify that the display names match the names.
+                // Verify that the display names match the names, and create missing entries in clientChangesByFullName.
                 foreach (var node in clientNode.RecursiveEnumerate())
                 {
                     if (node.Type == ChangeType.Add || node.Type == ChangeType.SetDisplayName || node.Type == ChangeType.Undelete)
                     {
-                        string displayName = clientChangesByFullName[node.FullName].DisplayName;
+                        if (clientChangesByFullName.ContainsKey(node.FullName))
+                        {
+                            string displayName = clientChangesByFullName[node.FullName].DisplayName;
 
-                        if (node.Type != ChangeType.Undelete && string.IsNullOrEmpty(displayName))
-                            throw new Exception("Missing display name for " + node.Type.ToString() + " operation on '" + node.FullName + "'");
-                        if (!string.IsNullOrEmpty(displayName) && displayName.ToUpperInvariant() != node.Name)
-                            throw new Exception("Invalid display name '" + displayName + "' for '" + node.FullName + "'");
+                            if (node.Type != ChangeType.Undelete && string.IsNullOrEmpty(displayName))
+                                throw new Exception("Missing display name for " + node.Type.ToString() + " operation on '" + node.FullName + "'");
+                            if (!string.IsNullOrEmpty(displayName) && displayName.ToUpperInvariant() != node.Name)
+                                throw new Exception("Invalid display name '" + displayName + "' for '" + node.FullName + "'");
+                        }
+                        else
+                        {
+                            // This node must be a folder with no display name specified.
+                            // Create a dummy entry.
+                            clientChangesByFullName[node.FullName] = new ClientChange
+                            {
+                                DisplayName = null
+                            };
+                        }
                     }
                 }
 
@@ -366,7 +384,7 @@ namespace FooBox.Models
                     orderby changelist.Id
                     select new { ChangeListId = changelist.Id, Changes = changes };
                 var intermediateNodes =
-                    from x in intermediateChanges
+                    from x in intermediateChanges.AsEnumerable()
                     select new
                     {
                         ChangelistId = x.ChangeListId,
@@ -414,7 +432,7 @@ namespace FooBox.Models
 
                 foreach (var addNode in clientNode.RecursiveEnumerate())
                 {
-                    if (addNode.Type != ChangeType.Add || !addNode.IsFolder)
+                    if (addNode.Type != ChangeType.Add || addNode.IsFolder)
                         continue;
 
                     var clientChange = clientChangesByFullName[addNode.FullName];
@@ -651,7 +669,7 @@ namespace FooBox.Models
                             file = _context.Folders.Add(new Folder
                             {
                                 Name = node.Name,
-                                DisplayName = clientChangesByFullName[node.FullName].DisplayName,
+                                DisplayName = clientChangesByFullName[node.FullName].DisplayName ?? node.Name,
                                 ParentFolder = parentFolder,
                                 Owner = parentFolder.Owner
                             });
@@ -678,7 +696,7 @@ namespace FooBox.Models
                             });
                         }
 
-                        if (setDisplayName)
+                        if (setDisplayName && !string.IsNullOrEmpty(clientChangesByFullName[node.FullName].DisplayName))
                         {
                             if (file.DisplayName != clientChangesByFullName[node.FullName].DisplayName)
                                 file.DisplayName = clientChangesByFullName[node.FullName].DisplayName;
@@ -687,7 +705,7 @@ namespace FooBox.Models
                         break;
 
                     case ChangeType.SetDisplayName:
-                        if (file != null)
+                        if (file != null && !string.IsNullOrEmpty(clientChangesByFullName[node.FullName].DisplayName))
                         {
                             if (file.DisplayName != clientChangesByFullName[node.FullName].DisplayName)
                                 file.DisplayName = clientChangesByFullName[node.FullName].DisplayName;

@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Entity;
 using System.Linq;
 using System.Net;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Web;
 using System.Web.Mvc;
 using FooBox;
@@ -105,27 +106,49 @@ namespace FooBox.Controllers
         {
             var clientUploadDirectory = _fileManager.AccessClientUploadDirectory(client.Id);
             var randomName = Utilities.GenerateRandomString(FileManager.IdChars, 32);
+            var tempUploadFileName = clientUploadDirectory.FullName + "\\" + randomName;
 
-            hash = "";
-            size = 0;
+            byte[] buffer = new byte[4096 * 4];
+            int bytesRead;
+            long totalBytesRead = 0;
 
-            using (var hashAlgorithm = System.Security.Cryptography.SHA512.Create())
-            using (var fileStream = new FileStream(clientUploadDirectory.FullName + "\\" + randomName, FileMode.Create))
+            using (var hashAlgorithm = _fileManager.CreateBlobHashAlgorithm())
             {
-                // TODO
+                using (var fileStream = new FileStream(tempUploadFileName, FileMode.Create))
+                {
+                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    {
+                        hashAlgorithm.TransformBlock(buffer, 0, bytesRead, null, 0);
+                        fileStream.Write(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+                    }
+                }
+
+                hashAlgorithm.TransformFinalBlock(new byte[0], 0, 0);
+                hash = (new SoapHexBinary(hashAlgorithm.Hash)).ToString();
+
+                try
+                {
+                    System.IO.File.Move(tempUploadFileName, clientUploadDirectory.FullName + "\\" + hash);
+                }
+                catch
+                {
+                    // We're going to assume that the file with hash as its name already exists.
+                    // This means that someone has already uploaded an identical file.
+                    System.IO.File.Delete(tempUploadFileName);
+                }
             }
+
+            size = totalBytesRead;
         }
 
         [HttpPost]
-        public ActionResult Upload(string fromPath, HttpPostedFile uploadFile)
+        public ActionResult Upload(string fromPath, HttpPostedFileBase uploadFile)
         {
-            if (fromPath == null)
-                return RedirectToAction("Browse");
-
             long userId = User.Identity.GetUserId();
             var internalClient = _fileManager.GetInternalClient(userId);
             string fullDisplayName = null;
-            File file = _fileManager.FindFile(fromPath, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+            File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
             if (file == null || !(file is Folder))
                 return RedirectToAction("Browse");

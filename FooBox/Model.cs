@@ -167,12 +167,13 @@ namespace FooBox
 
     public abstract class Identity
     {
-        public const int NameMaxLength = 32;
+        public const int NameMaxLength = 64;
 
         public long Id { get; set; }
 
         [DisplayName("Name")]
         [MaxLength(NameMaxLength)]
+        [Index("IX_Name", IsUnique = true)]
         [Index("IX_IdentityNameState", 1)]
         public string Name { get; set; }
 

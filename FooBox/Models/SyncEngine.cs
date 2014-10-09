@@ -289,7 +289,7 @@ namespace FooBox.Models
                 }
             }
 
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -410,12 +410,12 @@ namespace FooBox.Models
                             }
                             break;
                     }
-                }
-                
-                if (ourNode.IsFolder && otherNode.IsFolder &&
-                    ourNode.Type != ChangeType.Delete && otherNode.Type != ChangeType.Delete)
-                {
-                    ourNode.MakeSequentialByPreserving(otherNode);
+
+                    if (ourNode.IsFolder && otherNode.IsFolder &&
+                        ourNode.Type != ChangeType.Delete && otherNode.Type != ChangeType.Delete)
+                    {
+                        ourNode.MakeSequentialByPreserving(otherNode);
+                    }
                 }
             }
         }
