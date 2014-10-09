@@ -15,7 +15,7 @@ namespace FooBox
 
             routes.MapRoute(
                 name: "FileBrowse",
-                url: "Home/{path}",
+                url: "Home/{*path}",
                 defaults: new { controller = "File", action = "Browse", path = "" }
                 );
 

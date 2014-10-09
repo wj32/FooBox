@@ -42,7 +42,7 @@ namespace FooBox
                 i++;
             }
 
-            return s.ToString("{0:0.##}") + " " + _sizeUnits[i];
+            return s.ToString("N2") + " " + _sizeUnits[i];
         }
     }
 }

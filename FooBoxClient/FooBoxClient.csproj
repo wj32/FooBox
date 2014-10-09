@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>38d7d93c-0029-43b5-9cef-72acbdfca4b5</ProjectGuid>
+    <ProjectGuid>{CA804CF3-DE5C-45BC-AB75-EF157B52E0F9}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FooBoxClient</RootNamespace>
