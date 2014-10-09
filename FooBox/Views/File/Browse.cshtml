@@ -33,11 +33,45 @@
         </th>
     </tr>
 
-    @foreach (var item in Model.Files)
+    @for (int i = 0; i < Model.Files.Count(); ++i)
     {
+        var item = Model.Files[i];
         <tr>
-            <td>
-                @Html.ActionLink(item.DisplayName, "Browse", new { path = item.FullDisplayName })
+            <td id="@("file" + @i)" >
+                <div class="col-md-4">
+                    <div id="@("nameFieldfile" + @i)" class="fileName">
+                        @Html.ActionLink(item.DisplayName, "Browse", new { path = item.FullDisplayName })
+                    </div>
+                    <div class="input-group renameDialog" id="@("renameFieldfile" + @i)" style="display:none;">
+                        <input class="form-control" type="text" placeholder="@item.DisplayName">
+                        <span class="input-group-btn">
+                            <button class="delCancelButton btn btn-default">Cancel</button>
+                        </span>
+                    </div><!-- /input-group -->
+                    <div id="@("renameFieldfile" + @i)" style="display:none;" class="renameDialog">
+                        <input class="form-control" type="text" placeholder="@item.DisplayName" />
+                        <button  class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                    </div>
+                </div>
+                <!-- Split button -->
+                <div class="col-md-1 btn-group">
+                    <button type="button" class="btn btn-xs btn-link dropdown-toggle" id="@("dropdownfile" + @i)" data-toggle="dropdown">
+                        <span class="caret"></span>
+                        <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#" class="downloadLink">Download</a></li>
+                        <li><a href="#">Properties</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#" class="renameLink">Rename</a></li>
+                        <li><a href="#" class="deleteLink">Delete</a></li>
+                    </ul>
+                </div>
+                <div class="confirmDeleteDialog" id="@("confirmfile" + @i)" style="display:none;">
+                    <button class="btn btn-sm btn-danger">Delete</button>
+                    <button class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                </div>
+               
             </td>
             <td>
                 @Html.Encode(item.IsFolder ? "-" : Utilities.SizeToString(item.Size))
@@ -54,10 +88,8 @@
             <td>
                 <em>No files to display.</em>
             </td>
-            <td>
-            </td>
-            <td>
-            </td>
+            <td></td>
+            <td></td>
         </tr>
     }
 </table>
@@ -71,6 +103,28 @@
                 return;
 
             $("#UploadForm").submit();
+        });
+        $(".deleteLink").click(function () {
+
+            var it = $(this).closest('td').attr('id');
+            $("#dropdown" + it).hide();
+            $("#confirm" + it).show('slide');
+        })
+        $(".renameLink").click(function () {
+            var it = $(this).closest('td').attr('id');
+            $("#dropdown" + it).hide();
+            $("#nameField" + it).hide();
+            $("#renameField" + it).show('slide');
+        })
+        $(".delCancelButton").click(function () {
+            $(".confirmDeleteDialog").hide('slide');
+            $(".renameDialog").hide('slide');
+            $(".fileName").show();
+            $(".dropdown-toggle").show();
+            
         })
     });
+    $("")
 </script>
+
+<p id="debug"></p>

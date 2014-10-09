@@ -102,6 +102,7 @@ namespace FooBox.Controllers
             return View(CreateBrowseModelForFolder((Folder)file, fullDisplayName));
         }
 
+
         private void UploadBlob(Client client, Stream stream, out string hash, out long size)
         {
             var clientUploadDirectory = _fileManager.AccessClientUploadDirectory(client.Id);

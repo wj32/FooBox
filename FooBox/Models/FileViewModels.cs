@@ -10,7 +10,6 @@ namespace FooBox.Models
         public class FileEntry
         {
             public bool IsParent { get; set; }
-
             public string FullDisplayName { get; set; }
             public string DisplayName { get; set; }
             public bool IsFolder { get; set; }
