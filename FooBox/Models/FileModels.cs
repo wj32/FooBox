@@ -564,11 +564,11 @@ namespace FooBox.Models
             foreach (var node in clientNode.Nodes.Values)
                 queue.Enqueue(node);
 
-            Changelist changelist = _context.Changelists.Add(new Changelist
+            Changelist changelist = new Changelist
             {
                 ClientId = clientId,
                 TimeStamp = DateTime.UtcNow
-            });
+            };
 
             while (queue.Count != 0)
             {
@@ -584,18 +584,7 @@ namespace FooBox.Models
                     parentFolder.Files.AsQueryable()
                     .Where(f => f.Name == node.Name)
                     .FirstOrDefault();
-
-                if (node.Type != ChangeType.None)
-                {
-                    // Create the associated change object.
-                    _context.Changes.Add(new Change
-                    {
-                        Type = node.Type,
-                        FullName = node.FullName,
-                        IsFolder = node.IsFolder,
-                        Changelist = changelist
-                    });
-                }
+                bool createChange = false;
 
                 switch (node.Type)
                 {
@@ -661,7 +650,12 @@ namespace FooBox.Models
                         if (file != null)
                         {
                             // Undelete the file if it is deleted.
-                            file.State = ObjectState.Normal;
+
+                            if (file.State != ObjectState.Normal)
+                            {
+                                file.State = ObjectState.Normal;
+                                createChange = true;
+                            }
                         }
 
                         if (createFolder)
@@ -673,6 +667,7 @@ namespace FooBox.Models
                                 ParentFolder = parentFolder,
                                 Owner = parentFolder.Owner
                             });
+                            createChange = true;
                         }
                         else if (createDocument)
                         {
@@ -683,23 +678,46 @@ namespace FooBox.Models
                                 ParentFolder = parentFolder
                             });
                             createDocumentVersion = true;
+                            createChange = true;
                         }
 
                         if (createDocumentVersion)
                         {
-                            _context.DocumentVersions.Add(new DocumentVersion
+                            string hash = clientChangesByFullName[node.FullName].Hash.ToUpperInvariant();
+                            bool identicalVersion = false;
+
+                            if (!createDocument)
                             {
-                                TimeStamp = DateTime.UtcNow,
-                                ClientId = clientId,
-                                Document = (Document)file,
-                                Blob = presentHashes[clientChangesByFullName[node.FullName].Hash.ToUpperInvariant()]
-                            });
+                                string lastestHash = (
+                                    from version in ((Document)file).DocumentVersions.AsQueryable()
+                                    orderby version.TimeStamp descending
+                                    select version.Blob.Hash
+                                    ).First();
+
+                                if (hash == lastestHash)
+                                    identicalVersion = true;
+                            }
+
+                            if (!identicalVersion)
+                            {
+                                _context.DocumentVersions.Add(new DocumentVersion
+                                {
+                                    TimeStamp = DateTime.UtcNow,
+                                    ClientId = clientId,
+                                    Document = (Document)file,
+                                    Blob = presentHashes[hash]
+                                });
+                                createChange = true;
+                            }
                         }
 
                         if (setDisplayName && !string.IsNullOrEmpty(clientChangesByFullName[node.FullName].DisplayName))
                         {
                             if (file.DisplayName != clientChangesByFullName[node.FullName].DisplayName)
+                            {
                                 file.DisplayName = clientChangesByFullName[node.FullName].DisplayName;
+                                createChange = true;
+                            }
                         }
 
                         break;
@@ -708,24 +726,40 @@ namespace FooBox.Models
                         if (file != null && !string.IsNullOrEmpty(clientChangesByFullName[node.FullName].DisplayName))
                         {
                             if (file.DisplayName != clientChangesByFullName[node.FullName].DisplayName)
+                            {
                                 file.DisplayName = clientChangesByFullName[node.FullName].DisplayName;
+                                createChange = true;
+                            }
                         }
 
                         break;
 
                     case ChangeType.Delete:
-                        if (file != null)
+                        if (file != null && file.State != ObjectState.Deleted)
                         {
                             SetFileState(file, ObjectState.Deleted);
+                            createChange = true;
                         }
                         break;
 
                     case ChangeType.Undelete:
-                        if (file != null)
+                        if (file != null && file.State != ObjectState.Normal)
                         {
                             SetFileState(file, ObjectState.Normal);
+                            createChange = true;
                         }
                         break;
+                }
+
+                if (createChange)
+                {
+                    // Create the associated change object.
+                    changelist.Changes.Add(new Change
+                    {
+                        Type = node.Type,
+                        FullName = node.FullName,
+                        IsFolder = node.IsFolder
+                    });
                 }
 
                 if (file != null)
@@ -739,6 +773,9 @@ namespace FooBox.Models
                     }
                 }
             }
+
+            if (changelist.Changes.Count != 0)
+                _context.Changelists.Add(changelist);
 
             return changelist;
         }
