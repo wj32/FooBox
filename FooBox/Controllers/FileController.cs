@@ -87,19 +87,37 @@ namespace FooBox.Controllers
             return model;
         }
 
+        private ActionResult DownloadDocument(Document document)
+        {
+            string latestBlobKey = (
+                from version in document.DocumentVersions
+                orderby version.TimeStamp
+                select version.Blob.Key
+                ).First();
+
+            return File(_fileManager.GetBlobFileName(latestBlobKey), MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
+        }
+
         public ActionResult Browse()
         {
             string path = (string)RouteData.Values["path"] ?? "";
             string fullDisplayName = null;
             File file = _fileManager.FindFile(path, _fileManager.GetUserRootFolder(User.Identity.GetUserId()), out fullDisplayName);
 
-            if (file == null || !(file is Folder))
+            if (file == null)
             {
                 ModelState.AddModelError("", "The path '" + path + "' is invalid.");
                 return View(CreateBrowseModelForFolder(null, null));
             }
 
-            return View(CreateBrowseModelForFolder((Folder)file, fullDisplayName));
+            if (file is Document)
+            {
+                return DownloadDocument((Document)file);
+            }
+            else
+            {
+                return View(CreateBrowseModelForFolder((Folder)file, fullDisplayName));
+            }
         }
 
 
