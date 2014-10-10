@@ -57,6 +57,8 @@ namespace FooBox.Controllers
                 ).ToList();
             model.Parents = new List<Tuple<string, string>>();
 
+            // Construct the parent list for the breadcrumb.
+
             List<Folder> parentFolders = new List<Folder>();
 
             if (folder != userRootFolder)
@@ -121,7 +123,6 @@ namespace FooBox.Controllers
             }
         }
 
-
         private void UploadBlob(Client client, Stream stream, out string hash, out long size)
         {
             var clientUploadDirectory = _fileManager.AccessClientUploadDirectory(client.Id);
@@ -131,6 +132,8 @@ namespace FooBox.Controllers
             byte[] buffer = new byte[4096 * 4];
             int bytesRead;
             long totalBytesRead = 0;
+
+            // Simultaneously hash the file and write it out to a temporary file.
 
             using (var hashAlgorithm = _fileManager.CreateBlobHashAlgorithm())
             {
@@ -182,7 +185,7 @@ namespace FooBox.Controllers
             }
         }
 
-        private string GenerateNewName(string originalDisplayName, bool creatingDocument, int iteration)
+        private string GenerateNewName(string originalDisplayName, bool creatingDocument, string key)
         {
             if (creatingDocument)
             {
@@ -193,15 +196,17 @@ namespace FooBox.Controllers
                     string firstPart = originalDisplayName.Substring(0, indexOfLastDot);
                     string secondPart = originalDisplayName.Substring(indexOfLastDot + 1, originalDisplayName.Length - (indexOfLastDot + 1));
 
-                    return firstPart + " (" + (iteration + 2).ToString() + ")." + secondPart;
+                    return firstPart + " (" + key + ")." + secondPart;
                 }
             }
 
-            return originalDisplayName + " (" + (iteration + 2).ToString() + ")";
+            return originalDisplayName + " (" + key + ")";
         }
 
         private bool EnsureAvailableName(ref string destinationDisplayName, Folder parent, bool creatingDocument)
         {
+            const int MaxIterations = 10;
+
             string originalDisplayName = destinationDisplayName;
             string name = destinationDisplayName.ToUpperInvariant();
 
@@ -211,12 +216,22 @@ namespace FooBox.Controllers
 
                 do
                 {
-                    destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, iteration);
+                    if (iteration == MaxIterations)
+                    {
+                        // Try one last time with a random name.
+                        destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, Utilities.GenerateRandomString("0123456789", 8));
+                        name = destinationDisplayName.ToUpperInvariant();
+                        iteration++;
+                        continue;
+                    }
+                    else if (iteration == MaxIterations + 1)
+                    {
+                        return false;
+                    }
+
+                    destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, (iteration + 2).ToString());
                     name = destinationDisplayName.ToUpperInvariant();
                     iteration++;
-
-                    if (iteration == 10)
-                        return false; // Give up
                 } while (NameConflicts(parent, name, creatingDocument));
             }
 
