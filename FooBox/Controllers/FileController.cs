@@ -43,7 +43,7 @@ namespace FooBox.Controllers
                 where file.State == ObjectState.Normal
                 let latestVersion = (file is Document) ? (from version in ((Document)file).DocumentVersions.AsQueryable()
                                                           orderby version.TimeStamp descending
-                                                          select version).SingleOrDefault()
+                                                          select version).FirstOrDefault()
                                                          : null
                 select new FileBrowseViewModel.FileEntry
                 {

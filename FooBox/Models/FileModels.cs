@@ -120,7 +120,7 @@ namespace FooBox.Models
         public string FindBlob(string hash)
         {
             var upperHash = hash.ToUpperInvariant();
-            return (from blob in _context.Blobs where blob.Hash == upperHash select blob.Key).SingleOrDefault();
+            return (from blob in _context.Blobs where blob.Hash == upperHash select blob.Key).FirstOrDefault();
         }
 
         private Blob CreateBlob(long size, string hash, string fileName)
@@ -339,7 +339,7 @@ namespace FooBox.Models
         {
             return (from changelist in _context.Changelists
                     orderby changelist.Id descending
-                    select changelist.Id).SingleOrDefault();
+                    select changelist.Id).FirstOrDefault();
         }
 
         public ClientSyncResult SyncClientChanges(ClientSyncData clientData)
@@ -441,7 +441,7 @@ namespace FooBox.Models
                     if (presentHashes.ContainsKey(hash) || missingHashes.Contains(hash))
                         continue;
 
-                    var blobForHash = (from blob in _context.Blobs where blob.Hash == hash select blob).SingleOrDefault();
+                    var blobForHash = (from blob in _context.Blobs where blob.Hash == hash select blob).FirstOrDefault();
 
                     if (blobForHash != null || System.IO.File.Exists(uploadDirectory.FullName + "\\" + hash))
                     {

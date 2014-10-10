@@ -56,7 +56,7 @@ namespace FooBox
                 i++;
             }
 
-            return s.ToString("N2") + " " + _sizeUnits[i];
+            return s.ToString("#,#.##") + " " + _sizeUnits[i];
         }
     }
 }
