@@ -41,6 +41,7 @@ namespace FooBox.Controllers
             model.Files = (
                 from file in folder.Files.AsQueryable()
                 where file.State == ObjectState.Normal
+                orderby !(file is Folder) ascending, file.Name ascending
                 let latestVersion = (file is Document) ? (from version in ((Document)file).DocumentVersions.AsQueryable()
                                                           orderby version.TimeStamp descending
                                                           select version).FirstOrDefault()
@@ -161,6 +162,67 @@ namespace FooBox.Controllers
             size = totalBytesRead;
         }
 
+        private bool NameConflicts(Folder parent, string name, bool creatingDocument)
+        {
+            File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
+
+            if (file == null)
+                return false;
+
+            if (creatingDocument)
+            {
+                if (file is Folder)
+                    return true;
+
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        private string GenerateNewName(string originalDisplayName, bool creatingDocument, int iteration)
+        {
+            if (creatingDocument)
+            {
+                int indexOfLastDot = originalDisplayName.LastIndexOf('.');
+
+                if (indexOfLastDot != -1 && indexOfLastDot != originalDisplayName.Length - 1)
+                {
+                    string firstPart = originalDisplayName.Substring(0, indexOfLastDot);
+                    string secondPart = originalDisplayName.Substring(indexOfLastDot + 1, originalDisplayName.Length - (indexOfLastDot + 1));
+
+                    return firstPart + " (" + (iteration + 2).ToString() + ")." + secondPart;
+                }
+            }
+
+            return originalDisplayName + " (" + (iteration + 2).ToString() + ")";
+        }
+
+        private bool EnsureAvailableName(ref string destinationDisplayName, Folder parent, bool creatingDocument)
+        {
+            string originalDisplayName = destinationDisplayName;
+            string name = destinationDisplayName.ToUpperInvariant();
+
+            if (NameConflicts(parent, name, creatingDocument))
+            {
+                int iteration = 0;
+
+                do
+                {
+                    destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, iteration);
+                    name = destinationDisplayName.ToUpperInvariant();
+                    iteration++;
+
+                    if (iteration == 10)
+                        return false; // Give up
+                } while (NameConflicts(parent, name, creatingDocument));
+            }
+
+            return true;
+        }
+
         [HttpPost]
         public ActionResult Upload(string fromPath, HttpPostedFileBase uploadFile)
         {
@@ -170,6 +232,12 @@ namespace FooBox.Controllers
             File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
             if (file == null || !(file is Folder))
+                return RedirectToAction("Browse");
+
+            Folder folder = (Folder)file;
+            string destinationDisplayName = uploadFile.FileName;
+
+            if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
                 return RedirectToAction("Browse");
 
             string hash;
@@ -183,12 +251,12 @@ namespace FooBox.Controllers
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
             data.Changes.Add(new ClientChange
             {
-                FullName = "/" + userId + "/" + fromPath + "/" + uploadFile.FileName,
+                FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
                 Type = ChangeType.Add,
                 IsFolder = false,
                 Size = fileSize,
                 Hash = hash,
-                DisplayName = uploadFile.FileName
+                DisplayName = destinationDisplayName
             });
 
             _fileManager.SyncClientChanges(data);
