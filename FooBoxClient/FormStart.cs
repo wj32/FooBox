@@ -7,7 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
+using System.Net;
+using System.IO;
 namespace FooBoxClient
 {
     public partial class FormStart : Form
@@ -40,8 +41,35 @@ namespace FooBoxClient
 
         private void buttonNext_Click(object sender, EventArgs e)
         {
+            string url = @"http://" + textBoxServerLoc.Text.Trim() +":" + textBoxServerPort.Text.Trim() + "/Account/ClientLogin";
+            MessageBox.Show(url);
+           
+
+            string postContent = "username=" + textBoxUsername.Text.Trim() + "&password=" + textBoxPassword.Text;
+            MessageBox.Show(postContent);
+        
+            HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
+
+            byte[] dataBytes = UTF8Encoding.UTF8.GetBytes(postContent);
+            
+            req.KeepAlive = true;
+            req.Method = "POST";
+            req.ContentLength = dataBytes.Length;
+            req.ContentType = "application/x-www-form-urlencoded";
+
+            using (Stream postStream = req.GetRequestStream())
+            {
+                postStream.Write(dataBytes, 0, dataBytes.Length);
+            }
+
+            HttpWebResponse response = req.GetResponse() as HttpWebResponse;
+            MessageBox.Show(response.ToString());//req.CookieContainer.Add(response.Cookies);
+          //  req = WebRequest.Create(url) as HttpWebRequest;
+           // HttpWebResponse response2 = req.GetResponse() as HttpWebResponse;
+          //  MessageBox.Show(response2.ToString());
             //do the stuff here
         }
+
 
 
     }

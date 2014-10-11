@@ -9,6 +9,7 @@ namespace FooBox.Models
     {
         public class FileEntry
         {
+            public long Id { get; set; }
             public bool IsParent { get; set; }
             public string FullDisplayName { get; set; }
             public string DisplayName { get; set; }
@@ -24,5 +25,6 @@ namespace FooBox.Models
         public List<FileEntry> Files { get; set; }
 
         public List<Tuple<string, string>> Parents { get; set; }
+
     }
 }

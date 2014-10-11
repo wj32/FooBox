@@ -18,6 +18,7 @@ namespace FooBox.Controllers
     public class FileController : Controller
     {
         private FileManager _fileManager = new FileManager();
+        private UserManager _userManager = new UserManager();
 
         public ActionResult Index()
         {
@@ -48,6 +49,7 @@ namespace FooBox.Controllers
                                                          : null
                 select new FileBrowseViewModel.FileEntry
                 {
+                    Id = file.Id,
                     FullDisplayName = fullDisplayName + "/" + file.DisplayName,
                     DisplayName = file.DisplayName,
                     IsFolder = file is Folder,
@@ -238,6 +240,39 @@ namespace FooBox.Controllers
             return true;
         }
 
+      
+        // GET
+        public ActionResult Delete(long fileId)
+        {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            File file = _fileManager.FindFile(fileId);
+
+            if (file == null)
+                return RedirectToAction("Browse");
+
+            bool isFolder = (file is Folder);
+           
+           
+            ClientSyncData data = new ClientSyncData();
+
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            data.Changes.Add(new ClientChange
+            {
+                FullName = _fileManager.GetFullName(file),
+                Type = ChangeType.Delete,
+                IsFolder = isFolder,
+                Size = 0,
+                Hash = null,
+                DisplayName = file.DisplayName
+            });
+            String fromPath = _fileManager.GetFullName(file.ParentFolder, _fileManager.GetUserRootFolder(userId));
+            _fileManager.SyncClientChanges(data);
+            return RedirectToAction("Browse", new { path = fromPath });
+        }
+
+
         [HttpPost]
         public ActionResult Upload(string fromPath, HttpPostedFileBase uploadFile)
         {
@@ -282,6 +317,46 @@ namespace FooBox.Controllers
             {
                 _fileManager.CleanClientUploadDirectory(internalClient.Id);
             }
+
+            return RedirectToAction("Browse", new { path = fromPath });
+        }
+
+        [HttpPost]
+        public ActionResult NewFolder(string fromPath, string newFolderName)
+        {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            string fullDisplayName = null;
+            File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+
+            if (file == null || !(file is Folder))
+                return RedirectToAction("Browse");
+
+            Folder folder = (Folder)file;
+            string destinationDisplayName = newFolderName;
+
+            if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
+                return RedirectToAction("Browse");
+
+           
+
+            
+
+            ClientSyncData data = new ClientSyncData();
+
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            data.Changes.Add(new ClientChange
+            {
+                FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
+                Type = ChangeType.Add,
+                IsFolder = true,
+                Size = 0,
+                Hash = "",
+                DisplayName = destinationDisplayName
+            });
+
+            _fileManager.SyncClientChanges(data);
 
             return RedirectToAction("Browse", new { path = fromPath });
         }
