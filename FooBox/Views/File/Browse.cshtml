@@ -39,6 +39,8 @@
 <table class="table">
     <tr>
         <th>
+        </th>
+        <th>
             Name
         </th>
         <th>
@@ -53,6 +55,16 @@
     {
         var item = Model.Files[i];
         <tr>
+            <td>
+                @if (item.IsFolder)
+                {
+                    @Html.Raw("<span class='glyphicon glyphicon-folder-close'></span>")
+                }
+                else
+                {
+                    @Html.Raw("<span class='glyphicon glyphicon-file'></span>")
+                }
+            </td>
             <td id="@("file" + @i)" >
                 <div class="col-md-4">
                     <div id="@("nameFieldfile" + @i)" class="fileName">
