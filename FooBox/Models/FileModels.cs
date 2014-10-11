@@ -498,7 +498,7 @@ namespace FooBox.Models
                 using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.Serializable))
                 {
                     // Lock the *entire* changelist table.
-                    _context.Database.ExecuteSqlCommand("SELECT TOP 1 Id FROM dbo.Changelists WITH (TABLOCKX, HOLDLOCK)");
+                    _context.Database.LockTableExclusive("dbo.Changelists");
 
                     // Make sure no one changed anything since we started computing changes.
                     var moreChangelists = (from changelist in _context.Changelists
