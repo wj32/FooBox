@@ -41,9 +41,10 @@ namespace FooBox.Controllers
             model.Files = (
                 from file in folder.Files.AsQueryable()
                 where file.State == ObjectState.Normal
+                orderby !(file is Folder) ascending, file.Name ascending
                 let latestVersion = (file is Document) ? (from version in ((Document)file).DocumentVersions.AsQueryable()
                                                           orderby version.TimeStamp descending
-                                                          select version).SingleOrDefault()
+                                                          select version).FirstOrDefault()
                                                          : null
                 select new FileBrowseViewModel.FileEntry
                 {
@@ -55,6 +56,8 @@ namespace FooBox.Controllers
                 }
                 ).ToList();
             model.Parents = new List<Tuple<string, string>>();
+
+            // Construct the parent list for the breadcrumb.
 
             List<Folder> parentFolders = new List<Folder>();
 
@@ -87,21 +90,38 @@ namespace FooBox.Controllers
             return model;
         }
 
+        private ActionResult DownloadDocument(Document document)
+        {
+            string latestBlobKey = (
+                from version in document.DocumentVersions
+                orderby version.TimeStamp
+                select version.Blob.Key
+                ).First();
+
+            return File(_fileManager.GetBlobFileName(latestBlobKey), MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
+        }
+
         public ActionResult Browse()
         {
             string path = (string)RouteData.Values["path"] ?? "";
             string fullDisplayName = null;
             File file = _fileManager.FindFile(path, _fileManager.GetUserRootFolder(User.Identity.GetUserId()), out fullDisplayName);
 
-            if (file == null || !(file is Folder))
+            if (file == null)
             {
                 ModelState.AddModelError("", "The path '" + path + "' is invalid.");
                 return View(CreateBrowseModelForFolder(null, null));
             }
 
-            return View(CreateBrowseModelForFolder((Folder)file, fullDisplayName));
+            if (file is Document)
+            {
+                return DownloadDocument((Document)file);
+            }
+            else
+            {
+                return View(CreateBrowseModelForFolder((Folder)file, fullDisplayName));
+            }
         }
-
 
         private void UploadBlob(Client client, Stream stream, out string hash, out long size)
         {
@@ -112,6 +132,8 @@ namespace FooBox.Controllers
             byte[] buffer = new byte[4096 * 4];
             int bytesRead;
             long totalBytesRead = 0;
+
+            // Simultaneously hash the file and write it out to a temporary file.
 
             using (var hashAlgorithm = _fileManager.CreateBlobHashAlgorithm())
             {
@@ -143,6 +165,79 @@ namespace FooBox.Controllers
             size = totalBytesRead;
         }
 
+        private bool NameConflicts(Folder parent, string name, bool creatingDocument)
+        {
+            File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
+
+            if (file == null)
+                return false;
+
+            if (creatingDocument)
+            {
+                if (file is Folder)
+                    return true;
+
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        private string GenerateNewName(string originalDisplayName, bool creatingDocument, string key)
+        {
+            if (creatingDocument)
+            {
+                int indexOfLastDot = originalDisplayName.LastIndexOf('.');
+
+                if (indexOfLastDot != -1 && indexOfLastDot != originalDisplayName.Length - 1)
+                {
+                    string firstPart = originalDisplayName.Substring(0, indexOfLastDot);
+                    string secondPart = originalDisplayName.Substring(indexOfLastDot + 1, originalDisplayName.Length - (indexOfLastDot + 1));
+
+                    return firstPart + " (" + key + ")." + secondPart;
+                }
+            }
+
+            return originalDisplayName + " (" + key + ")";
+        }
+
+        private bool EnsureAvailableName(ref string destinationDisplayName, Folder parent, bool creatingDocument)
+        {
+            const int MaxIterations = 10;
+
+            string originalDisplayName = destinationDisplayName;
+            string name = destinationDisplayName.ToUpperInvariant();
+
+            if (NameConflicts(parent, name, creatingDocument))
+            {
+                int iteration = 0;
+
+                do
+                {
+                    if (iteration == MaxIterations)
+                    {
+                        // Try one last time with a random name.
+                        destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, Utilities.GenerateRandomString("0123456789", 8));
+                        name = destinationDisplayName.ToUpperInvariant();
+                        iteration++;
+                        continue;
+                    }
+                    else if (iteration == MaxIterations + 1)
+                    {
+                        return false;
+                    }
+
+                    destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, (iteration + 2).ToString());
+                    name = destinationDisplayName.ToUpperInvariant();
+                    iteration++;
+                } while (NameConflicts(parent, name, creatingDocument));
+            }
+
+            return true;
+        }
+
         [HttpPost]
         public ActionResult Upload(string fromPath, HttpPostedFileBase uploadFile)
         {
@@ -154,26 +249,39 @@ namespace FooBox.Controllers
             if (file == null || !(file is Folder))
                 return RedirectToAction("Browse");
 
-            string hash;
-            long fileSize;
+            Folder folder = (Folder)file;
+            string destinationDisplayName = uploadFile.FileName;
 
-            UploadBlob(internalClient, uploadFile.InputStream, out hash, out fileSize);
+            if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
+                return RedirectToAction("Browse");
 
-            ClientSyncData data = new ClientSyncData();
-
-            data.ClientId = internalClient.Id;
-            data.BaseChangelistId = _fileManager.GetLastChangelistId();
-            data.Changes.Add(new ClientChange
+            try
             {
-                FullName = "/" + userId + "/" + fromPath + "/" + uploadFile.FileName,
-                Type = ChangeType.Add,
-                IsFolder = false,
-                Size = fileSize,
-                Hash = hash,
-                DisplayName = uploadFile.FileName
-            });
+                string hash;
+                long fileSize;
 
-            _fileManager.SyncClientChanges(data);
+                UploadBlob(internalClient, uploadFile.InputStream, out hash, out fileSize);
+
+                ClientSyncData data = new ClientSyncData();
+
+                data.ClientId = internalClient.Id;
+                data.BaseChangelistId = _fileManager.GetLastChangelistId();
+                data.Changes.Add(new ClientChange
+                {
+                    FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
+                    Type = ChangeType.Add,
+                    IsFolder = false,
+                    Size = fileSize,
+                    Hash = hash,
+                    DisplayName = destinationDisplayName
+                });
+
+                _fileManager.SyncClientChanges(data);
+            }
+            finally
+            {
+                _fileManager.CleanClientUploadDirectory(internalClient.Id);
+            }
 
             return RedirectToAction("Browse", new { path = fromPath });
         }
