@@ -56,13 +56,9 @@
         var item = Model.Files[i];
         <tr>
             <td>
-                @if (item.IsFolder)
-                {
-                    @Html.Raw("<span class='glyphicon glyphicon-folder-close'></span>")
-                }
-                else
-                {
-                    @Html.Raw("<span class='glyphicon glyphicon-file'></span>")
+                @{
+                    string iconClass = item.IsFolder ? "glyphicon-folder-close" : "glyphicon-file";
+                    @Html.Raw("<span class='glyphicon " + iconClass + "'></span>"); 
                 }
             </td>
             <td id="@("file" + @i)" >
