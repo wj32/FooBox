@@ -1,0 +1,29 @@
+﻿@model FooBox.Document
+
+@{
+    ViewBag.Title = "Version History";
+}
+
+<h2>Version history for @Html.DisplayFor(model => model.DisplayName)</h2>
+
+<div>
+    <table class="table table-hover">
+        @foreach (DocumentVersion dv in Model.DocumentVersions)
+        {
+            <thead>
+            <tr>
+                <th>Revision Date</th>
+                <th></th>
+                <th></th>
+            </tr>
+            </thead>
+            <tr>
+                <td>@Html.Encode(dv.TimeStamp.ToLocalTime().ToString("F"))</td>
+                <td>@Html.ActionLink("Download", "DownloadVersion", new { id = Model.Id, blobKey = dv.Blob.Key })</td>
+                <td>Revert</td>
+            </tr>
+        }
+    </table>
+    <ul>
+    </ul>
+</div>

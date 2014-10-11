@@ -86,6 +86,10 @@
                     <ul class="dropdown-menu" role="menu">
                         <li><a href="#" class="downloadLink">Download</a></li>
                         <li><a href="#">Properties</a></li>
+                        @if (!item.IsFolder) // Not sure if there is a better property to check.. item is Document ?
+                        {
+                            <li>@Html.ActionLink("Version History", "DisplayVersionHistory", new { id = item.Id })</li>
+                        }
                         <li class="divider"></li>
                         <li><a href="#" class="renameLink">Rename</a></li>
                         <li><a href="#" class="deleteLink">Delete</a></li>

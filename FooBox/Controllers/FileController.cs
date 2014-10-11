@@ -98,15 +98,24 @@ namespace FooBox.Controllers
             return model;
         }
 
-        private ActionResult DownloadDocument(Document document)
+        private ActionResult DownloadDocument(Document document, string blobKey = null)
         {
-            string latestBlobKey = (
-                from version in document.DocumentVersions
-                orderby version.TimeStamp
-                select version.Blob.Key
-                ).First();
-
-            return File(_fileManager.GetBlobFileName(latestBlobKey), MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
+            if (blobKey == null)
+            {
+                // Get latest version
+                blobKey = (
+                    from version in document.DocumentVersions
+                    orderby version.TimeStamp
+                    select version.Blob.Key
+                    ).First();
+            }
+            string blobFileName = _fileManager.GetBlobFileName(blobKey);
+            if (blobFileName == null)
+            {
+                // Error - not sure which one.
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            return File(blobFileName, MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
         }
 
         public ActionResult Browse()
@@ -129,6 +138,36 @@ namespace FooBox.Controllers
             {
                 return View(CreateBrowseModelForFolder((Folder)file, fullDisplayName));
             }
+        }
+
+        public ActionResult DisplayVersionHistory(long? id)
+        {
+            if (! id.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Document document = _fileManager.FindDocument((long) id);
+            if (document == null)
+            {
+                // Error - not sure which one.
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            return View(document);
+        }
+
+        public ActionResult DownloadVersion(long? id, string blobKey = null)
+        {
+            if (!id.HasValue || blobKey == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Document document = _fileManager.FindDocument((long)id);
+            if (document == null)
+            {
+                // Error - not sure which one.
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            return DownloadDocument(document, blobKey);
         }
 
         private void UploadBlob(Client client, Stream stream, out string hash, out long size)
