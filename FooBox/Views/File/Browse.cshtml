@@ -19,6 +19,22 @@
     {
         <strong>Upload:</strong> <input type="file" id="UploadFile" name="UploadFile" style="display: inline">
     }
+        <button id="newFolderButton" class="btn btn-sm btn-primary">New Folder</button>
+        
+            @using (var form = @Html.BeginForm("NewFolder", "File", new { FromPath = Model.FullDisplayName, name = "foldee" }))
+            {
+                <div class="col-md-3">
+                    <div id="newFolderDialog" class="input-group" style="display:none;">
+                        <input name="newFolderName" class="form-control" type="text" placeholder="Folder Name">
+                        <span class="input-group-btn">
+                            <button id="newFolderCancelButton" class=" btn btn-default">Cancel</button>
+                        </span>
+                    </div>
+                </div>
+            }
+        
+       
+    
 </div>
 <table class="table">
     <tr>
@@ -67,9 +83,15 @@
                         <li><a href="#" class="deleteLink">Delete</a></li>
                     </ul>
                 </div>
+                <!-- Confirm Delete -->
                 <div class="confirmDeleteDialog" id="@("confirmfile" + @i)" style="display:none;">
-                    <button class="btn btn-sm btn-danger">Delete</button>
-                    <button class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                    @using (Html.BeginForm("Delete", "File", new { fileId = item.Id}))
+                    {
+                        @Html.AntiForgeryToken()
+       
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        <button type="button" class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                    }
                 </div>
                
             </td>
@@ -105,7 +127,6 @@
             $("#UploadForm").submit();
         });
         $(".deleteLink").click(function () {
-
             var it = $(this).closest('td').attr('id');
             $("#dropdown" + it).hide();
             $("#confirm" + it).show('slide');
@@ -117,11 +138,18 @@
             $("#renameField" + it).show('slide');
         })
         $(".delCancelButton").click(function () {
-            $(".confirmDeleteDialog").hide('slide');
-            $(".renameDialog").hide('slide');
-            $(".fileName").show();
-            $(".dropdown-toggle").show();
-            
+            $(".confirmDeleteDialog").hide();
+            $(".renameDialog").hide();
+            $(".fileName").show('slide');
+            $(".dropdown-toggle").show('slide');
+        })
+        $("#newFolderButton").click(function () {
+            $("#newFolderButton").hide();
+            $("#newFolderDialog").show('slide');
+        })
+        $("#newFolderCancelButton").click(function () {
+            $("#newFolderDialog").hide();
+            $("#newFolderButton").show('slide');
         })
     });
     $("")

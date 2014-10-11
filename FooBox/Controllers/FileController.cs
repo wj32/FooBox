@@ -17,7 +17,14 @@ namespace FooBox.Controllers
     [Authorize]
     public class FileController : Controller
     {
-        private FileManager _fileManager = new FileManager();
+        private FileManager _fileManager;
+        private UserManager _userManager;
+
+        public FileController()
+        {
+            _fileManager = new FileManager();
+            _userManager = new UserManager(_fileManager.Context);
+        }
 
         public ActionResult Index()
         {
@@ -48,6 +55,7 @@ namespace FooBox.Controllers
                                                          : null
                 select new FileBrowseViewModel.FileEntry
                 {
+                    Id = file.Id,
                     FullDisplayName = fullDisplayName + "/" + file.DisplayName,
                     DisplayName = file.DisplayName,
                     IsFolder = file is Folder,
@@ -169,7 +177,7 @@ namespace FooBox.Controllers
         {
             File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
 
-            if (file == null)
+            if (file == null || file.State == ObjectState.Deleted)
                 return false;
 
             if (creatingDocument)
@@ -238,6 +246,33 @@ namespace FooBox.Controllers
             return true;
         }
 
+      
+        // GET
+        public ActionResult Delete(long fileId)
+        {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            File file = _fileManager.FindFile(fileId);
+
+            if (file == null)
+                return RedirectToAction("Browse");
+
+            ClientSyncData data = new ClientSyncData();
+
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            data.Changes.Add(new ClientChange
+            {
+                FullName = _fileManager.GetFullName(file),
+                Type = ChangeType.Delete,
+                DisplayName = file.DisplayName
+            });
+            String fromPath = _fileManager.GetFullName(file.ParentFolder, _fileManager.GetUserRootFolder(userId));
+            _fileManager.SyncClientChanges(data);
+            return RedirectToAction("Browse", new { path = fromPath });
+        }
+
+
         [HttpPost]
         public ActionResult Upload(string fromPath, HttpPostedFileBase uploadFile)
         {
@@ -252,7 +287,7 @@ namespace FooBox.Controllers
             Folder folder = (Folder)file;
             string destinationDisplayName = uploadFile.FileName;
 
-            if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
+            if (!EnsureAvailableName(ref destinationDisplayName, folder, true))
                 return RedirectToAction("Browse");
 
             try
@@ -282,6 +317,40 @@ namespace FooBox.Controllers
             {
                 _fileManager.CleanClientUploadDirectory(internalClient.Id);
             }
+
+            return RedirectToAction("Browse", new { path = fromPath });
+        }
+
+        [HttpPost]
+        public ActionResult NewFolder(string fromPath, string newFolderName)
+        {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            string fullDisplayName = null;
+            File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+
+            if (file == null || !(file is Folder))
+                return RedirectToAction("Browse");
+
+            Folder folder = (Folder)file;
+            string destinationDisplayName = newFolderName;
+
+            if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
+                return RedirectToAction("Browse");
+
+            ClientSyncData data = new ClientSyncData();
+
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            data.Changes.Add(new ClientChange
+            {
+                FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
+                Type = ChangeType.Add,
+                IsFolder = true,
+                DisplayName = destinationDisplayName
+            });
+
+            _fileManager.SyncClientChanges(data);
 
             return RedirectToAction("Browse", new { path = fromPath });
         }

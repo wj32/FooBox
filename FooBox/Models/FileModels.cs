@@ -164,7 +164,7 @@ namespace FooBox.Models
 
         public File FindFile(string fullName, Folder root, out string fullDisplayName)
         {
-            File file = root != null ? root : GetRootFolder();
+            File file = root ?? GetRootFolder();
             string[] names = fullName.ToUpperInvariant().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             StringBuilder fullDisplayNameSb = new StringBuilder();
 
@@ -221,6 +221,11 @@ namespace FooBox.Models
             }
 
             return fullDisplayNameSb.ToString();
+        }
+
+        public string GetFullName(File file, Folder root = null)
+        {
+            return GetFullDisplayName(file, root).ToUpperInvariant();
         }
 
         public Document FindDocument(long documentId)
@@ -498,7 +503,7 @@ namespace FooBox.Models
                 using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.Serializable))
                 {
                     // Lock the *entire* changelist table.
-                    _context.Database.ExecuteSqlCommand("SELECT TOP 1 Id FROM dbo.Changelists WITH (TABLOCKX, HOLDLOCK)");
+                    _context.Database.LockTableExclusive("dbo.Changelists");
 
                     // Make sure no one changed anything since we started computing changes.
                     var moreChangelists = (from changelist in _context.Changelists
@@ -535,7 +540,7 @@ namespace FooBox.Models
         private void RenameAndDeleteConflictingFile(Folder parentFolder, File file, string reason)
         {
             string newDisplayName = file.DisplayName + " (" + reason + " " + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss-fff") + ")";
-            string newName = newDisplayName.ToString();
+            string newName = newDisplayName.ToUpperInvariant();
 
             if (parentFolder.Files.AsQueryable().Where(f => f.Name == newName).SingleOrDefault() != null)
             {
@@ -544,7 +549,7 @@ namespace FooBox.Models
                 do
                 {
                     newDisplayName = file.DisplayName + " (" + reason + " " + Utilities.GenerateRandomString(IdChars, 16) + ")";
-                    newName = newDisplayName.ToString();
+                    newName = newDisplayName.ToUpperInvariant();
                 } while (parentFolder.Files.AsQueryable().Where(f => f.Name == newName).SingleOrDefault() != null);
             }
 
@@ -608,6 +613,7 @@ namespace FooBox.Models
                         bool createDocument = false;
                         bool createDocumentVersion = false;
                         bool setDisplayName = false;
+                        bool replaced = false;
 
                         if (file == null)
                         {
@@ -638,6 +644,7 @@ namespace FooBox.Models
                                 // The folder is implicitly being deleted.
 
                                 RenameAndDeleteConflictingFile(parentFolder, file, "Deleted");
+                                replaced = true;
                                 createDocument = true;
                             }
                         }
@@ -649,6 +656,7 @@ namespace FooBox.Models
                                 // The document is implicitly being deleted.
 
                                 RenameAndDeleteConflictingFile(parentFolder, file, "Deleted");
+                                replaced = true;
                                 createFolder = true;
                             }
                             else
@@ -662,7 +670,7 @@ namespace FooBox.Models
 
                         // Apply the required changes.
 
-                        if (file != null)
+                        if (file != null && !replaced)
                         {
                             // Undelete the file if it is deleted.
 
