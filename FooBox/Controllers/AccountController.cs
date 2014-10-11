@@ -27,6 +27,19 @@ namespace FooBox.Controllers
         public UserManager UserManager { get; private set; }
 
         //
+        // POST  /ClientLogin
+        [HttpPost]
+        [AllowAnonymous]
+        public ActionResult ClientLogin(string username, string password)
+        {
+            var user = UserManager.FindUser(username, password);
+            if (user != null) { 
+               //Return json and secret
+            }
+            return View();
+        }
+
+        //
         // GET: /Account/Login
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
@@ -35,6 +48,7 @@ namespace FooBox.Controllers
             return View();
         }
 
+       
         //
         // POST: /Account/Login
         [HttpPost]
