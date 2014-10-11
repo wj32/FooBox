@@ -164,7 +164,7 @@ namespace FooBox.Models
 
         public File FindFile(string fullName, Folder root, out string fullDisplayName)
         {
-            File file = root != null ? root : GetRootFolder();
+            File file = root ?? GetRootFolder();
             string[] names = fullName.ToUpperInvariant().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             StringBuilder fullDisplayNameSb = new StringBuilder();
 
@@ -221,6 +221,11 @@ namespace FooBox.Models
             }
 
             return fullDisplayNameSb.ToString();
+        }
+
+        public string GetFullName(File file, Folder root = null)
+        {
+            return GetFullDisplayName(file, root).ToUpperInvariant();
         }
 
         public Document FindDocument(long documentId)

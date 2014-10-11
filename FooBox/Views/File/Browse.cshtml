@@ -67,9 +67,15 @@
                         <li><a href="#" class="deleteLink">Delete</a></li>
                     </ul>
                 </div>
+                <!-- Confirm Delete -->
                 <div class="confirmDeleteDialog" id="@("confirmfile" + @i)" style="display:none;">
-                    <button class="btn btn-sm btn-danger">Delete</button>
-                    <button class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                    @using (Html.BeginForm("Delete", "File", new { fileId = item.Id}))
+                    {
+                        @Html.AntiForgeryToken()
+       
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        <button class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                    }
                 </div>
                
             </td>
@@ -105,7 +111,6 @@
             $("#UploadForm").submit();
         });
         $(".deleteLink").click(function () {
-
             var it = $(this).closest('td').attr('id');
             $("#dropdown" + it).hide();
             $("#confirm" + it).show('slide');
@@ -120,8 +125,7 @@
             $(".confirmDeleteDialog").hide('slide');
             $(".renameDialog").hide('slide');
             $(".fileName").show();
-            $(".dropdown-toggle").show();
-            
+            $(".dropdown-toggle").show();  
         })
     });
     $("")

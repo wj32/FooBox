@@ -9,6 +9,7 @@ namespace FooBox.Models
     {
         public class FileEntry
         {
+            public long Id { get; set; }
             public bool IsParent { get; set; }
             public string FullDisplayName { get; set; }
             public string DisplayName { get; set; }
