@@ -240,7 +240,7 @@ namespace FooBox.Controllers
             return true;
         }
 
-
+      
         // GET
         public ActionResult Delete(long fileId)
         {
@@ -267,7 +267,7 @@ namespace FooBox.Controllers
                 Hash = null,
                 DisplayName = file.DisplayName
             });
-            String fromPath = _fileManager.GetFullName(file.ParentFolder).Substring(userId.ToString().Count() + 1);
+            String fromPath = _fileManager.GetFullName(file.ParentFolder, _fileManager.GetUserRootFolder(userId));
             _fileManager.SyncClientChanges(data);
             return RedirectToAction("Browse", new { path = fromPath });
         }
@@ -306,6 +306,46 @@ namespace FooBox.Controllers
                 IsFolder = false,
                 Size = fileSize,
                 Hash = hash,
+                DisplayName = destinationDisplayName
+            });
+
+            _fileManager.SyncClientChanges(data);
+
+            return RedirectToAction("Browse", new { path = fromPath });
+        }
+
+        [HttpPost]
+        public ActionResult NewFolder(string fromPath, string newFolderName)
+        {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            string fullDisplayName = null;
+            File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+
+            if (file == null || !(file is Folder))
+                return RedirectToAction("Browse");
+
+            Folder folder = (Folder)file;
+            string destinationDisplayName = newFolderName;
+
+            if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
+                return RedirectToAction("Browse");
+
+           
+
+            
+
+            ClientSyncData data = new ClientSyncData();
+
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            data.Changes.Add(new ClientChange
+            {
+                FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
+                Type = ChangeType.Add,
+                IsFolder = true,
+                Size = 0,
+                Hash = "",
                 DisplayName = destinationDisplayName
             });
 

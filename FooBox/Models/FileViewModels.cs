@@ -25,5 +25,6 @@ namespace FooBox.Models
         public List<FileEntry> Files { get; set; }
 
         public List<Tuple<string, string>> Parents { get; set; }
+
     }
 }
