@@ -42,6 +42,8 @@
             this.labelError = new System.Windows.Forms.Label();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonNext = new System.Windows.Forms.Button();
+            this.textBoxServerPort = new System.Windows.Forms.TextBox();
+            this.labelServerPort = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // labelName
@@ -67,18 +69,19 @@
             // labelServerLocation
             // 
             this.labelServerLocation.AutoSize = true;
-            this.labelServerLocation.Location = new System.Drawing.Point(19, 176);
+            this.labelServerLocation.Location = new System.Drawing.Point(21, 153);
             this.labelServerLocation.Name = "labelServerLocation";
-            this.labelServerLocation.Size = new System.Drawing.Size(169, 13);
+            this.labelServerLocation.Size = new System.Drawing.Size(167, 13);
             this.labelServerLocation.TabIndex = 2;
-            this.labelServerLocation.Text = "Enter the name or IP of the server:";
+            this.labelServerLocation.Text = "Enter the name or ip of the server:";
             // 
             // textBoxServerLoc
             // 
-            this.textBoxServerLoc.Location = new System.Drawing.Point(194, 173);
+            this.textBoxServerLoc.Location = new System.Drawing.Point(194, 149);
             this.textBoxServerLoc.Name = "textBoxServerLoc";
             this.textBoxServerLoc.Size = new System.Drawing.Size(245, 20);
             this.textBoxServerLoc.TabIndex = 3;
+            this.textBoxServerLoc.Text = "localhost:7348";
             // 
             // textBoxUsername
             // 
@@ -167,11 +170,30 @@
             this.buttonNext.UseVisualStyleBackColor = true;
             this.buttonNext.Click += new System.EventHandler(this.buttonNext_Click);
             // 
+            // textBoxServerPort
+            // 
+            this.textBoxServerPort.Location = new System.Drawing.Point(194, 175);
+            this.textBoxServerPort.Name = "textBoxServerPort";
+            this.textBoxServerPort.Size = new System.Drawing.Size(245, 20);
+            this.textBoxServerPort.TabIndex = 15;
+            this.textBoxServerPort.Text = "7348";
+            // 
+            // labelServerPort
+            // 
+            this.labelServerPort.AutoSize = true;
+            this.labelServerPort.Location = new System.Drawing.Point(157, 178);
+            this.labelServerPort.Name = "labelServerPort";
+            this.labelServerPort.Size = new System.Drawing.Size(29, 13);
+            this.labelServerPort.TabIndex = 14;
+            this.labelServerPort.Text = "Port:";
+            // 
             // FormStart
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(451, 317);
+            this.Controls.Add(this.textBoxServerPort);
+            this.Controls.Add(this.labelServerPort);
             this.Controls.Add(this.buttonNext);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.labelError);
@@ -209,6 +231,8 @@
         private System.Windows.Forms.Label labelError;
         private System.Windows.Forms.Button buttonCancel;
         private System.Windows.Forms.Button buttonNext;
+        private System.Windows.Forms.TextBox textBoxServerPort;
+        private System.Windows.Forms.Label labelServerPort;
     }
 }
 

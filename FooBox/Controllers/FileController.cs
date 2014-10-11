@@ -290,26 +290,33 @@ namespace FooBox.Controllers
             if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
                 return RedirectToAction("Browse");
 
-            string hash;
-            long fileSize;
-
-            UploadBlob(internalClient, uploadFile.InputStream, out hash, out fileSize);
-
-            ClientSyncData data = new ClientSyncData();
-
-            data.ClientId = internalClient.Id;
-            data.BaseChangelistId = _fileManager.GetLastChangelistId();
-            data.Changes.Add(new ClientChange
+            try
             {
-                FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
-                Type = ChangeType.Add,
-                IsFolder = false,
-                Size = fileSize,
-                Hash = hash,
-                DisplayName = destinationDisplayName
-            });
+                string hash;
+                long fileSize;
 
-            _fileManager.SyncClientChanges(data);
+                UploadBlob(internalClient, uploadFile.InputStream, out hash, out fileSize);
+
+                ClientSyncData data = new ClientSyncData();
+
+                data.ClientId = internalClient.Id;
+                data.BaseChangelistId = _fileManager.GetLastChangelistId();
+                data.Changes.Add(new ClientChange
+                {
+                    FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
+                    Type = ChangeType.Add,
+                    IsFolder = false,
+                    Size = fileSize,
+                    Hash = hash,
+                    DisplayName = destinationDisplayName
+                });
+
+                _fileManager.SyncClientChanges(data);
+            }
+            finally
+            {
+                _fileManager.CleanClientUploadDirectory(internalClient.Id);
+            }
 
             return RedirectToAction("Browse", new { path = fromPath });
         }

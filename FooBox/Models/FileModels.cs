@@ -336,6 +336,21 @@ namespace FooBox.Models
             return new DirectoryInfo(path);
         }
 
+        public void CleanClientUploadDirectory(long clientId)
+        {
+            DirectoryInfo directory = AccessClientUploadDirectory(clientId);
+
+            foreach (var file in directory.EnumerateFiles())
+            {
+                try
+                {
+                    System.IO.File.Delete(file.FullName);
+                }
+                catch
+                { }
+            }
+        }
+
         #endregion
 
         #region Synchronization
