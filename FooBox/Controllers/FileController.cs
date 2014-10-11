@@ -177,7 +177,7 @@ namespace FooBox.Controllers
         {
             File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
 
-            if (file == null)
+            if (file == null || file.State == ObjectState.Deleted)
                 return false;
 
             if (creatingDocument)

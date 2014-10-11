@@ -540,7 +540,7 @@ namespace FooBox.Models
         private void RenameAndDeleteConflictingFile(Folder parentFolder, File file, string reason)
         {
             string newDisplayName = file.DisplayName + " (" + reason + " " + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss-fff") + ")";
-            string newName = newDisplayName.ToString();
+            string newName = newDisplayName.ToUpperInvariant();
 
             if (parentFolder.Files.AsQueryable().Where(f => f.Name == newName).SingleOrDefault() != null)
             {
@@ -549,7 +549,7 @@ namespace FooBox.Models
                 do
                 {
                     newDisplayName = file.DisplayName + " (" + reason + " " + Utilities.GenerateRandomString(IdChars, 16) + ")";
-                    newName = newDisplayName.ToString();
+                    newName = newDisplayName.ToUpperInvariant();
                 } while (parentFolder.Files.AsQueryable().Where(f => f.Name == newName).SingleOrDefault() != null);
             }
 
@@ -613,6 +613,7 @@ namespace FooBox.Models
                         bool createDocument = false;
                         bool createDocumentVersion = false;
                         bool setDisplayName = false;
+                        bool replaced = false;
 
                         if (file == null)
                         {
@@ -643,6 +644,7 @@ namespace FooBox.Models
                                 // The folder is implicitly being deleted.
 
                                 RenameAndDeleteConflictingFile(parentFolder, file, "Deleted");
+                                replaced = true;
                                 createDocument = true;
                             }
                         }
@@ -654,6 +656,7 @@ namespace FooBox.Models
                                 // The document is implicitly being deleted.
 
                                 RenameAndDeleteConflictingFile(parentFolder, file, "Deleted");
+                                replaced = true;
                                 createFolder = true;
                             }
                             else
@@ -667,7 +670,7 @@ namespace FooBox.Models
 
                         // Apply the required changes.
 
-                        if (file != null)
+                        if (file != null && !replaced)
                         {
                             // Undelete the file if it is deleted.
 
