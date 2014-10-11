@@ -17,8 +17,14 @@ namespace FooBox.Controllers
     [Authorize]
     public class FileController : Controller
     {
-        private FileManager _fileManager = new FileManager();
-        private UserManager _userManager = new UserManager();
+        private FileManager _fileManager;
+        private UserManager _userManager;
+
+        public FileController()
+        {
+            _fileManager = new FileManager();
+            _userManager = new UserManager(_fileManager.Context);
+        }
 
         public ActionResult Index()
         {
@@ -251,9 +257,6 @@ namespace FooBox.Controllers
             if (file == null)
                 return RedirectToAction("Browse");
 
-            bool isFolder = (file is Folder);
-           
-           
             ClientSyncData data = new ClientSyncData();
 
             data.ClientId = internalClient.Id;
@@ -262,9 +265,6 @@ namespace FooBox.Controllers
             {
                 FullName = _fileManager.GetFullName(file),
                 Type = ChangeType.Delete,
-                IsFolder = isFolder,
-                Size = 0,
-                Hash = null,
                 DisplayName = file.DisplayName
             });
             String fromPath = _fileManager.GetFullName(file.ParentFolder, _fileManager.GetUserRootFolder(userId));
@@ -287,7 +287,7 @@ namespace FooBox.Controllers
             Folder folder = (Folder)file;
             string destinationDisplayName = uploadFile.FileName;
 
-            if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
+            if (!EnsureAvailableName(ref destinationDisplayName, folder, true))
                 return RedirectToAction("Browse");
 
             try
@@ -338,10 +338,6 @@ namespace FooBox.Controllers
             if (!EnsureAvailableName(ref destinationDisplayName, folder, false))
                 return RedirectToAction("Browse");
 
-           
-
-            
-
             ClientSyncData data = new ClientSyncData();
 
             data.ClientId = internalClient.Id;
@@ -351,8 +347,6 @@ namespace FooBox.Controllers
                 FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
                 Type = ChangeType.Add,
                 IsFolder = true,
-                Size = 0,
-                Hash = "",
                 DisplayName = destinationDisplayName
             });
 
