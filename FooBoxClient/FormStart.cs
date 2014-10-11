@@ -36,11 +36,16 @@ namespace FooBoxClient
 
         private void buttonCancel_Click(object sender, EventArgs e)
         {
-            Application.Exit();
+            this.Close();
         }
 
         private void buttonNext_Click(object sender, EventArgs e)
         {
+            if (String.IsNullOrWhiteSpace(textBoxDirLoc.Text.Trim()))
+            {
+                labelError.Text = "Please select a directory to sync files to";
+                return;
+            }
             string url = @"http://" + textBoxServerLoc.Text.Trim() +":" + textBoxServerPort.Text.Trim() + "/Account/ClientLogin";
 
            
@@ -62,7 +67,7 @@ namespace FooBoxClient
                     postStream.Write(dataBytes, 0, dataBytes.Length);
                 }
             }
-            catch (WebException ex)
+            catch (WebException)
             {
                 labelError.Text = "Server name or port incorrect";
                 return;
@@ -80,8 +85,17 @@ namespace FooBoxClient
                 labelError.Text = "Username or password incorrect";
             }
             //IF WE'VE GOT HERE WE'VE SUCCESFULLY AUTH'D
+            string[] content = responseText.Split(',');
+            Properties.Settings.Default.ID = content[0];
+            Properties.Settings.Default.Secret = content[1];
 
-           
+            Properties.Settings.Default.Save();
+            
+            //NOT SURE IF THIS HOW ITS SUPPOSED TO BE DONE
+            this.Hide();
+            FormSysTray frm = new FormSysTray(textBoxDirLoc.Text.Trim());
+            frm.Show();
+            this.Close();
         }
 
 

@@ -38,7 +38,7 @@ namespace FooBox.Controllers
                 FileManager f = new FileManager();
                 Client c = f.CreateClient(user.Id, user.Name, null);
 
-                return c.Id + " " +c.Secret + " " + user.Name;
+                return c.Id + "," +c.Secret;
                //Return json and secret
             }
             return "fail";

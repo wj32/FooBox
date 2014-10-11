@@ -16,7 +16,15 @@ namespace FooBoxClient
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FormStart());
+            if (Properties.Settings.Default.ID == "")
+            {
+                Application.Run(new FormStart());
+            }
+            else
+            {
+                Application.Run(new FormSysTray());
+            }
+           
         }
     }
 }
