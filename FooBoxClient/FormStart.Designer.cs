@@ -69,7 +69,7 @@
             // labelServerLocation
             // 
             this.labelServerLocation.AutoSize = true;
-            this.labelServerLocation.Location = new System.Drawing.Point(21, 153);
+            this.labelServerLocation.Location = new System.Drawing.Point(21, 152);
             this.labelServerLocation.Name = "labelServerLocation";
             this.labelServerLocation.Size = new System.Drawing.Size(167, 13);
             this.labelServerLocation.TabIndex = 2;
@@ -81,7 +81,7 @@
             this.textBoxServerLoc.Name = "textBoxServerLoc";
             this.textBoxServerLoc.Size = new System.Drawing.Size(245, 20);
             this.textBoxServerLoc.TabIndex = 3;
-            this.textBoxServerLoc.Text = "localhost:7348";
+            this.textBoxServerLoc.Text = "localhost";
             // 
             // textBoxUsername
             // 
@@ -145,7 +145,7 @@
             // 
             this.labelError.AutoSize = true;
             this.labelError.ForeColor = System.Drawing.Color.Red;
-            this.labelError.Location = new System.Drawing.Point(19, 153);
+            this.labelError.Location = new System.Drawing.Point(191, 133);
             this.labelError.Name = "labelError";
             this.labelError.Size = new System.Drawing.Size(0, 13);
             this.labelError.TabIndex = 11;

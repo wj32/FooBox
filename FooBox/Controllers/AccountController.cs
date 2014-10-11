@@ -27,16 +27,21 @@ namespace FooBox.Controllers
         public UserManager UserManager { get; private set; }
 
         //
-        // POST  /ClientLogin
+        // POST:  /Account/ClientLogin
         [HttpPost]
         [AllowAnonymous]
-        public ActionResult ClientLogin(string username, string password)
+        public String ClientLogin(string username, string password)
         {
             var user = UserManager.FindUser(username, password);
-            if (user != null) { 
+            if (user != null) {
+               
+                FileManager f = new FileManager();
+                Client c = f.CreateClient(user.Id, user.Name, null);
+
+                return c.Id + " " +c.Secret + " " + user.Name;
                //Return json and secret
             }
-            return View();
+            return "fail";
         }
 
         //

@@ -42,12 +42,11 @@ namespace FooBoxClient
         private void buttonNext_Click(object sender, EventArgs e)
         {
             string url = @"http://" + textBoxServerLoc.Text.Trim() +":" + textBoxServerPort.Text.Trim() + "/Account/ClientLogin";
-            MessageBox.Show(url);
+
            
 
             string postContent = "username=" + textBoxUsername.Text.Trim() + "&password=" + textBoxPassword.Text;
-            MessageBox.Show(postContent);
-        
+
             HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
 
             byte[] dataBytes = UTF8Encoding.UTF8.GetBytes(postContent);
@@ -56,18 +55,33 @@ namespace FooBoxClient
             req.Method = "POST";
             req.ContentLength = dataBytes.Length;
             req.ContentType = "application/x-www-form-urlencoded";
-
-            using (Stream postStream = req.GetRequestStream())
+            try
             {
-                postStream.Write(dataBytes, 0, dataBytes.Length);
+                using (Stream postStream = req.GetRequestStream())
+                {
+                    postStream.Write(dataBytes, 0, dataBytes.Length);
+                }
+            }
+            catch (WebException ex)
+            {
+                labelError.Text = "Server name or port incorrect";
+                return;
             }
 
             HttpWebResponse response = req.GetResponse() as HttpWebResponse;
-            MessageBox.Show(response.ToString());//req.CookieContainer.Add(response.Cookies);
-          //  req = WebRequest.Create(url) as HttpWebRequest;
-           // HttpWebResponse response2 = req.GetResponse() as HttpWebResponse;
-          //  MessageBox.Show(response2.ToString());
-            //do the stuff here
+            var encoding = UTF8Encoding.UTF8;
+            string responseText = "";
+            using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
+            {
+               responseText = reader.ReadToEnd();
+            }
+            if (responseText == "fail")
+            {
+                labelError.Text = "Username or password incorrect";
+            }
+            //IF WE'VE GOT HERE WE'VE SUCCESFULLY AUTH'D
+
+           
         }
 
 
