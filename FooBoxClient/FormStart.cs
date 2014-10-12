@@ -83,6 +83,7 @@ namespace FooBoxClient
             if (responseText == "fail")
             {
                 labelError.Text = "Username or password incorrect";
+                return;
             }
             //IF WE'VE GOT HERE WE'VE SUCCESFULLY AUTH'D
             string[] content = responseText.Split(',');
@@ -95,7 +96,6 @@ namespace FooBoxClient
             this.Hide();
             FormSysTray frm = new FormSysTray(textBoxDirLoc.Text.Trim());
             frm.Show();
-            this.Close();
         }
 
 
