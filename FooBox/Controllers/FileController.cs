@@ -286,29 +286,97 @@ namespace FooBox.Controllers
         }
 
       
-        // GET
-        public ActionResult Delete(long fileId)
+        // POST
+        [HttpPost]
+        public ActionResult Delete(string fromPath, string fileDisplayName)
         {
             long userId = User.Identity.GetUserId();
-            var internalClient = _fileManager.GetInternalClient(userId);
-            File file = _fileManager.FindFile(fileId);
+            string fullDisplayName = null;
+            string fromPathString = fromPath == null ? "" : fromPath + "/";
+            File file = _fileManager.FindFile(fromPathString + fileDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
             if (file == null)
                 return RedirectToAction("Browse");
 
+            DeleteFile(file);
+            
+            return RedirectToAction("Browse", new { path = fromPath });
+        }
+
+        private void DeleteFile(File f) 
+        {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            
             ClientSyncData data = new ClientSyncData();
 
             data.ClientId = internalClient.Id;
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
             data.Changes.Add(new ClientChange
             {
-                FullName = _fileManager.GetFullName(file),
+                FullName = _fileManager.GetFullName(f),
                 Type = ChangeType.Delete,
-                DisplayName = file.DisplayName
+                DisplayName = f.DisplayName
             });
-            String fromPath = _fileManager.GetFullName(file.ParentFolder, _fileManager.GetUserRootFolder(userId));
             _fileManager.SyncClientChanges(data);
+        }
+
+        [HttpPost]
+        public ActionResult Rename(string fromPath, string oldFileDisplayName, string newFileDisplayName)
+        {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            string fullDisplayName = null;
+            string fromPathString = fromPath == null ? "" : fromPath + "/";
+            File file = _fileManager.FindFile(fromPathString + oldFileDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+
+            if (file == null || file is Folder || oldFileDisplayName == newFileDisplayName) // JUST FOR NOW
+                return RedirectToAction("Browse");
+
+            bool isFolder = false;
+
+            string destinationDisplayName = newFileDisplayName;
+
+            if (!EnsureAvailableName(ref destinationDisplayName, file.ParentFolder, !isFolder))
+                return RedirectToAction("Browse");
+          
+            ClientSyncData data = new ClientSyncData();
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+
+           var b = _fileManager.GetLatestBlob(file);
+           long fileSize = b.Size;
+           string hash = b.Hash;
+
+
+            // Add file
+            data = new ClientSyncData();
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+
+            string conflictResolve = "";
+            int tries = 0;
+            do
+            {
+                data.Changes.Clear();
+                data.Changes.Add(new ClientChange
+                {
+                    FullName = "/" + userId + "/" + fromPathString + destinationDisplayName + conflictResolve,
+                    Type = ChangeType.Add,
+                    IsFolder = false,
+                    Size = fileSize,
+                    Hash = hash,
+                    DisplayName = destinationDisplayName
+                });
+                conflictResolve = " (" + ++tries + ")";
+                if (tries > 10) throw new Exception("No success after 10 rename attempts.");
+            }
+            while (_fileManager.SyncClientChanges(data).State == ClientSyncResultState.Retry);
+
+            DeleteFile(file);
+
             return RedirectToAction("Browse", new { path = fromPath });
+
         }
 
 

@@ -193,6 +193,14 @@ namespace FooBox.Models
             return file;
         }
 
+        public Blob GetLatestBlob(File file) 
+        {
+            return (from version in ((Document)file).DocumentVersions.AsQueryable()
+                    orderby version.TimeStamp descending
+                    select version.Blob).FirstOrDefault();
+        }
+
+       
         public string GetFullDisplayName(File file, Folder root = null)
         {
             List<string> displayNames = new List<string>();

@@ -14,27 +14,35 @@
     <strong>@Html.Encode(Model.DisplayName)</strong>
 </h2>
 <p>@Html.ValidationSummary(true)</p>
-<div>
-    @using (var form = @Html.BeginForm("Upload", "File", new { FromPath = Model.FullDisplayName }, FormMethod.Post, new { id = "UploadForm", enctype = "multipart/form-data" }))
-    {
-        <strong>Upload:</strong> <input type="file" id="UploadFile" name="UploadFile" style="display: inline">
-    }
-        <button id="newFolderButton" class="btn btn-sm btn-primary">New Folder</button>
-        
-            @using (var form = @Html.BeginForm("NewFolder", "File", new { FromPath = Model.FullDisplayName, name = "foldee" }))
-            {
-                <div class="col-md-3">
-                    <div id="newFolderDialog" class="input-group" style="display:none;">
-                        <input name="newFolderName" class="form-control" type="text" placeholder="Folder Name">
-                        <span class="input-group-btn">
-                            <button id="newFolderCancelButton" class=" btn btn-default">Cancel</button>
-                        </span>
-                    </div>
+<div class="row">
+    <div class="col-md-3">
+        <button id="newFolderButton" class="btn btn-sm btn-primary">
+        New Folder 
+        </button>
+
+        @using (var form = @Html.BeginForm("NewFolder", "File", new { FromPath = Model.FullDisplayName }))
+        {
+            <div >
+                <div id="newFolderDialog" class="input-group" style="display:none;">
+                    <input name="newFolderName" class="form-control" type="text" placeholder="Folder Name">
+                    <span class="input-group-btn">
+                        <button id="newFolderCancelButton" class=" btn btn-default">Cancel</button>
+                    </span>
                 </div>
-            }
-        
-       
-    
+            </div>
+        }
+    </div>
+</div>
+<br>
+<div class ="row"> 
+    <div class="col-md-6">
+        @using (var form = @Html.BeginForm("Upload", "File", new { FromPath = Model.FullDisplayName }, FormMethod.Post, new { id = "UploadForm", enctype = "multipart/form-data" }))
+        {
+            <strong>Upload:</strong> <input type="file" id="UploadFile" name="UploadFile" style="display: inline">
+        }
+    </div>
+
+
 </div>
 <table class="table">
     <tr>
@@ -61,21 +69,20 @@
                     @Html.Raw("<span class='glyphicon " + iconClass + "'></span>"); 
                 }
             </td>
-            <td id="@("file" + @i)" >
-                <div class="col-md-4">
+            <td class="col-md-6" id="@("file" + @i)">
+                <div class="col-md-6">
                     <div id="@("nameFieldfile" + @i)" class="fileName">
                         @Html.ActionLink(item.DisplayName, "Browse", new { path = item.FullDisplayName })
                     </div>
+                    @using(@Html.BeginForm("Rename", "File", new { fromPath = Model.FullDisplayName, oldFileDisplayName = item.DisplayName }))
+                     {
                     <div class="input-group renameDialog" id="@("renameFieldfile" + @i)" style="display:none;">
-                        <input class="form-control" type="text" placeholder="@item.DisplayName">
+                        <input class="form-control" name="newFileDisplayName" type="text" placeholder="@item.DisplayName">
                         <span class="input-group-btn">
                             <button class="delCancelButton btn btn-default">Cancel</button>
                         </span>
                     </div><!-- /input-group -->
-                    <div id="@("renameFieldfile" + @i)" style="display:none;" class="renameDialog">
-                        <input class="form-control" type="text" placeholder="@item.DisplayName" />
-                        <button  class="delCancelButton btn btn-sm btn-default">Cancel</button>
-                    </div>
+                     }
                 </div>
                 <!-- Split button -->
                 <div class="col-md-1 btn-group">
@@ -84,7 +91,6 @@
                         <span class="sr-only">Toggle Dropdown</span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
-                        <li><a href="#" class="downloadLink">Download</a></li>
                         <li><a href="#">Properties</a></li>
                         @if (!item.IsFolder) // Not sure if there is a better property to check.. item is Document ?
                         {
@@ -97,15 +103,15 @@
                 </div>
                 <!-- Confirm Delete -->
                 <div class="confirmDeleteDialog" id="@("confirmfile" + @i)" style="display:none;">
-                    @using (Html.BeginForm("Delete", "File", new { fileId = item.Id}))
+                    @using (var form1 = @Html.BeginForm("Delete", "File", new { fromPath = Model.FullDisplayName, fileDisplayName = item.DisplayName }))
                     {
                         @Html.AntiForgeryToken()
-       
+
                         <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         <button type="button" class="delCancelButton btn btn-sm btn-default">Cancel</button>
                     }
                 </div>
-               
+
             </td>
             <td>
                 @Html.Encode(item.IsFolder ? "-" : Utilities.SizeToString(item.Size))
