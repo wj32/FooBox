@@ -11,6 +11,7 @@ using FooBox;
 using FooBox.Models;
 using System.Text;
 using System.IO;
+using System.Xml.Serialization;
 
 namespace FooBox.Controllers
 {
@@ -460,6 +461,35 @@ namespace FooBox.Controllers
             _fileManager.SyncClientChanges(data);
 
             return RedirectToAction("Browse", new { path = fromPath });
+        }
+        
+   
+        /*For now, create an action that takes in a client ID and secret 
+         * and returns the entire contents of the client's user's root folder */
+        [HttpPost]
+        [AllowAnonymous]
+        public String ClientRoot(string id, string secret)
+        {
+            FileManager f = new FileManager();
+            Client c;
+            long ID;
+            if (long.TryParse(id, out ID)){
+                c = f.FindClient(ID);
+                if (c.Secret != secret)
+                {
+                    return "fail";
+                }
+            } else {
+                return "fail";
+            }
+            UserManager m = new UserManager();
+            User u = m.FindUser(c.UserId);
+            XmlSerializer xmlSerializer = new XmlSerializer(u.RootFolder.GetType());
+            StringWriter textWriter = new StringWriter();
+
+            xmlSerializer.Serialize(textWriter, u.RootFolder);
+            return textWriter.ToString();
+        
         }
 
         protected override void Dispose(bool disposing)
