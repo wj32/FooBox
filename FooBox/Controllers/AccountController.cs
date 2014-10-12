@@ -34,12 +34,13 @@ namespace FooBox.Controllers
         {
             var user = UserManager.FindUser(username, password);
             if (user != null) {
-               
-                FileManager f = new FileManager();
-                Client c = f.CreateClient(user.Id, user.Name, null);
+                using (var f = new FileManager(UserManager.Context))
+                {
+                    Client c = f.CreateClient(user.Id, user.Name);
 
-                return c.Id + "," +c.Secret;
-               //Return json and secret
+                    return c.Id + "," + c.Secret;
+                    //Return json and secret
+                }
             }
             return "fail";
         }

@@ -92,9 +92,9 @@
                     </button>
                     <ul class="dropdown-menu" role="menu">
                         <li><a href="#">Properties</a></li>
-                        @if (!item.IsFolder) // Not sure if there is a better property to check.. item is Document ?
+                        @if (!item.IsFolder)
                         {
-                            <li>@Html.ActionLink("Version History", "DisplayVersionHistory", new { id = item.Id })</li>
+                            <li>@Html.ActionLink("Version History", "DisplayVersionHistory", new { fullName = item.FullDisplayName })</li>
                         }
                         <li class="divider"></li>
                         <li><a href="#" class="renameLink">Rename</a></li>

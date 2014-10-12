@@ -25,6 +25,18 @@ namespace FooBox.Models
         public List<FileEntry> Files { get; set; }
 
         public List<Tuple<string, string>> Parents { get; set; }
+    }
 
+    public class VersionHistoryViewModel
+    {
+        public class VersionEntry
+        {
+            public DateTime TimeStamp { get; set; }
+            public long VersionId { get; set; }
+        }
+
+        public string DisplayName { get; set; }
+
+        public List<VersionEntry> Versions { get; set; }
     }
 }

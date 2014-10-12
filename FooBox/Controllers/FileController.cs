@@ -98,23 +98,14 @@ namespace FooBox.Controllers
             return model;
         }
 
-        private ActionResult DownloadDocument(Document document, string blobKey = null)
+        private ActionResult DownloadDocument(Document document, DocumentVersion version = null)
         {
-            if (blobKey == null)
+            if (version == null)
             {
                 // Get latest version
-                blobKey = (
-                    from version in document.DocumentVersions
-                    orderby version.TimeStamp
-                    select version.Blob.Key
-                    ).First();
+                version = _fileManager.GetLastDocumentVersion(document);
             }
-            string blobFileName = _fileManager.GetBlobFileName(blobKey);
-            if (blobFileName == null)
-            {
-                // Error - not sure which one.
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
+            string blobFileName = _fileManager.GetBlobFileName(version.Blob.Key);
             return File(blobFileName, MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
         }
 
@@ -140,34 +131,43 @@ namespace FooBox.Controllers
             }
         }
 
-        public ActionResult DisplayVersionHistory(long? id)
+        public ActionResult DisplayVersionHistory(string fullName)
         {
-            if (! id.HasValue)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Document document = _fileManager.FindDocument((long) id);
-            if (document == null)
-            {
-                // Error - not sure which one.
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            return View(document);
+            if (fullName == null)
+                return RedirectToAction("Browse");
+
+            Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+            string fullDisplayName;
+            File file = _fileManager.FindFile(fullName, userRootFolder, out fullDisplayName);
+
+            if (file == null || !(file is Document))
+                return RedirectToAction("Browse");
+
+            Document document = (Document)file;
+            VersionHistoryViewModel model = new VersionHistoryViewModel();
+
+            model.DisplayName = document.DisplayName;
+            model.Versions = (
+                from version in document.DocumentVersions
+                orderby version.TimeStamp descending
+                select new VersionHistoryViewModel.VersionEntry { TimeStamp = version.TimeStamp, VersionId = version.Id }
+                ).ToList();
+
+            return View(model);
         }
 
-        public ActionResult DownloadVersion(long? id, string blobKey = null)
+        public ActionResult DownloadVersion(long? id)
         {
-            if (!id.HasValue || blobKey == null)
+            if (!id.HasValue)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Document document = _fileManager.FindDocument((long)id);
-            if (document == null)
+            DocumentVersion version = _fileManager.FindDocumentVersion((long)id);
+            if (version == null)
             {
-                // Error - not sure which one.
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            return DownloadDocument(document, blobKey);
+            return DownloadDocument(version.Document, version);
         }
 
         private void UploadBlob(Client client, Stream stream, out string hash, out long size)
@@ -339,14 +339,14 @@ namespace FooBox.Controllers
 
             if (!EnsureAvailableName(ref destinationDisplayName, file.ParentFolder, !isFolder))
                 return RedirectToAction("Browse");
-          
+
             ClientSyncData data = new ClientSyncData();
             data.ClientId = internalClient.Id;
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
 
-           var b = _fileManager.GetLatestBlob(file);
-           long fileSize = b.Size;
-           string hash = b.Hash;
+            var b = _fileManager.GetLastDocumentVersion((Document)file).Blob;
+            long fileSize = b.Size;
+            string hash = b.Hash;
 
 
             // Add file
