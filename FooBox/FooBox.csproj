@@ -228,6 +228,7 @@
     <Content Include="Views\User\UserNewForm.cshtml" />
     <Content Include="Views\Group\GroupEdit.cshtml" />
     <Content Include="Views\File\Browse.cshtml" />
+    <Content Include="Views\File\DisplayVersionHistory.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

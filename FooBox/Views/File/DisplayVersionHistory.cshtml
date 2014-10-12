@@ -1,0 +1,28 @@
+﻿@using FooBox.Models
+@model VersionHistoryViewModel
+
+@{
+    ViewBag.Title = "Version History";
+}
+
+<h2>Version history for @Html.Encode(Model.DisplayName)</h2>
+
+<div>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Revision Date</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        @foreach (var version in Model.Versions)
+        {
+            <tr>
+                <td>@Html.Encode(version.TimeStamp.ToLocalTime().ToString("F"))</td>
+                <td>@Html.ActionLink("Download", "DownloadVersion", new { id = version.VersionId })</td>
+                <td>Revert</td>
+            </tr>
+        }
+    </table>
+</div>

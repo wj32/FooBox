@@ -9,7 +9,10 @@
         <li>
             @using (var userManager = new UserManager())
             {
-                @Html.ActionLink("Hello " + userManager.FindUser(User.Identity.GetUserId()).Name + "!", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "Manage" })
+                if (userManager.FindUser(User.Identity.GetUserId()) != null)
+                {
+                    @Html.ActionLink("Hello " + userManager.FindUser(User.Identity.GetUserId()).Name + "!", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "Manage" })
+                }
             }
         </li>
         <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
