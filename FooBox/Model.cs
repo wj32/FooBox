@@ -44,7 +44,7 @@ namespace FooBox
     public class Change
     {
         public long Id { get; set; }
-        public FooBox.Models.ChangeType Type { get; set; }
+        public FooBox.Common.ChangeType Type { get; set; }
         public string FullName { get; set; }
         public bool IsFolder { get; set; }
         public long ChangelistId { get; set; }

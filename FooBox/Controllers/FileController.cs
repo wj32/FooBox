@@ -12,6 +12,7 @@ using FooBox.Models;
 using System.Text;
 using System.IO;
 using System.Xml.Serialization;
+using FooBox.Common;
 
 namespace FooBox.Controllers
 {

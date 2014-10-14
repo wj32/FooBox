@@ -1,4 +1,5 @@
-﻿using FooBox.Models;
+﻿using FooBox.Common;
+using FooBox.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;

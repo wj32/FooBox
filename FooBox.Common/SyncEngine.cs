@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace FooBox.Models
+namespace FooBox.Common
 {
     public enum ChangeType
     {
