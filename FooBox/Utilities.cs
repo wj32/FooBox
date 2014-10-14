@@ -63,5 +63,11 @@ namespace FooBox
 
             return s.ToString("#,#.##") + " " + _sizeUnits[i];
         }
+
+        public static bool ValidateString(string alphabet, string s)
+        {
+            HashSet<char> set = new HashSet<char>(alphabet);
+            return s.All(set.Contains);
+        }
     }
 }

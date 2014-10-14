@@ -117,12 +117,6 @@ namespace FooBox.Models
             return BlobDataDirectory + "\\" + blobKey;
         }
 
-        public string FindBlob(string hash)
-        {
-            var upperHash = hash.ToUpperInvariant();
-            return (from blob in _context.Blobs where blob.Hash == upperHash select blob.Key).FirstOrDefault();
-        }
-
         private Blob CreateBlob(long size, string hash, string fileName)
         {
             var blobKey = GenerateBlobKey();
@@ -381,6 +375,18 @@ namespace FooBox.Models
         {
             try
             {
+                var client = FindClient(clientData.ClientId);
+
+                if (clientData.BaseChangelistId == 0)
+                {
+                    return new ClientSyncResult
+                    {
+                        State = ClientSyncResultState.Success,
+                        LastChangelistId = GetLastChangelistId(),
+                        Changes = GetChangesForFolder(client.User.RootFolder)
+                    };
+                }
+
                 var clientNode = ChangeNode.FromItems(clientData.Changes);
                 var clientChangesByFullName = clientData.Changes.ToDictionary(change => Utilities.NormalizeFullName(change.FullName).ToUpperInvariant());
 
@@ -417,12 +423,12 @@ namespace FooBox.Models
                     where changelist.Id > clientData.BaseChangelistId
                     join change in _context.Changes on changelist.Id equals change.ChangelistId into changes
                     orderby changelist.Id
-                    select new { ChangeListId = changelist.Id, Changes = changes };
+                    select new { ChangelistId = changelist.Id, Changes = changes };
                 var intermediateNodes =
                     from x in intermediateChanges.AsEnumerable()
                     select new
                     {
-                        ChangelistId = x.ChangeListId,
+                        ChangelistId = x.ChangelistId,
                         Nodes = ChangeNode.FromItems(from change in x.Changes
                                                         select new ChangeItem
                                                             {
@@ -433,12 +439,30 @@ namespace FooBox.Models
                     };
 
                 var mergedNode = ChangeNode.CreateRoot();
+                bool nextChangelistFound = false;
                 long lastChangelistId = clientData.BaseChangelistId;
 
                 foreach (var changelist in intermediateNodes)
                 {
                     mergedNode.SequentialMerge(changelist.Nodes);
                     lastChangelistId = changelist.ChangelistId;
+
+                    if (changelist.ChangelistId == clientData.BaseChangelistId + 1)
+                        nextChangelistFound = true;
+                }
+
+                if (!nextChangelistFound)
+                    return new ClientSyncResult { State = ClientSyncResultState.TooOld };
+
+                if (clientData.Changes.Count == 0)
+                {
+                    return new ClientSyncResult
+                    {
+                        State = ClientSyncResultState.Success,
+                        LastChangelistId = lastChangelistId,
+                        Changes = GetChangesForNode(mergedNode),
+                        NewChangelistId = lastChangelistId
+                    };
                 }
 
                 // Check if the client's changes conflict with ours.
@@ -449,7 +473,7 @@ namespace FooBox.Models
                     {
                         State = ClientSyncResultState.Conflict,
                         LastChangelistId = lastChangelistId,
-                        Changes = mergedNode.ToItems(),
+                        Changes = GetChangesForNode(mergedNode),
                         UploadRequiredFor = new HashSet<string>()
                     };
                 }
@@ -497,7 +521,7 @@ namespace FooBox.Models
                     {
                         State = ClientSyncResultState.UploadRequired,
                         LastChangelistId = lastChangelistId,
-                        Changes = mergedNode.ToItems(),
+                        Changes = GetChangesForNode(mergedNode),
                         UploadRequiredFor = missingHashes
                     };
                 }
@@ -517,8 +541,9 @@ namespace FooBox.Models
 
                 using (var transaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.Serializable))
                 {
-                    // Lock the *entire* changelist table.
+                    // Lock the tables.
                     _context.Database.LockTableExclusive("dbo.Changelists");
+                    _context.Database.LockTableExclusive("dbo.Files");
 
                     // Make sure no one changed anything since we started computing changes.
                     var moreChangelists = (from changelist in _context.Changelists
@@ -537,7 +562,7 @@ namespace FooBox.Models
                     {
                         State = ClientSyncResultState.Success,
                         LastChangelistId = lastChangelistId,
-                        Changes = mergedNode.ToItems(),
+                        Changes = GetChangesForNode(mergedNode),
                         NewChangelistId = newChangelist.Id
                     };
                 }
@@ -818,6 +843,106 @@ namespace FooBox.Models
             return changelist;
         }
 
+        private void AddChangesForFolder(ICollection<ClientChange> changes, Folder folder, string fullName)
+        {
+            foreach (File file in folder.Files.AsQueryable().Where(f => f.State == ObjectState.Normal))
+            {
+                string newFullName = fullName + "/" + file.Name;
+                long size = 0;
+                string hash = "";
+
+                if (file is Document)
+                {
+                    var blob = GetLastDocumentVersion((Document)file).Blob;
+                    size = blob.Size;
+                    hash = blob.Hash;
+                }
+
+                changes.Add(new ClientChange
+                {
+                    FullName = newFullName,
+                    Type = ChangeType.Add,
+                    IsFolder = file is Folder,
+                    Size = size,
+                    Hash = hash,
+                    DisplayName = file.DisplayName
+                });
+
+                if (file is Folder)
+                    AddChangesForFolder(changes, (Folder)file, newFullName);
+            }
+        }
+
+        private ICollection<ClientChange> GetChangesForFolder(Folder folder)
+        {
+            var changes = new List<ClientChange>();
+            AddChangesForFolder(changes, folder, GetFullName(folder));
+            return changes;
+        }
+
+        private ICollection<ClientChange> GetChangesForNode(ChangeNode rootNode)
+        {
+            var changes = new List<ClientChange>();
+            Dictionary<string, File> fileCache = new Dictionary<string, File>();
+            Queue<ChangeNode> queue = new Queue<ChangeNode>();
+
+            fileCache.Add(rootNode.FullName, GetRootFolder());
+
+            foreach (var node in rootNode.Nodes.Values)
+                queue.Enqueue(node);
+
+            while (queue.Count != 0)
+            {
+                var node = queue.Dequeue();
+
+                // There is no need to process files that haven't changed.
+                if (node.Type == ChangeType.None && !node.IsFolder)
+                    continue;
+
+                var parentFolder = (Folder)fileCache[node.Parent.FullName];
+                var file =
+                    parentFolder.Files.AsQueryable()
+                    .Where(f => f.Name == node.Name)
+                    .FirstOrDefault();
+
+                long size = 0;
+                string hash = "";
+                string displayName = null;
+
+                if (file != null)
+                {
+                    if (file is Document)
+                    {
+                        var blob = GetLastDocumentVersion((Document)file).Blob;
+                        size = blob.Size;
+                        hash = blob.Hash;
+                    }
+
+                    displayName = file.DisplayName;
+
+                    fileCache.Add(node.FullName, file);
+
+                    if (node.Nodes != null)
+                    {
+                        foreach (var subNode in node.Nodes.Values)
+                            queue.Enqueue(subNode);
+                    }
+                }
+
+                changes.Add(new ClientChange
+                {
+                    FullName = node.FullName,
+                    Type = node.Type,
+                    IsFolder = node.IsFolder,
+                    Size = size,
+                    Hash = hash,
+                    DisplayName = displayName ?? node.Name
+                });
+            }
+
+            return changes;
+        }
+
         #endregion
     }
 
@@ -850,10 +975,40 @@ namespace FooBox.Models
 
     public enum ClientSyncResultState
     {
+        /// <summary>
+        /// Another client made changes while applying these changes.
+        /// Try again.
+        /// </summary>
         Retry,
+
+        /// <summary>
+        /// One or more changelists since <see cref="BaseChangelistId"/> are no longer
+        /// in the database. Request a complete list of files by setting
+        /// <see cref="BaseChangelistId"/> to 0.
+        /// </summary>
+        TooOld,
+
+        /// <summary>
+        /// An error occurred. See <see cref="Exception"/> for the exception object.
+        /// </summary>
         Error,
+
+        /// <summary>
+        /// The changes conflict with other changes made since
+        /// <see cref="BaseChangelistId"/>. The list of other changes is in
+        /// <see cref="Changes"/>.
+        /// </summary>
         Conflict,
+
+        /// <summary>
+        /// One or more files need to be uploaded. The list of files is in
+        /// <see cref="UploadRequiredFor"/>
+        /// </summary>
         UploadRequired,
+
+        /// <summary>
+        /// The operation succeeded.
+        /// </summary>
         Success
     }
 
@@ -868,7 +1023,7 @@ namespace FooBox.Models
         // >= Conflict
 
         public long LastChangelistId { get; set; }
-        public ICollection<ChangeItem> Changes { get; set; }
+        public ICollection<ClientChange> Changes { get; set; }
 
         // >= UploadRequired
 

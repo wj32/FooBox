@@ -364,48 +364,6 @@ namespace FooBox.Controllers
             }
         }
 
-        private void UploadBlob(Client client, Stream stream, out string hash, out long size)
-        {
-            var clientUploadDirectory = _fileManager.AccessClientUploadDirectory(client.Id);
-            var randomName = Utilities.GenerateRandomString(FileManager.IdChars, 32);
-            var tempUploadFileName = clientUploadDirectory.FullName + "\\" + randomName;
-
-            byte[] buffer = new byte[4096 * 4];
-            int bytesRead;
-            long totalBytesRead = 0;
-
-            // Simultaneously hash the file and write it out to a temporary file.
-
-            using (var hashAlgorithm = _fileManager.CreateBlobHashAlgorithm())
-            {
-                using (var fileStream = new FileStream(tempUploadFileName, FileMode.Create))
-                {
-                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
-                    {
-                        hashAlgorithm.TransformBlock(buffer, 0, bytesRead, null, 0);
-                        fileStream.Write(buffer, 0, bytesRead);
-                        totalBytesRead += bytesRead;
-                    }
-                }
-
-                hashAlgorithm.TransformFinalBlock(new byte[0], 0, 0);
-                hash = (new SoapHexBinary(hashAlgorithm.Hash)).ToString();
-
-                try
-                {
-                    System.IO.File.Move(tempUploadFileName, clientUploadDirectory.FullName + "\\" + hash);
-                }
-                catch
-                {
-                    // We're going to assume that the file with hash as its name already exists.
-                    // This means that someone has already uploaded an identical file.
-                    System.IO.File.Delete(tempUploadFileName);
-                }
-            }
-
-            size = totalBytesRead;
-        }
-
         [HttpPost]
         public ActionResult Upload(string fromPath, HttpPostedFileBase uploadFile)
         {
@@ -428,7 +386,7 @@ namespace FooBox.Controllers
                 string hash;
                 long fileSize;
 
-                UploadBlob(internalClient, uploadFile.InputStream, out hash, out fileSize);
+                ClientController.UploadBlob(_fileManager, internalClient, uploadFile.InputStream, out hash, out fileSize);
 
                 ClientSyncData data = new ClientSyncData();
 
@@ -486,34 +444,6 @@ namespace FooBox.Controllers
             _fileManager.SyncClientChanges(data);
 
             return RedirectToAction("Browse", new { path = fromPath });
-        }
-
-        /*For now, create an action that takes in a client ID and secret 
-         * and returns the entire contents of the client's user's root folder */
-        [HttpPost]
-        [AllowAnonymous]
-        public String ClientRoot(string id, string secret)
-        {
-            FileManager f = new FileManager();
-            Client c;
-            long ID;
-            if (long.TryParse(id, out ID)){
-                c = f.FindClient(ID);
-                if (c.Secret != secret)
-                {
-                    return "fail";
-                }
-            } else {
-                return "fail";
-            }
-            UserManager m = new UserManager();
-            User u = m.FindUser(c.UserId);
-            XmlSerializer xmlSerializer = new XmlSerializer(u.RootFolder.GetType());
-            StringWriter textWriter = new StringWriter();
-
-            xmlSerializer.Serialize(textWriter, u.RootFolder);
-            return textWriter.ToString();
-        
         }
 
         protected override void Dispose(bool disposing)
