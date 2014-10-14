@@ -276,6 +276,8 @@ namespace FooBox.Controllers
             string parentFolderFullName = null;
             File parentFolderFile = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out parentFolderFullName);
 
+            if (!Utilities.ValidateFileName(newFileDisplayName))
+                return RedirectToAction("Browse", new { path = fromPath });
             if (parentFolderFile == null || !(parentFolderFile is Folder) || oldFileDisplayName == newFileDisplayName)
                 return RedirectToAction("Browse", new { path = fromPath });
 
@@ -369,7 +371,7 @@ namespace FooBox.Controllers
             string fullDisplayName = null;
             File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
-            if (file == null || !(file is Folder) || uploadFile == null)
+            if (file == null || !(file is Folder) || uploadFile == null || !Utilities.ValidateFileName(uploadFile.FileName))
                 return RedirectToAction("Browse");
 
             Folder folder = (Folder)file;
@@ -417,7 +419,7 @@ namespace FooBox.Controllers
             string fullDisplayName = null;
             File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
-            if (file == null || !(file is Folder))
+            if (file == null || !(file is Folder) || !Utilities.ValidateFileName(newFolderName))
                 return RedirectToAction("Browse");
 
             Folder folder = (Folder)file;

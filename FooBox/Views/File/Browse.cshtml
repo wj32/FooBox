@@ -91,12 +91,11 @@
                         <span class="sr-only">Toggle Dropdown</span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
-                        <li><a href="#">Properties</a></li>
                         @if (!item.IsFolder)
                         {
                             <li>@Html.ActionLink("Version History", "DisplayVersionHistory", new { fullName = item.FullDisplayName })</li>
+                            <li class="divider"></li>
                         }
-                        <li class="divider"></li>
                         <li><a href="#" class="renameLink">Rename</a></li>
                         <li><a href="#" class="deleteLink">Delete</a></li>
                     </ul>
