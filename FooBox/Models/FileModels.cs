@@ -193,11 +193,13 @@ namespace FooBox.Models
             return file;
         }
 
-        public Blob GetLatestBlob(File file) 
+        public DocumentVersion GetLastDocumentVersion(Document document)
         {
-            return (from version in ((Document)file).DocumentVersions.AsQueryable()
-                    orderby version.TimeStamp descending
-                    select version.Blob).FirstOrDefault();
+            return (
+                from version in document.DocumentVersions.AsQueryable()
+                orderby version.TimeStamp descending
+                select version
+                ).FirstOrDefault();
         }
 
        
@@ -249,6 +251,11 @@ namespace FooBox.Models
         public Folder GetRootFolder()
         {
             return (from folder in _context.Folders where folder.Tag == RootFolderTag select folder).Single();
+        }
+
+        public DocumentVersion FindDocumentVersion(long documentVersionId)
+        {
+            return (from version in _context.DocumentVersions where version.Id == documentVersionId select version).SingleOrDefault();
         }
 
         public Folder CreateUserRootFolder(User user)

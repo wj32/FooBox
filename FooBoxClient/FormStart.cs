@@ -83,19 +83,21 @@ namespace FooBoxClient
             if (responseText == "fail")
             {
                 labelError.Text = "Username or password incorrect";
+                return;
             }
             //IF WE'VE GOT HERE WE'VE SUCCESFULLY AUTH'D
             string[] content = responseText.Split(',');
             Properties.Settings.Default.ID = content[0];
             Properties.Settings.Default.Secret = content[1];
-
+            Properties.Settings.Default.Port = int.Parse(textBoxServerPort.Text);
+            Properties.Settings.Default.Server = textBoxServerLoc.Text;
+            Properties.Settings.Default.Root = textBoxDirLoc.Text;
             Properties.Settings.Default.Save();
             
             //NOT SURE IF THIS HOW ITS SUPPOSED TO BE DONE
             this.Hide();
-            FormSysTray frm = new FormSysTray(textBoxDirLoc.Text.Trim());
+            FormSysTray frm = new FormSysTray();
             frm.Show();
-            this.Close();
         }
 
 

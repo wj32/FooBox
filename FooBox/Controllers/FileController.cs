@@ -11,6 +11,7 @@ using FooBox;
 using FooBox.Models;
 using System.Text;
 using System.IO;
+using System.Xml.Serialization;
 
 namespace FooBox.Controllers
 {
@@ -98,23 +99,14 @@ namespace FooBox.Controllers
             return model;
         }
 
-        private ActionResult DownloadDocument(Document document, string blobKey = null)
+        private ActionResult DownloadDocument(Document document, DocumentVersion version = null)
         {
-            if (blobKey == null)
+            if (version == null)
             {
                 // Get latest version
-                blobKey = (
-                    from version in document.DocumentVersions
-                    orderby version.TimeStamp
-                    select version.Blob.Key
-                    ).First();
+                version = _fileManager.GetLastDocumentVersion(document);
             }
-            string blobFileName = _fileManager.GetBlobFileName(blobKey);
-            if (blobFileName == null)
-            {
-                // Error - not sure which one.
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
+            string blobFileName = _fileManager.GetBlobFileName(version.Blob.Key);
             return File(blobFileName, MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
         }
 
@@ -140,34 +132,43 @@ namespace FooBox.Controllers
             }
         }
 
-        public ActionResult DisplayVersionHistory(long? id)
+        public ActionResult DisplayVersionHistory(string fullName)
         {
-            if (! id.HasValue)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Document document = _fileManager.FindDocument((long) id);
-            if (document == null)
-            {
-                // Error - not sure which one.
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            return View(document);
-        }
+            if (fullName == null)
+                return RedirectToAction("Browse");
 
-        public ActionResult DownloadVersion(long? id, string blobKey = null)
+            Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+            string fullDisplayName;
+            File file = _fileManager.FindFile(fullName, userRootFolder, out fullDisplayName);
+
+            if (file == null || !(file is Document))
+                return RedirectToAction("Browse");
+
+            Document document = (Document)file;
+            VersionHistoryViewModel model = new VersionHistoryViewModel();
+
+            model.DisplayName = document.DisplayName;
+            model.Versions = (
+                from version in document.DocumentVersions
+                orderby version.TimeStamp descending
+                select new VersionHistoryViewModel.VersionEntry { TimeStamp = version.TimeStamp, VersionId = version.Id }
+                ).ToList();
+
+            return View(model);
+            }
+
+        public ActionResult DownloadVersion(long? id)
         {
-            if (!id.HasValue || blobKey == null)
+            if (!id.HasValue)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Document document = _fileManager.FindDocument((long)id);
-            if (document == null)
+            DocumentVersion version = _fileManager.FindDocumentVersion((long)id);
+            if (version == null)
             {
-                // Error - not sure which one.
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            return DownloadDocument(document, blobKey);
+            return DownloadDocument(version.Document, version);
         }
 
         private void UploadBlob(Client client, Stream stream, out string hash, out long size)
@@ -374,15 +375,15 @@ namespace FooBox.Controllers
                     var b = _fileManager.GetLatestBlob(file);
                     fileSize = b.Size;
                     hash = b.Hash;
-                    data.Changes.Add(new ClientChange
-                    {
+                data.Changes.Add(new ClientChange
+                {
                         FullName = newPath,
-                        Type = ChangeType.Add,
-                        IsFolder = false,
-                        Size = fileSize,
-                        Hash = hash,
-                        DisplayName = destinationDisplayName
-                    });
+                    Type = ChangeType.Add,
+                    IsFolder = false,
+                    Size = fileSize,
+                    Hash = hash,
+                    DisplayName = destinationDisplayName
+                });
                 }
                 conflictResolve = " (" + ++tries + ")";
                 if (tries > 10) throw new Exception("No success after 10 rename attempts.");
@@ -451,8 +452,8 @@ namespace FooBox.Controllers
             else 
             {
                 fileList.Add(f);
-            }
-        
+        }
+
         }
 
         [HttpPost]
@@ -535,6 +536,35 @@ namespace FooBox.Controllers
             _fileManager.SyncClientChanges(data);
 
             return RedirectToAction("Browse", new { path = fromPath });
+        }
+
+   
+        /*For now, create an action that takes in a client ID and secret 
+         * and returns the entire contents of the client's user's root folder */
+        [HttpPost]
+        [AllowAnonymous]
+        public String ClientRoot(string id, string secret)
+        {
+            FileManager f = new FileManager();
+            Client c;
+            long ID;
+            if (long.TryParse(id, out ID)){
+                c = f.FindClient(ID);
+                if (c.Secret != secret)
+                {
+                    return "fail";
+                }
+            } else {
+                return "fail";
+            }
+            UserManager m = new UserManager();
+            User u = m.FindUser(c.UserId);
+            XmlSerializer xmlSerializer = new XmlSerializer(u.RootFolder.GetType());
+            StringWriter textWriter = new StringWriter();
+
+            xmlSerializer.Serialize(textWriter, u.RootFolder);
+            return textWriter.ToString();
+        
         }
 
         protected override void Dispose(bool disposing)
