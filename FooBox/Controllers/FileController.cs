@@ -330,10 +330,10 @@ namespace FooBox.Controllers
             string fromPathString = fromPath == null ? "" : fromPath + "/";
             File file = _fileManager.FindFile(fromPathString + oldFileDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
-            if (file == null || file is Folder || oldFileDisplayName == newFileDisplayName) // JUST FOR NOW
+            if (file == null || oldFileDisplayName == newFileDisplayName) // JUST FOR NOW
                 return RedirectToAction("Browse");
 
-            bool isFolder = false;
+            bool isFolder = file is Folder;
 
             string destinationDisplayName = newFileDisplayName;
 
@@ -344,41 +344,116 @@ namespace FooBox.Controllers
             data.ClientId = internalClient.Id;
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
 
-           var b = _fileManager.GetLatestBlob(file);
-           long fileSize = b.Size;
-           string hash = b.Hash;
+            long fileSize = 0;
+            string hash = "";
 
-
-            // Add file
+            // Add primary file
             data = new ClientSyncData();
             data.ClientId = internalClient.Id;
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
 
             string conflictResolve = "";
+            string newPath = "";
             int tries = 0;
             do
             {
+                newPath = "/" + userId + "/" + fromPathString + destinationDisplayName + conflictResolve;
                 data.Changes.Clear();
-                data.Changes.Add(new ClientChange
+                if (isFolder)
                 {
-                    FullName = "/" + userId + "/" + fromPathString + destinationDisplayName + conflictResolve,
-                    Type = ChangeType.Add,
-                    IsFolder = false,
-                    Size = fileSize,
-                    Hash = hash,
-                    DisplayName = destinationDisplayName
-                });
+                    data.Changes.Add(new ClientChange
+                    {
+                        FullName = newPath,
+                        Type = ChangeType.Add,
+                        IsFolder = true,
+                        DisplayName = destinationDisplayName
+                    });
+                }
+                else
+                {
+                    var b = _fileManager.GetLatestBlob(file);
+                    fileSize = b.Size;
+                    hash = b.Hash;
+                    data.Changes.Add(new ClientChange
+                    {
+                        FullName = newPath,
+                        Type = ChangeType.Add,
+                        IsFolder = false,
+                        Size = fileSize,
+                        Hash = hash,
+                        DisplayName = destinationDisplayName
+                    });
+                }
                 conflictResolve = " (" + ++tries + ")";
                 if (tries > 10) throw new Exception("No success after 10 rename attempts.");
             }
             while (_fileManager.SyncClientChanges(data).State == ClientSyncResultState.Retry);
 
+            
+            // Need to traverse sub-folders if folder:
+            if (isFolder)
+            {
+                LinkedList<File> fileList = new LinkedList<File>();
+                Folder fold = (Folder)file;
+                folderTraverse(file, fileList);
+                data.Changes.Clear();
+                foreach (File toAdd in fileList)
+                {
+                    String relPath = _fileManager.GetFullDisplayName(toAdd, fold);
+                    if (toAdd is Document)
+                    {
+                        Blob toAddBlob = _fileManager.GetLatestBlob(toAdd);
+                        hash = toAddBlob.Hash;
+                        fileSize = toAddBlob.Size;
+
+                        data.Changes.Add(new ClientChange
+                        {
+                            FullName = newPath + "/" + relPath,
+                            Type = ChangeType.Add,
+                            IsFolder = false,
+                            Size = fileSize,
+                            Hash = hash,
+                            DisplayName = toAdd.DisplayName
+                        });
+                    } 
+                    else 
+                    {
+                        data.Changes.Add(new ClientChange
+                        {
+                            FullName = newPath + "/" + relPath,
+                            Type = ChangeType.Add,
+                            IsFolder = true,
+                            DisplayName = toAdd.DisplayName
+                        });
+                    }
+                }
+                _fileManager.SyncClientChanges(data);
+            
+            }
+
+
+            // Delete original file
             DeleteFile(file);
 
             return RedirectToAction("Browse", new { path = fromPath });
 
         }
 
+        private void folderTraverse(File f, ICollection<File> fileList) 
+        {
+            if (f is Folder)
+            {
+                foreach (File child in ((Folder)f).Files)
+                {
+                    folderTraverse(child, fileList);
+                }
+            }
+            else 
+            {
+                fileList.Add(f);
+            }
+        
+        }
 
         [HttpPost]
         public ActionResult Upload(string fromPath, HttpPostedFileBase uploadFile)
