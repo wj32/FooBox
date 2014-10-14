@@ -10,25 +10,29 @@ using System.Windows.Forms;
 using System.IO;
 using System.Net;
 using System.Xml.Serialization;
+using FooBox.Common;
 namespace FooBoxClient
 {
     public partial class FormSysTray : Form
     {
-
+        FileSystem fs;
 
         public FormSysTray()
         {
             InitializeComponent();
-            getRootFolder();
+            getRootFolder(Properties.Settings.Default.ID);
         }
 
-
-        private void getRootFolder(){
-            string url = @"http://" + Properties.Settings.Default.Server +":" + Properties.Settings.Default.Port + "/File/ClientRoot";
+        /*
+         *  This method SHOULD only occur on the very first time run of the form
+         * 
+         */
+        private void getRootFolder(string ID){
+            string url = @"http://" + Properties.Settings.Default.Server +":" + Properties.Settings.Default.Port + "/Client/Sync";
 
            
 
-            string postContent = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret;
+            string postContent = "id=" + ID + "&secret=" + Properties.Settings.Default.Secret +  "&baseChangelistId=";
             MessageBox.Show(postContent);
             HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
 
@@ -50,19 +54,32 @@ namespace FooBoxClient
                 this.Text = "Server name or port incorrect";
                 return;
             }
+            try
+            {
+                HttpWebResponse response = req.GetResponse() as HttpWebResponse;
+                var encoding = UTF8Encoding.UTF8;
+                string responseText = "";
+                using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
+                {
+                    this.Text = responseText = reader.ReadToEnd();
+                }
 
-            HttpWebResponse response = req.GetResponse() as HttpWebResponse;
-            var encoding = UTF8Encoding.UTF8;
-            string responseText = "";
-            using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
-            {
-               this.Text =responseText = reader.ReadToEnd();
-            }
-            if (responseText == "fail")
-            {
-                this.Text = "Authentification failed";
+
+                ClientSyncResult c = (new System.Web.Script.Serialization.JavaScriptSerializer()).Deserialize<ClientSyncResult>(responseText);
+                //loop through changes
+            
+                fs = new FileSystem(Properties.Settings.Default.Root);
+                foreach (ClientChange change in c.Changes)
+                {
+                    fs.execChange(change);
+                }
                 return;
             }
+            catch (WebException) {
+                this.Text = "Authentification Failed!";
+                return;
+            }
+    
         }
 
         private void FormSysTray_FormClosed(object sender, FormClosedEventArgs e)
@@ -79,5 +96,12 @@ namespace FooBoxClient
         {
            
         }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            getRootFolder("342");
+        }
+    
+        
     }
 }
