@@ -156,7 +156,7 @@ namespace FooBox.Controllers
                 ).ToList();
 
             return View(model);
-            }
+        }
 
         public ActionResult DownloadVersion(long? id)
         {
