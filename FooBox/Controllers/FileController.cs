@@ -172,6 +172,37 @@ namespace FooBox.Controllers
             return DownloadDocument(version.Document, version);
         }
 
+        // POST
+        [HttpPost]
+        public ActionResult RevertVersion(string fullName, long versionId)
+        {
+            long userId = User.Identity.GetUserId();
+            DocumentVersion version = _fileManager.FindDocumentVersion(versionId);
+            if (version == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            File file = _fileManager.FindFile(fullName);
+            if (file == null || !(file is Document))
+                return RedirectToAction("Browse");
+
+            var internalClient = _fileManager.GetInternalClient(userId);
+            ClientSyncData data = new ClientSyncData();
+
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            data.Changes.Add(new ClientChange
+            {
+                FullName = "/" + userId.ToString() + "/" + fullName,
+                Type = ChangeType.Add,
+                Hash = version.Blob.Hash,
+                Size = version.Blob.Size
+            });
+            _fileManager.SyncClientChanges(data);
+
+            return DisplayVersionHistory(fullName);
+        }
+
         private bool NameConflicts(Folder parent, string name, bool creatingDocument, bool newVersion)
         {
             File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
