@@ -10,17 +10,22 @@ using System.Windows.Forms;
 using System.IO;
 using System.Net;
 using System.Xml.Serialization;
+using System.Timers;
 using FooBox.Common;
 namespace FooBoxClient
 {
     public partial class FormSysTray : Form
     {
         FileSystem fs;
-
+        System.Timers.Timer timerPoll;
         public FormSysTray()
         {
             InitializeComponent();
             getRootFolder(Properties.Settings.Default.ID);
+            //run every 20 seconds;
+            timerPoll = new System.Timers.Timer(20000);
+            timerPoll.Elapsed += timerPollTick;
+            timerPoll.Enabled = true;
         }
 
         /*
@@ -80,6 +85,13 @@ namespace FooBoxClient
                 return;
             }
     
+        }
+
+        private void timerPollTick(Object source, ElapsedEventArgs e)
+        {
+            //Okay doesn't block GUI
+            sync();
+            System.Threading.Thread.Sleep(10000);
         }
 
         private void FormSysTray_FormClosed(object sender, FormClosedEventArgs e)
