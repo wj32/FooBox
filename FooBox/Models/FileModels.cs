@@ -452,7 +452,7 @@ namespace FooBox.Models
                         nextChangelistFound = true;
                 }
 
-                if (!nextChangelistFound)
+                if (lastChangelistId != clientData.BaseChangelistId && !nextChangelistFound)
                     return new ClientSyncResult { State = ClientSyncResultState.TooOld };
 
                 if (clientData.Changes.Count == 0)

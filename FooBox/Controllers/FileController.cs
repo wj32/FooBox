@@ -172,24 +172,17 @@ namespace FooBox.Controllers
             return DownloadDocument(version.Document, version);
         }
 
-        private bool NameConflicts(Folder parent, string name, bool creatingDocument)
+        private bool NameConflicts(Folder parent, string name, bool creatingDocument, bool newVersion)
         {
             File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
 
             if (file == null || file.State == ObjectState.Deleted)
                 return false;
 
-            if (creatingDocument)
-            {
-                if (file is Folder)
-                    return true;
-
+            if (creatingDocument && newVersion && file is Document)
                 return false;
-            }
-            else
-            {
-                return true;
-            }
+
+            return true;
         }
 
         private string GenerateNewName(string originalDisplayName, bool creatingDocument, string key)
@@ -210,14 +203,14 @@ namespace FooBox.Controllers
             return originalDisplayName + " (" + key + ")";
         }
 
-        private bool EnsureAvailableName(ref string destinationDisplayName, Folder parent, bool creatingDocument)
+        private bool EnsureAvailableName(ref string destinationDisplayName, Folder parent, bool creatingDocument, bool newVersion = false)
         {
             const int MaxIterations = 10;
 
             string originalDisplayName = destinationDisplayName;
             string name = destinationDisplayName.ToUpperInvariant();
 
-            if (NameConflicts(parent, name, creatingDocument))
+            if (NameConflicts(parent, name, creatingDocument, newVersion))
             {
                 int iteration = 0;
 
@@ -239,7 +232,10 @@ namespace FooBox.Controllers
                     destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, (iteration + 2).ToString());
                     name = destinationDisplayName.ToUpperInvariant();
                     iteration++;
-                } while (NameConflicts(parent, name, creatingDocument));
+
+                    // Don't allow new versions if we already had a name conflict.
+                    newVersion = false;
+                } while (NameConflicts(parent, name, creatingDocument, newVersion));
             }
 
             return true;
@@ -323,7 +319,7 @@ namespace FooBox.Controllers
                     Type = ChangeType.Delete
                 });
 
-                AddFileRecursive(data.Changes, existingFile, parentFolderFullNameFromRoot + "/" + newFileDisplayName, newFileDisplayName);
+                AddFileRecursive(data.Changes, existingFile, parentFolderFullNameFromRoot + "/" + destinationDisplayName, destinationDisplayName);
             }
 
             _fileManager.SyncClientChanges(data);
@@ -379,7 +375,7 @@ namespace FooBox.Controllers
             Folder folder = (Folder)file;
             string destinationDisplayName = uploadFile.FileName;
 
-            if (!EnsureAvailableName(ref destinationDisplayName, folder, true))
+            if (!EnsureAvailableName(ref destinationDisplayName, folder, true, true))
                 return RedirectToAction("Browse");
 
             try
