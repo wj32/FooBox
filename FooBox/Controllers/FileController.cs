@@ -372,9 +372,8 @@ namespace FooBox.Controllers
                 }
                 else
                 {
-                    var b = _fileManager.GetLatestBlob(file);
-                    fileSize = b.Size;
-                    hash = b.Hash;
+                sizeAndHash((Document)file, out fileSize, out hash);
+
                 data.Changes.Add(new ClientChange
                 {
                         FullName = newPath,
@@ -403,9 +402,7 @@ namespace FooBox.Controllers
                     String relPath = _fileManager.GetFullDisplayName(toAdd, fold);
                     if (toAdd is Document)
                     {
-                        Blob toAddBlob = _fileManager.GetLatestBlob(toAdd);
-                        hash = toAddBlob.Hash;
-                        fileSize = toAddBlob.Size;
+                        sizeAndHash((Document)toAdd, out fileSize, out hash);
 
                         data.Changes.Add(new ClientChange
                         {
@@ -574,6 +571,13 @@ namespace FooBox.Controllers
                 _fileManager.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        private void sizeAndHash(Document d, out long size, out string hash)
+        {
+            Blob b = _fileManager.GetLastDocumentVersion(d).Blob;
+            size = b.Size;
+            hash = b.Hash;
         }
     }
 }
