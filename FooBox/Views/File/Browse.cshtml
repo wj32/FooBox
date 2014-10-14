@@ -24,9 +24,10 @@
         {
             <div >
                 <div id="newFolderDialog" class="input-group" style="display:none;">
-                    <input name="newFolderName" class="form-control" type="text" placeholder="Folder Name">
+                    <input id="newFolderName" name="newFolderName" class="form-control" type="text" placeholder="Folder Name">
                     <span class="input-group-btn">
-                        <button id="newFolderCancelButton" class=" btn btn-default">Cancel</button>
+                        <button type="submit" id="newFolderSubmitButton" class="btn btn-default btn-primary">Create</button>
+                        <button id="newFolderCancelButton" class="btn btn-default">Cancel</button>
                     </span>
                 </div>
             </div>
@@ -77,8 +78,9 @@
                     @using(@Html.BeginForm("Rename", "File", new { fromPath = Model.FullDisplayName, oldFileDisplayName = item.DisplayName }))
                      {
                     <div class="input-group renameDialog" id="@("renameFieldfile" + @i)" style="display:none;">
-                        <input class="form-control" name="newFileDisplayName" type="text" placeholder="@item.DisplayName">
+                        <input class="form-control" name="newFileDisplayName" id="@("newFileDisplayNamefile" + @i)" type="text" placeholder="@item.DisplayName">
                         <span class="input-group-btn">
+                            <button type="submit" class="btn btn-default btn-primary">Rename</button>
                             <button class="delCancelButton btn btn-default">Cancel</button>
                         </span>
                     </div><!-- /input-group -->
@@ -110,7 +112,6 @@
                         <button type="button" class="delCancelButton btn btn-sm btn-default">Cancel</button>
                     }
                 </div>
-
             </td>
             <td>
                 @Html.Encode(item.IsFolder ? "-" : Utilities.SizeToString(item.Size))
@@ -147,27 +148,50 @@
             var it = $(this).closest('td').attr('id');
             $("#dropdown" + it).hide();
             $("#confirm" + it).show('slide');
-        })
+        });
         $(".renameLink").click(function () {
             var it = $(this).closest('td').attr('id');
             $("#dropdown" + it).hide();
             $("#nameField" + it).hide();
             $("#renameField" + it).show('slide');
-        })
+
+            var renameInput = $("#newFileDisplayName" + it);
+            var existingName = renameInput.attr("placeholder");
+            var lastIndexOfDot = existingName.lastIndexOf(".");
+
+            renameInput.val(existingName);
+
+            if (lastIndexOfDot != -1 && lastIndexOfDot != existingName.length - 1) {
+                renameInput[0].select();
+                renameInput[0].selectionStart = 0;
+                renameInput[0].selectionEnd = lastIndexOfDot;
+            } else {
+                renameInput[0].select();
+            }
+        });
         $(".delCancelButton").click(function () {
             $(".confirmDeleteDialog").hide();
             $(".renameDialog").hide();
             $(".fileName").show('slide');
             $(".dropdown-toggle").show('slide');
-        })
+            return false;
+        });
         $("#newFolderButton").click(function () {
             $("#newFolderButton").hide();
             $("#newFolderDialog").show('slide');
-        })
+            $("#newFolderName").val("");
+            $("#newFolderName")[0].select();
+            return false;
+        });
+        $("#newFolderSubmitButton").click(function () {
+            $("#newFolderDialog").hide();
+            $("#newFolderButton").show('slide');
+        });
         $("#newFolderCancelButton").click(function () {
             $("#newFolderDialog").hide();
             $("#newFolderButton").show('slide');
-        })
+            return false;
+        });
     });
     $("")
 </script>
