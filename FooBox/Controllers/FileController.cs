@@ -332,14 +332,14 @@ namespace FooBox.Controllers
             File file = _fileManager.FindFile(fromPathString + oldFileDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
             if (file == null || oldFileDisplayName == newFileDisplayName) // JUST FOR NOW
-                return RedirectToAction("Browse");
+                return RedirectToAction("Browse", new { path = fromPath });
 
             bool isFolder = file is Folder;
 
             string destinationDisplayName = newFileDisplayName;
 
             if (!EnsureAvailableName(ref destinationDisplayName, file.ParentFolder, !isFolder))
-                return RedirectToAction("Browse");
+                return RedirectToAction("Browse", new { path = fromPath });
           
             ClientSyncData data = new ClientSyncData();
             data.ClientId = internalClient.Id;
