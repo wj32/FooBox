@@ -171,48 +171,6 @@ namespace FooBox.Controllers
             return DownloadDocument(version.Document, version);
         }
 
-        private void UploadBlob(Client client, Stream stream, out string hash, out long size)
-        {
-            var clientUploadDirectory = _fileManager.AccessClientUploadDirectory(client.Id);
-            var randomName = Utilities.GenerateRandomString(FileManager.IdChars, 32);
-            var tempUploadFileName = clientUploadDirectory.FullName + "\\" + randomName;
-
-            byte[] buffer = new byte[4096 * 4];
-            int bytesRead;
-            long totalBytesRead = 0;
-
-            // Simultaneously hash the file and write it out to a temporary file.
-
-            using (var hashAlgorithm = _fileManager.CreateBlobHashAlgorithm())
-            {
-                using (var fileStream = new FileStream(tempUploadFileName, FileMode.Create))
-                {
-                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
-                    {
-                        hashAlgorithm.TransformBlock(buffer, 0, bytesRead, null, 0);
-                        fileStream.Write(buffer, 0, bytesRead);
-                        totalBytesRead += bytesRead;
-                    }
-                }
-
-                hashAlgorithm.TransformFinalBlock(new byte[0], 0, 0);
-                hash = (new SoapHexBinary(hashAlgorithm.Hash)).ToString();
-
-                try
-                {
-                    System.IO.File.Move(tempUploadFileName, clientUploadDirectory.FullName + "\\" + hash);
-                }
-                catch
-                {
-                    // We're going to assume that the file with hash as its name already exists.
-                    // This means that someone has already uploaded an identical file.
-                    System.IO.File.Delete(tempUploadFileName);
-                }
-            }
-
-            size = totalBytesRead;
-        }
-
         private bool NameConflicts(Folder parent, string name, bool creatingDocument)
         {
             File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
@@ -286,7 +244,6 @@ namespace FooBox.Controllers
             return true;
         }
 
-      
         // POST
         [HttpPost]
         public ActionResult Delete(string fromPath, string fileDisplayName)
@@ -296,30 +253,22 @@ namespace FooBox.Controllers
             string fromPathString = fromPath == null ? "" : fromPath + "/";
             File file = _fileManager.FindFile(fromPathString + fileDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
-            if (file == null)
+            if (file == null || file.State != ObjectState.Normal)
                 return RedirectToAction("Browse");
 
-            DeleteFile(file);
-            
-            return RedirectToAction("Browse", new { path = fromPath });
-        }
-
-        private void DeleteFile(File f) 
-        {
-            long userId = User.Identity.GetUserId();
             var internalClient = _fileManager.GetInternalClient(userId);
-            
             ClientSyncData data = new ClientSyncData();
 
             data.ClientId = internalClient.Id;
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
             data.Changes.Add(new ClientChange
             {
-                FullName = _fileManager.GetFullName(f),
-                Type = ChangeType.Delete,
-                DisplayName = f.DisplayName
+                FullName = "/" + userId.ToString() + "/" + fullDisplayName,
+                Type = ChangeType.Delete
             });
             _fileManager.SyncClientChanges(data);
+
+            return RedirectToAction("Browse", new { path = fromPath });
         }
 
         [HttpPost]
@@ -327,130 +276,134 @@ namespace FooBox.Controllers
         {
             long userId = User.Identity.GetUserId();
             var internalClient = _fileManager.GetInternalClient(userId);
-            string fullDisplayName = null;
-            string fromPathString = fromPath == null ? "" : fromPath + "/";
-            File file = _fileManager.FindFile(fromPathString + oldFileDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+            string parentFolderFullName = null;
+            File parentFolderFile = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out parentFolderFullName);
 
-            if (file == null || oldFileDisplayName == newFileDisplayName) // JUST FOR NOW
+            if (parentFolderFile == null || !(parentFolderFile is Folder) || oldFileDisplayName == newFileDisplayName)
                 return RedirectToAction("Browse", new { path = fromPath });
 
-            bool isFolder = file is Folder;
+            Folder parentFolder = (Folder)parentFolderFile;
 
-            string destinationDisplayName = newFileDisplayName;
+            // Check if the old file exists.
 
-            if (!EnsureAvailableName(ref destinationDisplayName, file.ParentFolder, !isFolder))
+            string oldFileName = oldFileDisplayName.ToUpperInvariant();
+            File existingFile = parentFolder.Files.AsQueryable().Where(f => f.Name == oldFileName).SingleOrDefault();
+
+            if (existingFile == null || existingFile.State != ObjectState.Normal)
                 return RedirectToAction("Browse", new { path = fromPath });
-          
+
             ClientSyncData data = new ClientSyncData();
             data.ClientId = internalClient.Id;
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
 
-            long fileSize = 0;
-            string hash = "";
+            // Check if the user is just trying to change the case.
 
-            // Add primary file
-            data = new ClientSyncData();
-            data.ClientId = internalClient.Id;
-            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            string parentFolderFullNameFromRoot = "/" + userId.ToString() + "/" + parentFolderFullName;
 
-            string conflictResolve = "";
-            string newPath = "";
-            int tries = 0;
-            do
+            if (string.Equals(oldFileDisplayName, newFileDisplayName, StringComparison.InvariantCultureIgnoreCase))
             {
-                newPath = "/" + userId + "/" + fromPathString + destinationDisplayName + conflictResolve;
-                data.Changes.Clear();
-                if (isFolder)
+                data.Changes.Add(new ClientChange
                 {
-                    data.Changes.Add(new ClientChange
-                    {
-                        FullName = newPath,
-                        Type = ChangeType.Add,
-                        IsFolder = true,
-                        DisplayName = destinationDisplayName
-                    });
-                }
-                else
-                {
-                sizeAndHash((Document)file, out fileSize, out hash);
+                    FullName = parentFolderFullNameFromRoot + "/" + oldFileDisplayName,
+                    Type = ChangeType.SetDisplayName,
+                    DisplayName = newFileDisplayName
+                });
+            }
+            else
+            {
+                string destinationDisplayName = newFileDisplayName;
+
+                if (!EnsureAvailableName(ref destinationDisplayName, parentFolder, !(existingFile is Folder)))
+                    return RedirectToAction("Browse", new { path = fromPath });
 
                 data.Changes.Add(new ClientChange
                 {
-                        FullName = newPath,
-                    Type = ChangeType.Add,
-                    IsFolder = false,
-                    Size = fileSize,
-                    Hash = hash,
-                    DisplayName = destinationDisplayName
+                    FullName = parentFolderFullNameFromRoot + "/" + oldFileDisplayName,
+                    Type = ChangeType.Delete
                 });
-                }
-                conflictResolve = " (" + ++tries + ")";
-                if (tries > 10) throw new Exception("No success after 10 rename attempts.");
-            }
-            while (_fileManager.SyncClientChanges(data).State == ClientSyncResultState.Retry);
 
-            
-            // Need to traverse sub-folders if folder:
-            if (isFolder)
-            {
-                LinkedList<File> fileList = new LinkedList<File>();
-                Folder fold = (Folder)file;
-                folderTraverse(file, fileList);
-                data.Changes.Clear();
-                foreach (File toAdd in fileList)
-                {
-                    String relPath = _fileManager.GetFullDisplayName(toAdd, fold);
-                    if (toAdd is Document)
-                    {
-                        sizeAndHash((Document)toAdd, out fileSize, out hash);
-
-                        data.Changes.Add(new ClientChange
-                        {
-                            FullName = newPath + "/" + relPath,
-                            Type = ChangeType.Add,
-                            IsFolder = false,
-                            Size = fileSize,
-                            Hash = hash,
-                            DisplayName = toAdd.DisplayName
-                        });
-                    } 
-                    else 
-                    {
-                        data.Changes.Add(new ClientChange
-                        {
-                            FullName = newPath + "/" + relPath,
-                            Type = ChangeType.Add,
-                            IsFolder = true,
-                            DisplayName = toAdd.DisplayName
-                        });
-                    }
-                }
-                _fileManager.SyncClientChanges(data);
-            
+                AddFileRecursive(data.Changes, existingFile, parentFolderFullNameFromRoot + "/" + newFileDisplayName, newFileDisplayName);
             }
 
-
-            // Delete original file
-            DeleteFile(file);
+            _fileManager.SyncClientChanges(data);
 
             return RedirectToAction("Browse", new { path = fromPath });
-
         }
 
-        private void folderTraverse(File f, ICollection<File> fileList) 
+        private void AddFileRecursive(ICollection<ClientChange> changes, File existingFile, string newFullName, string newDisplayName = null)
         {
-            if (f is Folder)
+            long size = 0;
+            string hash = null;
+
+            if (existingFile is Document)
             {
-                foreach (File child in ((Folder)f).Files)
+                Blob blob = _fileManager.GetLastDocumentVersion((Document)existingFile).Blob;
+                size = blob.Size;
+                hash = blob.Hash;
+            }
+
+            changes.Add(new ClientChange
+            {
+                FullName = newFullName,
+                Type = ChangeType.Add,
+                IsFolder = existingFile is Folder,
+                DisplayName = newDisplayName ?? existingFile.DisplayName,
+                Size = size,
+                Hash = hash
+            });
+
+            if (existingFile is Folder)
+            {
+                foreach (File file in ((Folder)existingFile).Files)
                 {
-                    folderTraverse(child, fileList);
+                    if (file.State != ObjectState.Normal)
+                        continue;
+
+                    AddFileRecursive(changes, file, newFullName + "/" + file.Name);
                 }
             }
-            else 
-            {
-                fileList.Add(f);
         }
 
+        private void UploadBlob(Client client, Stream stream, out string hash, out long size)
+        {
+            var clientUploadDirectory = _fileManager.AccessClientUploadDirectory(client.Id);
+            var randomName = Utilities.GenerateRandomString(FileManager.IdChars, 32);
+            var tempUploadFileName = clientUploadDirectory.FullName + "\\" + randomName;
+
+            byte[] buffer = new byte[4096 * 4];
+            int bytesRead;
+            long totalBytesRead = 0;
+
+            // Simultaneously hash the file and write it out to a temporary file.
+
+            using (var hashAlgorithm = _fileManager.CreateBlobHashAlgorithm())
+            {
+                using (var fileStream = new FileStream(tempUploadFileName, FileMode.Create))
+                {
+                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    {
+                        hashAlgorithm.TransformBlock(buffer, 0, bytesRead, null, 0);
+                        fileStream.Write(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+                    }
+                }
+
+                hashAlgorithm.TransformFinalBlock(new byte[0], 0, 0);
+                hash = (new SoapHexBinary(hashAlgorithm.Hash)).ToString();
+
+                try
+                {
+                    System.IO.File.Move(tempUploadFileName, clientUploadDirectory.FullName + "\\" + hash);
+                }
+                catch
+                {
+                    // We're going to assume that the file with hash as its name already exists.
+                    // This means that someone has already uploaded an identical file.
+                    System.IO.File.Delete(tempUploadFileName);
+                }
+            }
+
+            size = totalBytesRead;
         }
 
         [HttpPost]
@@ -461,7 +414,7 @@ namespace FooBox.Controllers
             string fullDisplayName = null;
             File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
-            if (file == null || !(file is Folder))
+            if (file == null || !(file is Folder) || uploadFile == null)
                 return RedirectToAction("Browse");
 
             Folder folder = (Folder)file;
@@ -483,7 +436,7 @@ namespace FooBox.Controllers
                 data.BaseChangelistId = _fileManager.GetLastChangelistId();
                 data.Changes.Add(new ClientChange
                 {
-                    FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
+                    FullName = "/" + userId.ToString() + "/" + fullDisplayName + "/" + destinationDisplayName,
                     Type = ChangeType.Add,
                     IsFolder = false,
                     Size = fileSize,
@@ -535,7 +488,6 @@ namespace FooBox.Controllers
             return RedirectToAction("Browse", new { path = fromPath });
         }
 
-   
         /*For now, create an action that takes in a client ID and secret 
          * and returns the entire contents of the client's user's root folder */
         [HttpPost]
@@ -571,13 +523,6 @@ namespace FooBox.Controllers
                 _fileManager.Dispose();
             }
             base.Dispose(disposing);
-        }
-
-        private void sizeAndHash(Document d, out long size, out string hash)
-        {
-            Blob b = _fileManager.GetLastDocumentVersion(d).Blob;
-            size = b.Size;
-            hash = b.Hash;
         }
     }
 }
