@@ -29,11 +29,6 @@ namespace FooBox
             return fullName;
         }
 
-        public static void LockTableExclusive(this System.Data.Entity.Database database, string tableName)
-        {
-            database.ExecuteSqlCommand("SELECT TOP 1 Id FROM " + tableName + " WITH (TABLOCKX, HOLDLOCK)");
-        }
-
         public static string NormalizeFullName(string fullName)
         {
             StringBuilder sb = new StringBuilder();
@@ -64,9 +59,18 @@ namespace FooBox
             return s.ToString("#,#.##") + " " + _sizeUnits[i];
         }
 
+        public static bool ValidateFileName(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return false;
+
+            var bad = new HashSet<char>("\0\\/:?*<>\"|");
+            return !fileName.Any(bad.Contains);
+        }
+
         public static bool ValidateString(string alphabet, string s)
         {
-            HashSet<char> set = new HashSet<char>(alphabet);
+            var set = new HashSet<char>(alphabet);
             return s.All(set.Contains);
         }
     }

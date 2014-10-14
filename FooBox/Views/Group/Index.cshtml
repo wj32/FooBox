@@ -19,9 +19,6 @@
         <th>
             @Html.DisplayNameFor(model => model.Description)
         </th>
-        <th>
-            @Html.DisplayNameFor(model => model.IsAdmin)
-        </th>
         <th></th>
     </tr>
 
@@ -34,9 +31,6 @@
         </td>
         <td>
             @Html.DisplayFor(modelItem => item.Description)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.IsAdmin)
         </td>
         <td>
             @Html.ActionLink("Edit", "GroupEdit", new { id=item.Id }) |

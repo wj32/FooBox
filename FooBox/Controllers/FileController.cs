@@ -156,7 +156,7 @@ namespace FooBox.Controllers
                 ).ToList();
 
             return View(model);
-            }
+        }
 
         public ActionResult DownloadVersion(long? id)
         {
@@ -170,6 +170,37 @@ namespace FooBox.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
             return DownloadDocument(version.Document, version);
+        }
+
+        // POST
+        [HttpPost]
+        public ActionResult RevertVersion(string fullName, long versionId)
+        {
+            long userId = User.Identity.GetUserId();
+            DocumentVersion version = _fileManager.FindDocumentVersion(versionId);
+            if (version == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            File file = _fileManager.FindFile(fullName);
+            if (file == null || !(file is Document))
+                return RedirectToAction("Browse");
+
+            var internalClient = _fileManager.GetInternalClient(userId);
+            ClientSyncData data = new ClientSyncData();
+
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId();
+            data.Changes.Add(new ClientChange
+            {
+                FullName = "/" + userId.ToString() + "/" + fullName,
+                Type = ChangeType.Add,
+                Hash = version.Blob.Hash,
+                Size = version.Blob.Size
+            });
+            _fileManager.SyncClientChanges(data);
+
+            return DisplayVersionHistory(fullName);
         }
 
         private bool NameConflicts(Folder parent, string name, bool creatingDocument, bool newVersion)
@@ -276,6 +307,8 @@ namespace FooBox.Controllers
             string parentFolderFullName = null;
             File parentFolderFile = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out parentFolderFullName);
 
+            if (!Utilities.ValidateFileName(newFileDisplayName))
+                return RedirectToAction("Browse", new { path = fromPath });
             if (parentFolderFile == null || !(parentFolderFile is Folder) || oldFileDisplayName == newFileDisplayName)
                 return RedirectToAction("Browse", new { path = fromPath });
 
@@ -369,7 +402,7 @@ namespace FooBox.Controllers
             string fullDisplayName = null;
             File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
-            if (file == null || !(file is Folder) || uploadFile == null)
+            if (file == null || !(file is Folder) || uploadFile == null || !Utilities.ValidateFileName(uploadFile.FileName))
                 return RedirectToAction("Browse");
 
             Folder folder = (Folder)file;
@@ -417,7 +450,7 @@ namespace FooBox.Controllers
             string fullDisplayName = null;
             File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
 
-            if (file == null || !(file is Folder))
+            if (file == null || !(file is Folder) || !Utilities.ValidateFileName(newFolderName))
                 return RedirectToAction("Browse");
 
             Folder folder = (Folder)file;

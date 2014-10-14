@@ -32,7 +32,7 @@
 @foreach (var item in Model) {
     if (item.State == ObjectState.Normal) { 
         <tr>
-
+            @if (item.Name.Equals("__DEFAULT__")) { continue;  }
             <td>
                 @Html.DisplayFor(modelItem => item.Name)
             </td>

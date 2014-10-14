@@ -391,9 +391,13 @@ namespace FooBox.Models
                 var clientNode = ChangeNode.FromItems(clientData.Changes);
                 var clientChangesByFullName = clientData.Changes.ToDictionary(change => Utilities.NormalizeFullName(change.FullName).ToUpperInvariant());
 
-                // Verify that the display names match the names, and create missing entries in clientChangesByFullName.
+                // Verify that the names are valid and the display names match the names.
+                // Also create missing entries in clientChangesByFullName.
                 foreach (var node in clientNode.RecursiveEnumerate())
                 {
+                    if (!string.IsNullOrEmpty(node.Name) && !Utilities.ValidateFileName(node.Name))
+                        throw new Exception("Name '" + node.Name + "' is invalid");
+
                     if (node.Type == ChangeType.Add || node.Type == ChangeType.SetDisplayName || node.Type == ChangeType.Undelete)
                     {
                         if (clientChangesByFullName.ContainsKey(node.FullName))
