@@ -91,7 +91,7 @@ namespace FooBox.Controllers
             {
                 return HttpNotFound();
             }
-            return View(user);
+            return View(model);
         }
 
         // POST: UserUser/Edit/5
@@ -124,28 +124,15 @@ namespace FooBox.Controllers
             return View(model);
         }
 
-        // GET: User/UserDelete/5
+        // POST: User/UserDelete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public ActionResult UserDelete(long? id)
         {
-            if (id == null)
-            {
+            if (!id.HasValue)
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            User user = um.FindUser(id.Value);
-            if (user == null)
-            {
-                return HttpNotFound();
-            }
-            return View(user);
-        }
 
-        // POST: User/UserDelete/5
-        [HttpPost, ActionName("UserDelete")]
-        [ValidateAntiForgeryToken]
-        public ActionResult UserDeleteConfirmed(long id)
-        {
-            
-            um.DeleteUser(id);
+            um.DeleteUser(id.Value);
 
             DisplaySuccessMessage("User deleted");
             return RedirectToAction("Index");

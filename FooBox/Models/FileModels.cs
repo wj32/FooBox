@@ -197,7 +197,6 @@ namespace FooBox.Models
                 ).FirstOrDefault();
         }
 
-       
         public string GetFullDisplayName(File file, Folder root = null)
         {
             List<string> displayNames = new List<string>();
