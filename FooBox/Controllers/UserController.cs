@@ -60,7 +60,7 @@ namespace FooBox.Controllers
                     Name = model.Name,
                     FirstName = model.FirstName,
                     LastName = model.LastName,
-                    QuotaLimit = model.QuotaLimit
+                    QuotaLimit = model.QuotaLimit * 1024
                 };
                 um.CreateUser(template, model.Password);
                 DisplaySuccessMessage("User created");
@@ -79,7 +79,14 @@ namespace FooBox.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
             User user = um.FindUser(id.Value);
-
+            var model = new AdminEditUserViewModel
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Name = user.Name,
+                QuotaLimit = user.QuotaLimit / 1024
+            };
             if (user == null)
             {
                 return HttpNotFound();
@@ -91,17 +98,30 @@ namespace FooBox.Controllers
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult UserEdit([Bind(Include = "Id,Name,FirstName,LastName,QuotaLimit,QuotaCharged")] User user)
+        public ActionResult UserEdit(AdminEditUserViewModel model)
         {
             if (ModelState.IsValid)
             {
-                um.Context.Entry(user).State = EntityState.Modified;
-                um.Context.SaveChanges();
+                User u = um.FindUser(model.Id);
+                u.Name = model.Name;
+                u.FirstName = model.FirstName;
+                u.LastName = model.LastName;
+                u.QuotaLimit = model.QuotaLimit * 1024;
+              
+                try
+                {
+                    um.Context.SaveChanges();
+                }
+                catch
+                {
+                    DisplayErrorMessage();
+                    return View(model);
+                }
                 DisplaySuccessMessage("User details updated");
                 return RedirectToAction("Index");
             }
             DisplayErrorMessage();
-            return View(user);
+            return View(model);
         }
 
         // GET: User/UserDelete/5
