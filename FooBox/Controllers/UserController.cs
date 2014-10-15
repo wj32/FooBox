@@ -85,7 +85,7 @@ namespace FooBox.Controllers
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Name = user.Name,
-                QuotaLimit = user.QuotaLimit / 1024
+                QuotaLimit = user.QuotaLimit / (1024 * 1024)
             };
             if (user == null)
             {
@@ -106,7 +106,7 @@ namespace FooBox.Controllers
                 u.Name = model.Name;
                 u.FirstName = model.FirstName;
                 u.LastName = model.LastName;
-                u.QuotaLimit = model.QuotaLimit * 1024;
+                u.QuotaLimit = model.QuotaLimit * 1024 * 1024;
               
                 try
                 {
