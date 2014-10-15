@@ -28,6 +28,7 @@ namespace FooBox.Controllers
 
             foreach (User u in um.Context.Users) 
             {
+                if (u.Name.Equals("__DEFAULT__") || u.State == ObjectState.Deleted) { continue; }
                 var a = new UserSelectedViewModel();
                 a.Id = u.Id;
                 a.IsSelected = false;
@@ -55,6 +56,7 @@ namespace FooBox.Controllers
                     IsAdmin = model.IsAdmin
                 };
                 var actual = um.CreateGroup(template);
+                actual.Users.Add(um.GetDefaultUser());
                 foreach (var item in model.Users) 
                 {
                     if (item.IsSelected)
@@ -63,7 +65,7 @@ namespace FooBox.Controllers
                         if (u != null) actual.Users.Add(u);
                         um.Context.SaveChanges();
                     }
-                }
+                }           
 
                 DisplaySuccessMessage("User created");
                 return RedirectToAction("Index");
@@ -101,6 +103,7 @@ namespace FooBox.Controllers
             var userList = um.Context.Users.ToList();
             foreach (User u in userList)
             {
+                if (u.Name.Equals("__DEFAULT__") || u.State == ObjectState.Deleted) { continue; }
                 var a = new UserSelectedViewModel();
                 a.Id = u.Id;
                 a.IsSelected = grp.Users.Contains(u);
@@ -123,6 +126,7 @@ namespace FooBox.Controllers
                 g.Name = model.Name;
                 g.IsAdmin = model.IsAdmin;
                 g.Users.Clear();
+                g.Users.Add(um.GetDefaultUser());
                 foreach (var item in model.Users)
                 {
                     if (item.IsSelected)

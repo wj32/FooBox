@@ -43,7 +43,14 @@
                 @Html.DisplayFor(modelItem => item.LastName)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.QuotaLimit)
+                @if (item.QuotaLimit != long.MaxValue) 
+                { 
+                    @Html.DisplayFor(modelItem => item.QuotaLimit)
+                }
+                else
+                {
+                    @("Unlimited")
+                }
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.QuotaCharged)
