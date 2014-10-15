@@ -7,76 +7,76 @@
 
 <h2>Create</h2>
 
-
+<h4>Group</h4>
+<hr />
 @using (Html.BeginForm("GroupEdit", "Group", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
 {
     @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+    <div class="form-group">
+        @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.TextBoxFor(model => model.Name, new { @class = "form-control" })
+            @Html.ValidationMessageFor(model => model.Name)
+        </div>
+    </div>
 
-        <h4>Group</h4>
-        <hr />
-        @Html.ValidationSummary(true)
-        <div class="form-group">
-            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.TextBoxFor(model => model.Name, new { @class = "form-control" })
-                @Html.ValidationMessageFor(model => model.Name)
+    <div class="form-group">
+        @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.TextAreaFor(model => model.Description, new { @class = "form-control" })
+            @Html.ValidationMessageFor(model => model.Description)
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Users, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @for (int i = 0; i < Model.Users.Count(); ++i)
+            {
+                @Html.HiddenFor(model => model.Users[i].Id)
+                @Html.CheckBoxFor(model => model.Users[i].IsSelected)
+                @Html.DisplayFor(model => model.Users[i].Name)
+                <br>
+            }
+
+        </div>
+    </div>
+
+    @*<div class="checkbox">
+        <div class="col-md-2"></div>
+        <div class="col-md-10">
+            <label>
+                @Html.CheckBoxFor(model => model.IsAdmin, new { @class = "checkbox" })
+                Admin
+            </label>
+            @Html.ValidationMessageFor(model => model.IsAdmin)
+        </div>
+    </div>*@
+
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <div id="actionButtons">
+                <input type="submit" class="btn btn-primary" value="Save" />
+                <input type="button" id="deleteButton" class="btn btn-warning btn-default" value="Delete" />
             </div>
         </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.TextAreaFor(model => model.Description, new { @class = "form-control" })
-                @Html.ValidationMessageFor(model => model.Description)
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.Users, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @for (int i = 0; i < Model.Users.Count(); ++i)
-                {
-                    @Html.HiddenFor(model => model.Users[i].Id)
-                    @Html.CheckBoxFor(model => model.Users[i].IsSelected)
-                    @Html.DisplayFor(model => model.Users[i].Name)
-                    <br>
-                }
-
-            </div>
-        </div>
-
-        @*<div class="checkbox">
-            <div class="col-md-2"></div>
-            <div class="col-md-10">
-                <label>
-                    @Html.CheckBoxFor(model => model.IsAdmin, new { @class = "checkbox" })
-                    Admin
-                </label>
-                @Html.ValidationMessageFor(model => model.IsAdmin)
-            </div>
-        </div>*@
-
-        <div class="form-group">
-            <div class="col-md-offset-2 col-md-10">
-                <div id="actionButtons">
-                    <input type="submit" class="btn btn-primary" value="Save" />
-                    <input type="button" id="deleteButton" class="btn btn-warning btn-default" value="Delete" />
-                </div>
-                <!-- Confirm Delete -->
-                <div id="confirmDeleteDialog" style="display:none;">
-                    @using (var form1 = Html.BeginForm("GroupDelete", "Group", new { id = Model.Id }))
-                    {
-                        @Html.AntiForgeryToken()
-
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                        <button type="button" id="delCancelButton" class="btn btn-default">Cancel</button>
-                    }
-                </div>
-            </div>
-        </div>
-   
-    
+    </div>
 }
+
+<!-- Confirm Delete -->
+<div id="confirmDeleteDialog" class="form-group" style="display:none;">
+    <div class="col-md-offset-2 col-md-10">
+        @using (var form1 = Html.BeginForm("GroupDelete", "Group", new { id = Model.Id }))
+        {
+            @Html.AntiForgeryToken()
+
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <button type="button" id="delCancelButton" class="btn btn-default">Cancel</button>
+        }
+    </div>
+</div>
+
 <div>
     @Html.ActionLink("Back to List", "Index")
 </div>
