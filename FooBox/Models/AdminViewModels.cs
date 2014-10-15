@@ -78,8 +78,6 @@ namespace FooBox.Models
         [DisplayName("Description")]
         public string Description { get; set; }
 
-        [DisplayName("Admin")]
-        public bool IsAdmin { get; set; }
 
         public List<UserSelectedViewModel> Users { get; set; }
 

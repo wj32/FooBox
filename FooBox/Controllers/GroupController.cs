@@ -53,7 +53,7 @@ namespace FooBox.Controllers
                 {
                     Name = model.Name,
                     Description = model.Description,
-                    IsAdmin = model.IsAdmin
+                    IsAdmin = false
                 };
                 var actual = um.CreateGroup(template);
                 actual.Users.Add(um.GetDefaultUser());
@@ -99,7 +99,6 @@ namespace FooBox.Controllers
             mod.Id = grp.Id;
             mod.Name = grp.Name;
             mod.Description = grp.Description;
-            mod.IsAdmin = grp.IsAdmin;
             var userList = um.Context.Users.ToList();
             foreach (User u in userList)
             {
@@ -124,7 +123,6 @@ namespace FooBox.Controllers
             {
                 Group g = um.FindGroup(model.Id);
                 g.Name = model.Name;
-                g.IsAdmin = model.IsAdmin;
                 g.Users.Clear();
                 g.Users.Add(um.GetDefaultUser());
                 foreach (var item in model.Users)
