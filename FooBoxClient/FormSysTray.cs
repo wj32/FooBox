@@ -143,7 +143,6 @@ namespace FooBoxClient
                         {
                             //Found change however assumes that user didn't rename a file 
                             //and add a file with the same name
-                            changeOccured = true;
                         }
                     }
                     else
