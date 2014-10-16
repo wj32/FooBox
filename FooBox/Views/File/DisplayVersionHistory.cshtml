@@ -19,9 +19,23 @@
         @foreach (var version in Model.Versions)
         {
             <tr>
-                <td>@Html.Encode(version.TimeStamp.ToLocalTime().ToString("F"))</td>
-                <td>@Html.ActionLink("Download", "DownloadVersion", new { id = version.VersionId })</td>
-                <td>Revert</td>
+                <td class="vert-align">@Html.Encode(version.TimeStamp.ToLocalTime().ToString("F"))</td>
+                <td class="vert-align">@Html.ActionLink("Download", "DownloadVersion", new { id = version.VersionId }, new { @class = "btn btn-link" })</td>
+                <td class="vert-align">
+                    @{
+                        bool first = true;
+                        if (!first)
+                        {
+                            using (Html.BeginForm("RevertVersion", "File", FormMethod.Post, new { role = "form" }))
+                            {
+                                @Html.Hidden("fullName", Model.FullDisplayName)
+                                @Html.Hidden("versionId", version.VersionId)
+                                <input type="submit" value="Revert" class="btn btn-link" />
+                            }
+                            first = false;
+                        }
+                    }
+                </td>
             </tr>
         }
     </table>

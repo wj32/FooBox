@@ -41,3 +41,7 @@ input[type="checkbox"].input-validation-error {
     display: none;
 }
 
+/* center table rows */
+.table tbody>tr>td.vert-align{
+    vertical-align: middle;
+}

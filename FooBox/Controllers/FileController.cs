@@ -149,6 +149,7 @@ namespace FooBox.Controllers
             VersionHistoryViewModel model = new VersionHistoryViewModel();
 
             model.DisplayName = document.DisplayName;
+            model.FullDisplayName = fullDisplayName;
             model.Versions = (
                 from version in document.DocumentVersions
                 orderby version.TimeStamp descending
@@ -177,12 +178,14 @@ namespace FooBox.Controllers
         public ActionResult RevertVersion(string fullName, long versionId)
         {
             long userId = User.Identity.GetUserId();
+            string fullDisplayName = null;
             DocumentVersion version = _fileManager.FindDocumentVersion(versionId);
             if (version == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            File file = _fileManager.FindFile(fullName);
+            _fileManager.FindFile(fullName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+            File file = _fileManager.FindFile(fullName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
             if (file == null || !(file is Document))
                 return RedirectToAction("Browse");
 
@@ -193,14 +196,14 @@ namespace FooBox.Controllers
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
             data.Changes.Add(new ClientChange
             {
-                FullName = "/" + userId.ToString() + "/" + fullName,
+                FullName = "/" + userId.ToString() + "/" + fullDisplayName,
                 Type = ChangeType.Add,
                 Hash = version.Blob.Hash,
                 Size = version.Blob.Size
             });
             _fileManager.SyncClientChanges(data);
 
-            return DisplayVersionHistory(fullName);
+            return RedirectToAction("DisplayVersionHistory", new { fullName = fullName });
         }
 
         private bool NameConflicts(Folder parent, string name, bool creatingDocument, bool newVersion)
