@@ -118,7 +118,8 @@ namespace FooBox.Controllers
                 return null;
 
             var client = _fileManager.FindClient(id.Value);
-
+            if (client == null)
+                return null;
             if (client.Secret != secret)
                 return null;
 

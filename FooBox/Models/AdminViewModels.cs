@@ -34,10 +34,31 @@ namespace FooBox.Models
         public string LastName { get; set; }
 
                 
-        [DisplayName("Quota Limit")]
+        [DisplayName("Quota Limit (MB)")]
         public long QuotaLimit { get; set; }
+    }
+
+    public class AdminEditUserViewModel
+    {
+        public long Id { get; set; }
+
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "User name")]
+        public string Name { get; set; }
 
 
+        [DataType(DataType.Text)]
+        [DisplayName("First name")]
+        public string FirstName { get; set; }
+
+        [DataType(DataType.Text)]
+        [DisplayName("Last name")]
+        public string LastName { get; set; }
+
+
+        [DisplayName("Quota Limit (MB)")]
+        public long QuotaLimit { get; set; }
     }
 
     public class AdminNewGroupViewModel
@@ -53,12 +74,9 @@ namespace FooBox.Models
         [DisplayName("Description")]
         public string Description { get; set; }
 
-        [DisplayName("Admin")]
-        public bool IsAdmin { get; set; }
+    
 
-        //[DisplayName("Users in group")]
-        //public IEnumerable<User> Users { get; set; }
-
+    
         public List<UserSelectedViewModel> Users { get; set; }
     }
 
@@ -78,8 +96,6 @@ namespace FooBox.Models
         [DisplayName("Description")]
         public string Description { get; set; }
 
-        [DisplayName("Admin")]
-        public bool IsAdmin { get; set; }
 
         public List<UserSelectedViewModel> Users { get; set; }
 
