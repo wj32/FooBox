@@ -92,8 +92,8 @@ namespace FooBoxClient
         private void timerPollTick(Object source, ElapsedEventArgs e)
         {
             //Okay doesn't block GUI
-            sync();
-            System.Threading.Thread.Sleep(10000);
+            checkForChanges(new DirectoryInfo(fs.RootFolder),fs.Root);
+
         }
 
         private void FormSysTray_FormClosed(object sender, FormClosedEventArgs e)
@@ -143,6 +143,7 @@ namespace FooBoxClient
                         {
                             //Found change however assumes that user didn't rename a file 
                             //and add a file with the same name
+                            changeOccured = true;
                         }
                     }
                     else
@@ -167,6 +168,7 @@ namespace FooBoxClient
                         fsDirs.Remove(temp.Name);
                         //directory exists
                         //go another level deeper
+
                         checkForChanges(dirInfo, temp);
                     }
                     else
