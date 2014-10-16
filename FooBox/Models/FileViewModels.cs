@@ -36,6 +36,7 @@ namespace FooBox.Models
         }
 
         public string DisplayName { get; set; }
+        public string FullDisplayName { get; set; }
 
         public List<VersionEntry> Versions { get; set; }
     }
