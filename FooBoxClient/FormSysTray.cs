@@ -18,12 +18,14 @@ namespace FooBoxClient
     {
         FileSystem fs;
         System.Timers.Timer timerPoll;
+        //in milliseconds
+        int pollInterval = 20000;
         public FormSysTray()
         {
             InitializeComponent();
             getRootFolder(Properties.Settings.Default.ID);
             //run every 20 seconds;
-            timerPoll = new System.Timers.Timer(20000);
+            timerPoll = new System.Timers.Timer(pollInterval);
             timerPoll.Elapsed += timerPollTick;
             timerPoll.Enabled = true;
         }
@@ -104,6 +106,86 @@ namespace FooBoxClient
             Properties.Settings.Default.Reset();
         }
 
+        /*
+         * Called by timerPollTick will check for changes every pollInterval
+         * Iterates over the fs starting at root and continuing down compares files and 
+         * directory FileInfo, also searches for new files
+         */
+        private void checkForChanges(DirectoryInfo root, File fsRoot)
+        {
+           
+            System.IO.FileInfo[] files = null;
+            System.IO.DirectoryInfo[] subDirs = null;
+            try
+            {
+                files = root.GetFiles();
+            }
+            catch (UnauthorizedAccessException)
+            {
+
+            }
+            catch (DirectoryNotFoundException)
+            {
+                // lol no
+            }
+
+            if (files != null)
+            {
+                List<string> l = fsRoot.getFileNameList();
+                foreach (System.IO.FileInfo fi in files)
+                {
+                    File temp = fsRoot.subExists(fi.Name);
+
+                    if (temp != null)
+                    {
+                        l.Remove(temp.Name);
+                        if (temp.Info.LastWriteTime != fi.LastWriteTime)
+                        {
+                            //Found change however assumes that user didn't rename a file 
+                            //and add a file with the same name
+                        }
+                    }
+                    else
+                    {
+                        //new file created
+                        //needs to be added
+                    }
+                }
+                foreach (string name in l)
+                {
+                    //file was deleted or renamed
+                }
+
+                // Now find all the subdirectories under this directory.
+                subDirs = root.GetDirectories();
+                List<string> fsDirs = fsRoot.getDirectoryNameList();
+                foreach (System.IO.DirectoryInfo dirInfo in subDirs)
+                {
+                    // Resursive call for each subdirectory.
+                    File  temp = fsRoot.subExists(dirInfo.Name);
+                    if (temp != null){
+                        fsDirs.Remove(temp.Name);
+                        //directory exists
+                        //go another level deeper
+                        checkForChanges(dirInfo, temp);
+                    }
+                    else
+                    {
+                        //directory does not exist could be rename or created
+                        //needs to be added
+                    }
+                    
+                }
+                foreach (string name in fsDirs)
+                {
+                    //directory was deleted or renamed
+                }
+            }
+        }
+
+        /*
+         * Syncs with the syncserver thing 
+         */
         private void sync()
         {
            
@@ -113,7 +195,6 @@ namespace FooBoxClient
         {
             getRootFolder("342");
         }
-    
-        
+
     }
 }

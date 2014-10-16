@@ -41,6 +41,35 @@ namespace FooBoxClient
             return null;
         }
 
+        /*
+         * Returns a list of file names in the directory
+         */
+        public List<string> getFileNameList()
+        {
+            List<string> l = new List<string>();
+            foreach (File f in subFiles)
+            {
+                if (!f._isDirectory)
+                {
+                    l.Add(f.Name);
+                }
+            }
+            return l;
+        }
+
+        public List<string> getDirectoryNameList()
+        {
+            List<string> l = new List<string>();
+            foreach (File f in subFiles)
+            {
+                if (f._isDirectory)
+                {
+                    l.Add(f.Name);
+                }
+            }
+            return l;
+        }
+
         public void addFile(File f)
         {
             f._parent = this;
@@ -48,17 +77,44 @@ namespace FooBoxClient
             {
                 if (f._isDirectory)
                 {
-                    System.IO.Directory.CreateDirectory(f.getFullPath());
+                    System.IO.Directory.CreateDirectory(f.getFullPath());             
                 }
                 else
                 {
+                    f.Info = new System.IO.FileInfo(f.getFullPath());
                     System.IO.File.Create(f.getFullPath(), 43224);
                 }
             }
             //create actual file if doean't exist
             subFiles.Add(f);
         }
+        /*
+         * Returns number of FILES not directories
+         */
+        public int getFileCount()
+        {
+            int count = 0;
+            foreach (File f in subFiles){
+                if (!f._isDirectory)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
 
+        public int getDirectoryCount()
+        {
+            int count = 0;
+            foreach (File f in subFiles)
+            {
+                if (f._isDirectory)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
         public string getFullPath()
         {
             File current = this;
