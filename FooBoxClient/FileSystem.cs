@@ -11,22 +11,21 @@ namespace FooBoxClient
 {
     class File
     {
-        //this is really lazy and bad i guess
-        public bool isRoot = false;
 
 
         private FileInfo _info;
         private string _fileName;
         private bool _isDirectory;
-        public HashSet<File> subFiles;
+        public List<File> subFiles;
         private File _parent;
+        public File() { }
         public File(string fileName, bool isDirectory)
         {
             _isDirectory = isDirectory;
             _fileName = fileName;
             if (isDirectory)
             {
-                subFiles = new HashSet<File>();
+                subFiles = new List<File>();
             }
         }
 
@@ -70,10 +69,11 @@ namespace FooBoxClient
             return l;
         }
 
-        public void addFile(File f)
+        public void addFile(File f, bool instantiate)
         {
             f._parent = this;
-            if (!System.IO.File.Exists(f.getFullPath()))
+            
+            if (!System.IO.File.Exists(f.getFullPath()) && instantiate)
             {
                 if (f._isDirectory)
                 {
@@ -119,7 +119,7 @@ namespace FooBoxClient
         {
             File current = this;
             string path = "";
-            while (current.isRoot == false) {
+            while (current._parent != null) {
                 if (current._parent.Name[current._parent.Name.Length - 1] == '\\')
                 {
                     path = current.Name + path;
@@ -157,16 +157,27 @@ namespace FooBoxClient
         private string _rootFolder;
         private File _root;
 
+        public FileSystem(string rootFolder, File root)
+        {
+            _rootFolder = rootFolder;
+            _root = root;
+        }
+
         public FileSystem(string rootFolder)
         {
             _rootFolder = rootFolder;
             _root = new File(rootFolder, true);
-            _root.isRoot = true;
         }
 
-     
+        public void executeChangeList(ClientSyncResult s)
+        {
+            foreach (ClientChange change in s.Changes)
+            {
+                this.executeChange(change);
+            }
+        }
 
-        public bool execChange(ClientChange c)
+        public void executeChange(ClientChange c)
         {
             //do magic
             File current = _root;
@@ -185,7 +196,7 @@ namespace FooBoxClient
                                 }
                                 else
                                 {
-                                    current.addFile(new File(files[i], true));
+                                    current.addFile(new File(files[i], true), true);
                                 }
                             }
                             else
@@ -194,7 +205,7 @@ namespace FooBoxClient
                                 {
                                     //add the file
              
-                                    current.addFile(new File(files[i], false));
+                                    current.addFile(new File(files[i], false), true);
                                
                                 }
                                 else
@@ -215,7 +226,7 @@ namespace FooBoxClient
                         }
                     }
             
-            return false;
+            return;
         }
 
         internal File Root

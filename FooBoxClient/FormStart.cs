@@ -94,7 +94,8 @@ namespace FooBoxClient
             Properties.Settings.Default.Root = textBoxDirLoc.Text;
             Properties.Settings.Default.Save();
             
-            //NOT SURE IF THIS HOW ITS SUPPOSED TO BE DONE
+            
+
             this.Hide();
             FormSysTray frm = new FormSysTray();
             frm.Show();

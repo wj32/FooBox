@@ -12,6 +12,7 @@ using System.Net;
 using System.Xml.Serialization;
 using System.Timers;
 using FooBox.Common;
+using System.Web.Script.Serialization;
 namespace FooBoxClient
 {
     public partial class FormSysTray : Form
@@ -23,23 +24,66 @@ namespace FooBoxClient
         public FormSysTray()
         {
             InitializeComponent();
-            getRootFolder(Properties.Settings.Default.ID);
+            File temp = new File();
+            //check if data file exists 
+            if (System.IO.Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\FooBox")){
+                if (System.IO.File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\FooBox\\info.dat"))
+                {
+                    //deserialize file
+                    
+                    temp = new JavaScriptSerializer().Deserialize(
+                        System.IO.File.ReadAllText(
+                        System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
+                        + "\\FooBox\\info.dat")
+                        , temp.GetType()
+                        ) as File;
+                }
+            }
+            else
+            {
+                //create directory for serialised version
+                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\FooBox");
+                temp = null;
+            }
+
+
+            merge(temp);
             //run every 20 seconds;
             timerPoll = new System.Timers.Timer(pollInterval);
             timerPoll.Elapsed += timerPollTick;
             timerPoll.Enabled = true;
         }
 
+
         /*
-         *  This method SHOULD only occur on the very first time run of the form
-         * 
+         * Handles all of the cases
+         * Merges stored list with directory on computer
+         * then merges that with the server side list
+         * then instantiates all changes and pushes changelist to server
+         * at the end of the merge the current fs will be serialised and dumped into file
          */
-        private void getRootFolder(string ID){
+        private void merge(File f)
+        {
+            if (f != null)
+            {
+                fs = new FileSystem(Properties.Settings.Default.Root, f);
+                //have a file list from last run 
+                // need to merge this with the current files
+            }
+            else
+            {
+                fs = new FileSystem(Properties.Settings.Default.Root);
+                fs.executeChangeList(getSyncData(""));
+            }
+        }
+
+        /*
+         *  Gets a changelist from the server 
+         *  can be given a change list id other is assumed to be blank
+         */
+        private ClientSyncResult getSyncData(string changeListID){
             string url = @"http://" + Properties.Settings.Default.Server +":" + Properties.Settings.Default.Port + "/Client/Sync";
-
-           
-
-            string postContent = "id=" + ID + "&secret=" + Properties.Settings.Default.Secret +  "&baseChangelistId=";
+            string postContent = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret +  "&baseChangelistId=" + changeListID;
             MessageBox.Show(postContent);
             HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
 
@@ -59,7 +103,7 @@ namespace FooBoxClient
             catch (WebException)
             {
                 this.Text = "Server name or port incorrect";
-                return;
+                return null;
             }
             try
             {
@@ -75,16 +119,13 @@ namespace FooBoxClient
                 ClientSyncResult c = (new System.Web.Script.Serialization.JavaScriptSerializer()).Deserialize<ClientSyncResult>(responseText);
                 //loop through changes
             
-                fs = new FileSystem(Properties.Settings.Default.Root);
-                foreach (ClientChange change in c.Changes)
-                {
-                    fs.execChange(change);
-                }
-                return;
+             /*   fs = new FileSystem(Properties.Settings.Default.Root);
+            */
+                return c ;
             }
             catch (WebException) {
                 this.Text = "Authentification Failed!";
-                return;
+                return null;
             }
     
         }
@@ -101,13 +142,19 @@ namespace FooBoxClient
             Application.Exit();
         }
 
+        //test button plz ignore
         private void button1_Click(object sender, EventArgs e)
         {
-            Properties.Settings.Default.Reset();
+            var json = new JavaScriptSerializer().Serialize(fs.Root);
+            System.IO.File.WriteAllText(@"C:\Users\Luke\Desktop\temp.txt", json);
+            File temp = new File("temp", false);
+            temp = new JavaScriptSerializer().Deserialize(System.IO.File.ReadAllText(@"C:\Users\Luke\Desktop\temp.txt"), temp.GetType()) as File;
+            //Properties.Settings.Default.Reset();
+            temp = null;
         }
 
         /*
-         * Called by timerPollTick will check for changes every pollInterval
+         * check for changes between the local directory and a given file tree
          * Iterates over the fs starting at root and continuing down compares files and 
          * directory FileInfo, also searches for new files
          */
@@ -122,10 +169,11 @@ namespace FooBoxClient
             }
             catch (UnauthorizedAccessException)
             {
-
+                return;
             }
             catch (DirectoryNotFoundException)
             {
+                return;
                 // lol no
             }
 
@@ -185,17 +233,11 @@ namespace FooBoxClient
         }
 
         /*
-         * Syncs with the syncserver thing 
+         * Actually doesn't do anything yet
          */
         private void sync()
         {
            
         }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            getRootFolder("342");
-        }
-
     }
 }
