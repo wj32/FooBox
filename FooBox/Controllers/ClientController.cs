@@ -81,7 +81,7 @@ namespace FooBox.Controllers
         }
 
         [HttpPost]
-        public ActionResult Sync(long? id, string secret)
+        public ActionResult SyncUp(long? id, string secret)
         {
             var client = FindClient(id, secret);
 
@@ -90,7 +90,8 @@ namespace FooBox.Controllers
 
             StreamReader sr = new StreamReader(Request.InputStream);
             string input = sr.ReadToEnd();
-
+            int index = input.LastIndexOf("&");
+            input = input.Substring(index + 1);
             var serializer = new JavaScriptSerializer();
             var clientSyncData = serializer.Deserialize<ClientSyncData>(input);
 

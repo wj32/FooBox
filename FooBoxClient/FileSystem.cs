@@ -121,10 +121,11 @@ namespace FooBoxClient
                 HttpWebResponse response = req.GetResponse() as HttpWebResponse;
                 BinaryReader temp = new BinaryReader(response.GetResponseStream());//.Read(ret, 0, (int)this.FileSize);
                 int readLength = temp.Read(ret, 0, (int)this.FileSize);
-                if (readLength != this.FileSize || readLength != 0)
-                {
-                    return null;
-                }
+                //TODO: Fix the bug where it doesn't read to end
+            //    if (readLength != this.FileSize || readLength != 0)
+           //     {
+           //         return null;
+          //      }
             }
             catch (WebException)
             {
@@ -253,8 +254,10 @@ namespace FooBoxClient
     {
         private string _rootFolder;
         private long _changeListID;
+
         private File _root;
         private Dictionary<string, File> file;
+        
         public FileSystem(string rootFolder, File root)
         {
             _rootFolder = rootFolder;
@@ -271,7 +274,7 @@ namespace FooBoxClient
 
         public void executeClientSync(ClientSyncResult s, bool instantiate)
         {
-
+            this._changeListID = s.LastChangelistId;
             executeChangeList(s.Changes, instantiate);
         }
 
@@ -366,6 +369,12 @@ namespace FooBoxClient
         {
             get { return _rootFolder; }
             set { _rootFolder = value; }
+        }
+
+        public long ChangeListID
+        {
+            get { return _changeListID; }
+            set { _changeListID = value; }
         }
 
     }

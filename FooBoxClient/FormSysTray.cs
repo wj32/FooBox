@@ -97,7 +97,13 @@ namespace FooBoxClient
 
                 List<ClientChange> changeList = checkForChanges( new System.IO.DirectoryInfo(Properties.Settings.Default.Root), fs.Root);
                 fs.executeChangeList(changeList, true);
-
+                ClientSyncData d = new ClientSyncData();
+                d.BaseChangelistId = fs.ChangeListID;
+                d.ClientId = 0;
+               
+                sync(d);
+         //       d.Changes = changeList;
+          //      d.BaseChangelistId = ;
                 //Send list of changes along with base change list ID, if theres a conflict server sends conflict resolve by renaming
                 //List of hashes that I need to uplaod
 
@@ -180,7 +186,7 @@ namespace FooBoxClient
         private void timerPollTick(Object source, ElapsedEventArgs e)
         {
             //Okay doesn't block GUI
-            checkForChanges(new DirectoryInfo(fs.RootFolder),fs.Root);
+           // checkForChanges(new DirectoryInfo(fs.RootFolder),fs.Root);
 
         }
 
@@ -258,8 +264,10 @@ namespace FooBoxClient
         private string getHash(string fileName)
         {
             string hash = "";
+            hash = FooBox.Utilities.ComputeSha256Hash(fileName);
             return hash;
         }
+
 
         /*
          * check for changes between the local directory and a given file tree
@@ -305,6 +313,9 @@ namespace FooBoxClient
                             addDoc.IsFolder = false;
                             addDoc.Hash = getHash(fi.FullName);
                             addDoc.Type = ChangeType.Add;
+                            addDoc.DisplayName = fi.Name;
+
+                            addDoc.Size = fi.Length;
                             changeList.Add(addDoc);
                             //fi is a newer version of temp
                             //Found change however assumes that user didn't rename a file 
@@ -317,6 +328,9 @@ namespace FooBoxClient
                         addDoc.FullName = getServerPath(fi.FullName);
                         addDoc.IsFolder = false;
                         addDoc.Hash = getHash(fi.FullName);
+                        addDoc.DisplayName = fi.Name;
+                        addDoc.Size = fi.Length;
+
                         addDoc.Type = ChangeType.Add;
                         changeList.Add(addDoc);
                         //new file created
@@ -345,8 +359,11 @@ namespace FooBoxClient
                         fsDirs.Remove(temp.Name);
                         //directory exists
                         //go another level deeper
-
-                        changeList.AddRange(checkForChanges(dirInfo, temp));
+                        List<ClientChange> tL = checkForChanges(dirInfo, temp);
+                        if (tL.Count > 0)
+                        {
+                            changeList.AddRange(tL);
+                        }
                     }
                     else
                     {
@@ -357,7 +374,7 @@ namespace FooBoxClient
                         addDir.FullName = getServerPath(dirInfo.FullName);
                         addDir.IsFolder = false;
                         addDir.Type = ChangeType.Add;
-                        
+                        addDir.DisplayName = dirInfo.Name;
                         changeList.Add(addDir);
                     }
                     
@@ -377,11 +394,55 @@ namespace FooBoxClient
         }
 
         /*
-         * Actually doesn't do anything yet
+         * Calls the http post 
          */
-        private void sync()
+        private ClientSyncResult sync(ClientSyncData d)
         {
-           
+            string url = @"http://" + Properties.Settings.Default.Server + ":" + Properties.Settings.Default.Port + "/Client/SyncUp";
+            string postContent = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&";
+            HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
+            var serializer = new JavaScriptSerializer();
+            var serial = serializer.Serialize(d);
+            byte[] dataBytes = UTF8Encoding.UTF8.GetBytes(postContent + serial);
+
+            req.KeepAlive = true;
+            req.Method = "POST";
+            req.ContentLength = dataBytes.Length;
+            req.ContentType = "application/x-www-form-urlencoded";
+         
+            try
+            {
+                using (Stream postStream = req.GetRequestStream())
+                {
+                    postStream.Write(dataBytes, 0, dataBytes.Length);
+                }
+            }
+            catch (WebException)
+            {
+                return null;
+            }
+            try
+            {
+                HttpWebResponse response = req.GetResponse() as HttpWebResponse;
+                var encoding = UTF8Encoding.UTF8;
+                string responseText = "";
+                using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
+                {
+                    this.Text = responseText = reader.ReadToEnd();
+                }
+
+
+                ClientSyncResult c = (new System.Web.Script.Serialization.JavaScriptSerializer()).Deserialize<ClientSyncResult>(responseText);
+                //loop through changes
+
+                /*   fs = new FileSystem(Properties.Settings.Default.Root);
+               */
+                return c;
+            }
+            catch (WebException)
+            {
+                return null;
+            }
         }
     }
 }
