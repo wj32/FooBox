@@ -137,27 +137,12 @@ namespace FooBoxClient
          */
         private ClientSyncResult getSyncData(string changeListID){
             string url = @"http://" + Properties.Settings.Default.Server +":" + Properties.Settings.Default.Port + "/Client/Sync";
-            string postContent = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret +  "&baseChangelistId=" + changeListID;
-            HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret +  "&baseChangelistId=" + changeListID;
+            HttpWebRequest req = WebRequest.Create(url + "?" + parameters) as HttpWebRequest;
 
-            byte[] dataBytes = UTF8Encoding.UTF8.GetBytes(postContent);
-            
             req.KeepAlive = true;
-            req.Method = "POST";
-            req.ContentLength = dataBytes.Length;
-            req.ContentType = "application/x-www-form-urlencoded";
-            try
-            {
-                using (Stream postStream = req.GetRequestStream())
-                {
-                    postStream.Write(dataBytes, 0, dataBytes.Length);
-                }
-            }
-            catch (WebException)
-            {
-                this.Text = "Server name or port incorrect";
-                return null;
-            }
+            req.Method = "GET";
+
             try
             {
                 HttpWebResponse response = req.GetResponse() as HttpWebResponse;
@@ -398,12 +383,16 @@ namespace FooBoxClient
          */
         private ClientSyncResult sync(ClientSyncData d)
         {
-            string url = @"http://" + Properties.Settings.Default.Server + ":" + Properties.Settings.Default.Port + "/Client/SyncUp";
-            string postContent = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&";
+            string url = @"http://" + Properties.Settings.Default.Server + ":" + Properties.Settings.Default.Port + "/Client/Sync";
             HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
             var serializer = new JavaScriptSerializer();
-            var serial = serializer.Serialize(d);
-            byte[] dataBytes = UTF8Encoding.UTF8.GetBytes(postContent + serial);
+            var serial = serializer.Serialize(new ClientSyncPostData
+            {
+                Id = long.Parse(Properties.Settings.Default.ID),
+                Secret = Properties.Settings.Default.Secret,
+                Data = d
+            });
+            byte[] dataBytes = UTF8Encoding.UTF8.GetBytes(serial);
 
             req.KeepAlive = true;
             req.Method = "POST";

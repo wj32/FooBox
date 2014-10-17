@@ -81,21 +81,21 @@ namespace FooBox.Controllers
         }
 
         [HttpPost]
-        public ActionResult SyncUp(long? id, string secret)
+        public ActionResult Sync()
         {
-            var client = FindClient(id, secret);
+            using (var sr = new StreamReader(Request.InputStream))
+            {
+                string input = sr.ReadToEnd();
+                var serializer = new JavaScriptSerializer();
+                var clientSyncPostData = serializer.Deserialize<ClientSyncPostData>(input);
 
-            if (client == null)
-                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+                var client = FindClient(clientSyncPostData.Id, clientSyncPostData.Secret);
 
-            StreamReader sr = new StreamReader(Request.InputStream);
-            string input = sr.ReadToEnd();
-            int index = input.LastIndexOf("&");
-            input = input.Substring(index + 1);
-            var serializer = new JavaScriptSerializer();
-            var clientSyncData = serializer.Deserialize<ClientSyncData>(input);
+                if (client == null)
+                    return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
 
-            return Json(_fileManager.SyncClientChanges(clientSyncData));
+                return Json(_fileManager.SyncClientChanges(clientSyncPostData.Data));
+            }
         }
 
         public ActionResult Download(long? id, string secret, string hash)

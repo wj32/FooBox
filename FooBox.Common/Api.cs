@@ -93,4 +93,11 @@ namespace FooBox.Common
 
         public long NewChangelistId { get; set; }
     }
+
+    public class ClientSyncPostData
+    {
+        public long Id { get; set; }
+        public string Secret { get; set; }
+        public ClientSyncData Data { get; set; }
+    }
 }
