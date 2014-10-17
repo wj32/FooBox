@@ -82,5 +82,17 @@ namespace FooBoxClient.Properties {
                 this["Root"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ServerRoot {
+            get {
+                return ((string)(this["ServerRoot"]));
+            }
+            set {
+                this["ServerRoot"] = value;
+            }
+        }
     }
 }

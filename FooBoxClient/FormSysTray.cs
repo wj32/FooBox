@@ -43,6 +43,7 @@ namespace FooBoxClient
 
                     
                     temp = ser.ReadObject(stream) as File;
+                    
                     reconstructParents(temp);
                 }
                 else
@@ -94,8 +95,8 @@ namespace FooBoxClient
             {
                 fs = new FileSystem(Properties.Settings.Default.Root, f);
 
-                List<ChangeItem> changeList = checkForChanges( new System.IO.DirectoryInfo(Properties.Settings.Default.Root), fs.Root);
-                
+                List<ClientChange> changeList = checkForChanges( new System.IO.DirectoryInfo(Properties.Settings.Default.Root), fs.Root);
+                fs.executeChangeList(changeList, true);
               //  var fsOnline = new FileSystem(Properties.Settings.Default.Root);
               //  fsOnline.executeChangeList(getSyncData(""), false);
                // List<ChangeItem> changes = createChangeList(fs, fsOnline);
@@ -106,9 +107,9 @@ namespace FooBoxClient
             else
             {
                 fs = new FileSystem(Properties.Settings.Default.Root);
-                fs.executeChangeList(getSyncData(""), true);
+                fs.executeClientSync(getSyncData(""), true);
             }
-          //  var serialiserSettings = new DataContractJsonSerializerSettings() {PeserveReferencesHandling = PreserveReferencesHandling.Objects};
+            //serialise  the file 
             var serialiser = new DataContractJsonSerializer(typeof(File));
             
             MemoryStream stream1 = new MemoryStream();
@@ -237,14 +238,23 @@ namespace FooBoxClient
             return changes;
         }*/
 
+
+        public string getServerPath(string fullName)
+        {
+     
+            fullName = Properties.Settings.Default.ServerRoot + fullName.Substring(Properties.Settings.Default.Root.Length);
+            fullName = fullName.Replace('\\', '/');
+            return fullName;
+        }
+
         /*
          * check for changes between the local directory and a given file tree
          * Iterates over the fs starting at root and continuing down compares files and 
          * directory FileInfo, also searches for new files
          */
-        private List<ChangeItem> checkForChanges(DirectoryInfo root, File fsRoot)
+        private List<ClientChange> checkForChanges(DirectoryInfo root, File fsRoot)
         {
-            List<ChangeItem> changeList = new List<ChangeItem>();
+            List<ClientChange> changeList = new List<ClientChange>();
             System.IO.FileInfo[] files = null;
             System.IO.DirectoryInfo[] subDirs = null;
             try
@@ -283,6 +293,12 @@ namespace FooBoxClient
                     }
                     else
                     {
+                        ClientChange addDoc = new ClientChange();
+                        addDoc.FullName = getServerPath(fi.FullName);
+                        addDoc.IsFolder = false;
+                        
+                        addDoc.Type = ChangeType.Add;
+                        changeList.Add(addDoc);
                         //new file created
                         //needs to be added
                     }
@@ -290,6 +306,12 @@ namespace FooBoxClient
                 foreach (string name in l)
                 {
                     //file was deleted or renamed
+                    ClientChange deleteDoc = new ClientChange();
+                    File del = fsRoot.subExists(name);
+                    deleteDoc.FullName = getServerPath(del.getFullPath());
+                    deleteDoc.IsFolder = false;
+                    deleteDoc.Type = ChangeType.Delete;
+                    changeList.Add(deleteDoc);
                 }
 
                 // Now find all the subdirectories under this directory.
@@ -310,11 +332,22 @@ namespace FooBoxClient
                     {
                         //directory does not exist could be rename or created
                         //needs to be added
+                        ClientChange addDir = new ClientChange();
+                        addDir.FullName = getServerPath(dirInfo.FullName);
+                        addDir.IsFolder = false;
+                        addDir.Type = ChangeType.Add;
+                        changeList.Add(addDir);
                     }
                     
                 }
                 foreach (string name in fsDirs)
                 {
+                    ClientChange deleteDir = new ClientChange();
+                    File del = fsRoot.subExists(name);
+                    deleteDir.FullName = getServerPath(del.getFullPath());
+                    deleteDir.IsFolder = false;
+                    deleteDir.Type = ChangeType.Delete;
+                    changeList.Add(deleteDir);
                     //directory was deleted or renamed
                 }
             }

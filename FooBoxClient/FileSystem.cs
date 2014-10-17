@@ -26,8 +26,8 @@ namespace FooBoxClient
         public List<File> subFiles;
         private File _parent;
 
-        
-        public File() { }
+
+        public File() { DateTime.SpecifyKind(_lastModified, DateTimeKind.Utc); }
         public File(string fileName, bool isDirectory)
         {
             _isDirectory = isDirectory;
@@ -36,10 +36,12 @@ namespace FooBoxClient
             {
                 subFiles = new List<File>();
             }
+            DateTime.SpecifyKind(_lastModified, DateTimeKind.Utc);
         }
 
         public File subExists(string name)
         {
+
             foreach (File files in subFiles)
             {
                 if (name == files.Name) {
@@ -92,12 +94,13 @@ namespace FooBoxClient
                 }
                 else
                 {
-                    
                     System.IO.File.Create(f.getFullPath(), 43224);
-                   
-                    f.LastModified = new System.IO.FileInfo(f.getFullPath()).LastWriteTime.ToUniversalTime();
-                    
-                    
+                    //ultra hacky line that fixes odd bug which seems to be a result of File.Create
+                    while (DateTime.Compare(DateTime.MinValue, f.LastModified) == 0)
+                    {
+                        f.LastModified = new System.IO.FileInfo(f.getFullPath()).LastWriteTime.ToUniversalTime();
+                    }
+   
                 }
             } 
             //create actual file if doean't exist
@@ -149,6 +152,7 @@ namespace FooBoxClient
             return path;
         }
 
+
         #region GETSET
         public DateTime LastModified
         {
@@ -175,6 +179,7 @@ namespace FooBoxClient
     class FileSystem
     {
         private string _rootFolder;
+
         private File _root;
 
         public FileSystem(string rootFolder, File root)
@@ -191,9 +196,15 @@ namespace FooBoxClient
             _root.LastModified = DateTime.SpecifyKind(_root.LastModified, DateTimeKind.Utc);
         }
 
-        public void executeChangeList(ClientSyncResult s, bool instantiate)
+        public void executeClientSync(ClientSyncResult s, bool instantiate)
         {
-            foreach (ClientChange change in s.Changes)
+
+            executeChangeList(s.Changes, instantiate);
+        }
+
+        public void executeChangeList(ICollection<ClientChange> l, bool instantiate)
+        {
+            foreach (ClientChange change in l)
             {
                 this.executeChange(change, instantiate);
             }
@@ -207,6 +218,11 @@ namespace FooBoxClient
             string[] files =  c.FullName.Split('/');
                     for (int i = 2; i < files.Length; ++ i)
                     {
+                        if (Properties.Settings.Default.ServerRoot == "")
+                        {
+                            Properties.Settings.Default.ServerRoot = "/" + files[1];
+                            Properties.Settings.Default.Save();
+                        }
                         if (!String.IsNullOrWhiteSpace(files[i]))
                         {
                             
@@ -278,5 +294,6 @@ namespace FooBoxClient
             get { return _rootFolder; }
             set { _rootFolder = value; }
         }
+
     }
 }
