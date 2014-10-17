@@ -94,6 +94,8 @@ namespace FooBox.Controllers
                 if (client == null)
                     return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
 
+                clientSyncPostData.Data.ClientId = clientSyncPostData.Id;
+
                 return Json(_fileManager.SyncClientChanges(clientSyncPostData.Data));
             }
         }
