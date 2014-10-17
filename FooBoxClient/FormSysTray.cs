@@ -9,9 +9,10 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Net;
-using System.Xml.Serialization;
+using System.Runtime.Serialization.Json;
 using System.Timers;
 using FooBox.Common;
+using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 namespace FooBoxClient
 {
@@ -30,13 +31,23 @@ namespace FooBoxClient
                 if (System.IO.File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\FooBox\\info.dat"))
                 {
                     //deserialize file
-                    
-                    temp = new JavaScriptSerializer().Deserialize(
-                        System.IO.File.ReadAllText(
+                    var ser = new DataContractJsonSerializer(typeof(File));
+                    string text = System.IO.File.ReadAllText(
                         System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
-                        + "\\FooBox\\info.dat")
-                        , temp.GetType()
-                        ) as File;
+                        + "\\FooBox\\info.dat");
+                    MemoryStream stream = new MemoryStream();
+                    StreamWriter writer = new StreamWriter(stream);
+                    writer.Write(text);
+                    writer.Flush();
+                    stream.Position = 0;
+
+                    
+                    temp = ser.ReadObject(stream) as File;
+                    reconstructParents(temp);
+                }
+                else
+                {
+                    temp = null;
                 }
             }
             else
@@ -54,6 +65,21 @@ namespace FooBoxClient
             timerPoll.Enabled = true;
         }
 
+        /*
+         * Due to serialisation parents are null would have serialised parent
+         * but got stuck due to cycles in the Object tree
+         */
+        private void reconstructParents(File f)
+        {
+            foreach (File fi in f.subFiles)
+            {
+                fi.Parent = f;
+                if (fi.Directory)
+                {
+                    reconstructParents(fi);
+                }
+            }
+        }
 
         /*
          * Handles all of the cases
@@ -67,14 +93,31 @@ namespace FooBoxClient
             if (f != null)
             {
                 fs = new FileSystem(Properties.Settings.Default.Root, f);
+
+                List<ChangeItem> changeList = checkForChanges( new System.IO.DirectoryInfo(Properties.Settings.Default.Root), fs.Root);
+                
+              //  var fsOnline = new FileSystem(Properties.Settings.Default.Root);
+              //  fsOnline.executeChangeList(getSyncData(""), false);
+               // List<ChangeItem> changes = createChangeList(fs, fsOnline);
+               // fs.executeChangeList(getSyncData(""), false);
                 //have a file list from last run 
                 // need to merge this with the current files
             }
             else
             {
                 fs = new FileSystem(Properties.Settings.Default.Root);
-                fs.executeChangeList(getSyncData(""));
+                fs.executeChangeList(getSyncData(""), true);
             }
+          //  var serialiserSettings = new DataContractJsonSerializerSettings() {PeserveReferencesHandling = PreserveReferencesHandling.Objects};
+            var serialiser = new DataContractJsonSerializer(typeof(File));
+            
+            MemoryStream stream1 = new MemoryStream();
+            
+            serialiser.WriteObject(stream1, fs.Root);
+            stream1.Position = 0;
+            StreamReader sr = new StreamReader(stream1);
+            string json = sr.ReadToEnd();
+            System.IO.File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\FooBox\\info.dat", json);
         }
 
         /*
@@ -84,7 +127,6 @@ namespace FooBoxClient
         private ClientSyncResult getSyncData(string changeListID){
             string url = @"http://" + Properties.Settings.Default.Server +":" + Properties.Settings.Default.Port + "/Client/Sync";
             string postContent = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret +  "&baseChangelistId=" + changeListID;
-            MessageBox.Show(postContent);
             HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
 
             byte[] dataBytes = UTF8Encoding.UTF8.GetBytes(postContent);
@@ -142,25 +184,67 @@ namespace FooBoxClient
             Application.Exit();
         }
 
-        //test button plz ignore
-        private void button1_Click(object sender, EventArgs e)
+        /*
+         * Create a list of changes between two filesystems
+         * 
+         *
+        private List<ChangeItem> createChangeList(FileSystem l, FileSystem r)
         {
-            var json = new JavaScriptSerializer().Serialize(fs.Root);
-            System.IO.File.WriteAllText(@"C:\Users\Luke\Desktop\temp.txt", json);
-            File temp = new File("temp", false);
-            temp = new JavaScriptSerializer().Deserialize(System.IO.File.ReadAllText(@"C:\Users\Luke\Desktop\temp.txt"), temp.GetType()) as File;
-            //Properties.Settings.Default.Reset();
-            temp = null;
+            List<ChangeItem> changes = new List<ChangeItem>();
+            changes.AddRange(findDiff(l.Root, r.Root));
+            return changes;
         }
+
+        *
+        * Make l a copy of r and return the changes that occured
+         
+        private List<ChangeItem> findDiff(File l, File r)
+        {
+            List<ChangeItem> changes = new List<ChangeItem>();
+            List<string> dirsL = l.getDirectoryNameList();
+            List<string> docsL = l.getFileNameList();
+            List<string> dirsR = r.getDirectoryNameList();
+            List<string> docsR = r.getFileNameList();
+
+            foreach (string doc in docsR)
+            {
+                ChangeItem tempChange = null;
+                if (docsL.Contains(doc))
+                {
+                    //file exists in l
+                    File tempL = l.subExists(doc);
+                    File tempR = r.subExists(doc);
+                    //determine which file is newer
+                    if (tempL.LastModified != tempR.LastModified)
+                    {
+                        if (tempL.LastModified < tempR.LastModified)
+                        {
+                            tempChange = new ChangeItem();
+                            tempChange.IsFolder = false;
+                            tempChange.FullName =
+                            tempChange.Type = ChangeType.Add;
+                            //temp L is older
+                            //have to get tempR
+                        }
+                        else
+                        {
+                            //tempL is newer
+                            //have to upload tempL
+                        }
+                    }
+                }
+            }
+            return changes;
+        }*/
 
         /*
          * check for changes between the local directory and a given file tree
          * Iterates over the fs starting at root and continuing down compares files and 
          * directory FileInfo, also searches for new files
          */
-        private void checkForChanges(DirectoryInfo root, File fsRoot)
+        private List<ChangeItem> checkForChanges(DirectoryInfo root, File fsRoot)
         {
-           
+            List<ChangeItem> changeList = new List<ChangeItem>();
             System.IO.FileInfo[] files = null;
             System.IO.DirectoryInfo[] subDirs = null;
             try
@@ -169,11 +253,11 @@ namespace FooBoxClient
             }
             catch (UnauthorizedAccessException)
             {
-                return;
+                return changeList;
             }
             catch (DirectoryNotFoundException)
             {
-                return;
+                return changeList;
                 // lol no
             }
 
@@ -187,8 +271,12 @@ namespace FooBoxClient
                     if (temp != null)
                     {
                         l.Remove(temp.Name);
-                        if (temp.Info.LastWriteTime != fi.LastWriteTime)
+                        
+         
+
+                        if ((temp.LastModified-fi.LastWriteTimeUtc).TotalSeconds < -1)
                         {
+                            //fi is a newer version of temp
                             //Found change however assumes that user didn't rename a file 
                             //and add a file with the same name
                         }
@@ -216,7 +304,7 @@ namespace FooBoxClient
                         //directory exists
                         //go another level deeper
 
-                        checkForChanges(dirInfo, temp);
+                        changeList.AddRange(checkForChanges(dirInfo, temp));
                     }
                     else
                     {
@@ -230,6 +318,7 @@ namespace FooBoxClient
                     //directory was deleted or renamed
                 }
             }
+            return changeList;
         }
 
         /*

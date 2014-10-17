@@ -5,19 +5,28 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Windows.Forms;
+using System.Runtime.Serialization;
 using FooBox.Common;
 
 namespace FooBoxClient
 {
+    [Serializable]
+    [DataContract]
     class File
     {
 
+        [DataMember]
+        private DateTime _lastModified;
 
-        private FileInfo _info;
+        [DataMember]
         private string _fileName;
+        [DataMember]
         private bool _isDirectory;
+        [DataMember]
         public List<File> subFiles;
         private File _parent;
+
+        
         public File() { }
         public File(string fileName, bool isDirectory)
         {
@@ -48,6 +57,7 @@ namespace FooBoxClient
             List<string> l = new List<string>();
             foreach (File f in subFiles)
             {
+                
                 if (!f._isDirectory)
                 {
                     l.Add(f.Name);
@@ -77,14 +87,19 @@ namespace FooBoxClient
             {
                 if (f._isDirectory)
                 {
-                    System.IO.Directory.CreateDirectory(f.getFullPath());             
+                    System.IO.Directory.CreateDirectory(f.getFullPath());
+                    f.LastModified = new System.IO.DirectoryInfo(f.getFullPath()).LastWriteTime.ToUniversalTime();
                 }
                 else
                 {
-                    f.Info = new System.IO.FileInfo(f.getFullPath());
+                    
                     System.IO.File.Create(f.getFullPath(), 43224);
+                   
+                    f.LastModified = new System.IO.FileInfo(f.getFullPath()).LastWriteTime.ToUniversalTime();
+                    
+                    
                 }
-            }
+            } 
             //create actual file if doean't exist
             subFiles.Add(f);
         }
@@ -135,20 +150,25 @@ namespace FooBoxClient
         }
 
         #region GETSET
+        public DateTime LastModified
+        {
+            get { return _lastModified; }
+            set { _lastModified = value; }
+        }
         public bool Directory
         {
             get { return _isDirectory; }
             set { _isDirectory = value; }
         }
-        public FileInfo Info
-        {
-            get { return _info; }
-            set { _info = value; }
-        }
         public string Name
         {
           get { return _fileName; }
           set { _fileName = value; }
+        }
+        internal File Parent
+        {
+            get { return _parent; }
+            set { _parent = value; }
         }
         #endregion
     }
@@ -161,25 +181,28 @@ namespace FooBoxClient
         {
             _rootFolder = rootFolder;
             _root = root;
+            DateTime.SpecifyKind(_root.LastModified, DateTimeKind.Utc);
         }
 
         public FileSystem(string rootFolder)
         {
             _rootFolder = rootFolder;
             _root = new File(rootFolder, true);
+            _root.LastModified = DateTime.SpecifyKind(_root.LastModified, DateTimeKind.Utc);
         }
 
-        public void executeChangeList(ClientSyncResult s)
+        public void executeChangeList(ClientSyncResult s, bool instantiate)
         {
             foreach (ClientChange change in s.Changes)
             {
-                this.executeChange(change);
+                this.executeChange(change, instantiate);
             }
         }
 
-        public void executeChange(ClientChange c)
+        public void executeChange(ClientChange c, bool instantiate)
         {
             //do magic
+           
             File current = _root;
             string[] files =  c.FullName.Split('/');
                     for (int i = 2; i < files.Length; ++ i)
@@ -196,7 +219,20 @@ namespace FooBoxClient
                                 }
                                 else
                                 {
-                                    current.addFile(new File(files[i], true), true);
+                                    if (c.Type == ChangeType.Delete)
+                                    {
+                                        //delete folder code goes here
+                                    } else if (c.Type == ChangeType.Add){
+                                        current.addFile(new File(files[i], true), instantiate);
+                                    }
+                                    else if (c.Type == ChangeType.SetDisplayName)
+                                    {
+
+                                    }
+                                    else if (c.Type == ChangeType.None)
+                                    {
+                                        MessageBox.Show("no change to folder" + c.FullName);
+                                    }
                                 }
                             }
                             else
@@ -204,8 +240,10 @@ namespace FooBoxClient
                                 if (i == files.Length - 1)
                                 {
                                     //add the file
-             
-                                    current.addFile(new File(files[i], false), true);
+                                    //File temp = new File(files[i], false){
+                                      //  temp.LastModifed = c.
+                                   // }
+                                    current.addFile(new File(files[i], false), instantiate);
                                
                                 }
                                 else
