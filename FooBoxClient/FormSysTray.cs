@@ -97,6 +97,10 @@ namespace FooBoxClient
 
                 List<ClientChange> changeList = checkForChanges( new System.IO.DirectoryInfo(Properties.Settings.Default.Root), fs.Root);
                 fs.executeChangeList(changeList, true);
+
+                //Send list of changes along with base change list ID, if theres a conflict server sends conflict resolve by renaming
+                //List of hashes that I need to uplaod
+
               //  var fsOnline = new FileSystem(Properties.Settings.Default.Root);
               //  fsOnline.executeChangeList(getSyncData(""), false);
                // List<ChangeItem> changes = createChangeList(fs, fsOnline);
@@ -248,6 +252,16 @@ namespace FooBoxClient
         }
 
         /*
+         * Get the hash of the file defined by fileName
+         * fileName is the full directory on the system.
+         */
+        private string getHash(string fileName)
+        {
+            string hash = "";
+            return hash;
+        }
+
+        /*
          * check for changes between the local directory and a given file tree
          * Iterates over the fs starting at root and continuing down compares files and 
          * directory FileInfo, also searches for new files
@@ -286,6 +300,12 @@ namespace FooBoxClient
 
                         if ((temp.LastModified-fi.LastWriteTimeUtc).TotalSeconds < -1)
                         {
+                            ClientChange addDoc = new ClientChange();
+                            addDoc.FullName = getServerPath(fi.FullName);
+                            addDoc.IsFolder = false;
+                            addDoc.Hash = getHash(fi.FullName);
+                            addDoc.Type = ChangeType.Add;
+                            changeList.Add(addDoc);
                             //fi is a newer version of temp
                             //Found change however assumes that user didn't rename a file 
                             //and add a file with the same name
@@ -296,7 +316,7 @@ namespace FooBoxClient
                         ClientChange addDoc = new ClientChange();
                         addDoc.FullName = getServerPath(fi.FullName);
                         addDoc.IsFolder = false;
-                        
+                        addDoc.Hash = getHash(fi.FullName);
                         addDoc.Type = ChangeType.Add;
                         changeList.Add(addDoc);
                         //new file created
@@ -333,9 +353,11 @@ namespace FooBoxClient
                         //directory does not exist could be rename or created
                         //needs to be added
                         ClientChange addDir = new ClientChange();
+                       
                         addDir.FullName = getServerPath(dirInfo.FullName);
                         addDir.IsFolder = false;
                         addDir.Type = ChangeType.Add;
+                        
                         changeList.Add(addDir);
                     }
                     
