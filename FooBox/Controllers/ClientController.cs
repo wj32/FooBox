@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.Script.Serialization;
 
 namespace FooBox.Controllers
 {
@@ -77,6 +78,23 @@ namespace FooBox.Controllers
                     BaseChangelistId = baseChangelistId ?? 0
                 }),
                 JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public ActionResult Sync(long? id, string secret)
+        {
+            var client = FindClient(id, secret);
+
+            if (client == null)
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+
+            StreamReader sr = new StreamReader(Request.InputStream);
+            string input = sr.ReadToEnd();
+
+            var serializer = new JavaScriptSerializer();
+            var clientSyncData = serializer.Deserialize<ClientSyncData>(input);
+
+            return Json(_fileManager.SyncClientChanges(clientSyncData));
         }
 
         public ActionResult Download(long? id, string secret, string hash)

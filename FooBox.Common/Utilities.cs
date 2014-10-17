@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using System.Web;
 
@@ -27,6 +29,28 @@ namespace FooBox
                 return fullName.Remove(fullName.LastIndexOf('/'));
 
             return fullName;
+        }
+
+        public static string ComputeSha256Hash(string fileName)
+        {
+            byte[] buffer = new byte[4096 * 4];
+            int bytesRead;
+
+            // Simultaneously hash the file and write it out to a temporary file.
+
+            using (var hashAlgorithm = System.Security.Cryptography.SHA256.Create())
+            {
+                using (var fileStream = new FileStream(fileName, FileMode.Open))
+                {
+                    while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) != 0)
+                    {
+                        hashAlgorithm.TransformBlock(buffer, 0, bytesRead, null, 0);
+                    }
+                }
+
+                hashAlgorithm.TransformFinalBlock(new byte[0], 0, 0);
+                return (new SoapHexBinary(hashAlgorithm.Hash)).ToString();
+            }
         }
 
         public static string NormalizeFullName(string fullName)
