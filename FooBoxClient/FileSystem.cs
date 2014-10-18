@@ -91,47 +91,34 @@ namespace FooBoxClient
             return l;
         }
 
-        public Byte[] download()
+        public bool downloadTo(string destinationFileName)
         {
-            byte[] ret = new byte[this.FileSize];
             string url = @"http://" + Properties.Settings.Default.Server + ":" + Properties.Settings.Default.Port + "/Client/Download";
-           
-            string postContent = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&hash=" + this.Hash;
-            HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
-
-            byte[] dataBytes = UTF8Encoding.UTF8.GetBytes(postContent);
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&hash=" + this.Hash;
+            HttpWebRequest req = WebRequest.Create(url + "?" + parameters) as HttpWebRequest;
 
             req.KeepAlive = true;
-            req.Method = "POST";
-            req.ContentLength = dataBytes.Length;
-            req.ContentType = "application/x-www-form-urlencoded";
+            req.Method = "GET";
+
             try
             {
-                using (Stream postStream = req.GetRequestStream())
+                byte[] buffer = new byte[4096 * 4];
+                int bytesRead;
+
+                using (var response = req.GetResponse())
+                using (var responseStream = response.GetResponseStream())
+                using (var outStream = new FileStream(destinationFileName, FileMode.Create))
                 {
-                    postStream.Write(dataBytes, 0, dataBytes.Length);
+                    while ((bytesRead = responseStream.Read(buffer, 0, buffer.Length)) != 0)
+                        outStream.Write(buffer, 0, bytesRead);
                 }
+
+                return true;
             }
-            catch (WebException)
-            {
-                return null;
-            }
-            try
-            {
-                HttpWebResponse response = req.GetResponse() as HttpWebResponse;
-                BinaryReader temp = new BinaryReader(response.GetResponseStream());//.Read(ret, 0, (int)this.FileSize);
-                int readLength = temp.Read(ret, 0, (int)this.FileSize);
-                //TODO: Fix the bug where it doesn't read to end
-            //    if (readLength != this.FileSize || readLength != 0)
-           //     {
-           //         return null;
-          //      }
-            }
-            catch (WebException)
-            {
-                return null;
-            }
-            return ret;
+            catch
+            { }
+
+            return false;
         }
 
         public void addFile(File f, bool instantiate)
@@ -148,14 +135,9 @@ namespace FooBoxClient
                 {
                     //Download the file 
 
-                    byte[] fileContents = f.download();
-                    if (fileContents == null)
+                    if (!f.downloadTo(f.getFullPath()))
                     {
                         MessageBox.Show("Download  failed");
-                    }
-                    else
-                    {
-                        System.IO.File.WriteAllBytes(f.getFullPath(), fileContents);
                     }
    
                 }

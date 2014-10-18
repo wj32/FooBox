@@ -145,14 +145,14 @@ namespace FooBoxClient
 
             try
             {
-                HttpWebResponse response = req.GetResponse() as HttpWebResponse;
                 var encoding = UTF8Encoding.UTF8;
                 string responseText = "";
+
+                using (var response = req.GetResponse())
                 using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
                 {
                     this.Text = responseText = reader.ReadToEnd();
                 }
-
 
                 ClientSyncResult c = (new System.Web.Script.Serialization.JavaScriptSerializer()).Deserialize<ClientSyncResult>(responseText);
                 //loop through changes
@@ -412,9 +412,10 @@ namespace FooBoxClient
             }
             try
             {
-                HttpWebResponse response = req.GetResponse() as HttpWebResponse;
                 var encoding = UTF8Encoding.UTF8;
                 string responseText = "";
+
+                using (var response = req.GetResponse())
                 using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
                 {
                     this.Text = responseText = reader.ReadToEnd();
