@@ -4,8 +4,7 @@
     ViewBag.Title = "Index";
 }
 
-<h2>Index</h2>
-<h4>User</h4>
+<h2>Users</h2>
 <p>
     @Html.ActionLink("Create New", "UserCreate")
 </p>
@@ -21,10 +20,10 @@
             @Html.DisplayNameFor(model => model.LastName)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.QuotaLimit)
+            @Html.DisplayNameFor(model => model.QuotaCharged)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.QuotaCharged)
+            @Html.DisplayNameFor(model => model.QuotaLimit)
         </th>
         <th></th>
     </tr>
@@ -43,17 +42,17 @@
                 @Html.DisplayFor(modelItem => item.LastName)
             </td>
             <td>
+                @Html.Encode(Utilities.SizeToString(item.QuotaCharged))
+            </td>
+            <td>
                 @if (item.QuotaLimit != long.MaxValue) 
                 { 
-                    @Html.DisplayFor(modelItem => item.QuotaLimit)
+                    @Html.Encode(Utilities.SizeToString(item.QuotaLimit))
                 }
                 else
                 {
                     @("Unlimited")
                 }
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.QuotaCharged)
             </td>
             <td>
                 @Html.ActionLink("Edit", "UserEdit", new { id = item.Id })  
