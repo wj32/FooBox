@@ -90,7 +90,7 @@ namespace FooBox
             double s = size;
             int i = 0;
 
-            while (s >= 1024 && i < _sizeUnits.Length)
+            while (s >= 1024 && i < _sizeUnits.Length - 1)
             {
                 s /= 1024;
                 i++;

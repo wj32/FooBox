@@ -134,6 +134,26 @@
     }
 </table>
 
+<p>
+    Your quota usage:
+    @using (var userManager = new FooBox.Models.UserManager())
+    {
+        var user = userManager.FindUser(FooBox.Models.IdentityExtensions.GetUserId(User.Identity));
+        
+        <strong>@Html.Encode(Utilities.SizeToString(user.QuotaCharged))</strong>
+        @:out of
+        if (user.QuotaLimit == long.MaxValue)
+        {
+            <strong>unlimited</strong>
+        }
+        else
+        {
+            <strong>@Html.Encode(Utilities.SizeToString(user.QuotaLimit))</strong>
+            @:limit
+        }
+    }
+</p>
+
 <script>
     $("document").ready(function () {
         $("#UploadFile").change(function () {
