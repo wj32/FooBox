@@ -274,6 +274,19 @@ namespace FooBox.Models
                 return userManager.FindUser(userId).RootFolder;
         }
 
+        public void RecalculateQuotaCharge(User user)
+        {
+            user.QuotaCharged = (
+                from document in _context.Documents
+                where document.ParentFolder.OwnerId == user.Id && document.State == ObjectState.Normal
+                select (
+                    from version in document.DocumentVersions.AsQueryable()
+                    orderby version.TimeStamp descending
+                    select version.Blob.Size
+                    ).FirstOrDefault()
+                ).Sum();
+        }
+
         #endregion
 
         #region Clients
@@ -558,7 +571,7 @@ namespace FooBox.Models
                     if (moreChangelists)
                         return new ClientSyncResult { State = ClientSyncResultState.Retry };
 
-                    var newChangelist = ApplyClientChanges(clientData.ClientId, clientNode, clientChangesByFullName, presentHashes);
+                    var newChangelist = ApplyClientChanges(client, clientNode, clientChangesByFullName, presentHashes);
 
                     _context.SaveChanges();
                     transaction.Commit();
@@ -603,19 +616,39 @@ namespace FooBox.Models
             file.State = ObjectState.Deleted;
         }
 
-        private void SetFileState(File file, ObjectState state)
+        private void AddQuotaCharge(IDictionary<User, long> quotaCharge, User user, long charge)
         {
-            file.State = state;
+            if (!quotaCharge.ContainsKey(user))
+                quotaCharge.Add(user, 0);
 
-            if (file is Folder)
+            quotaCharge[user] += charge;
+        }
+
+        private void SetFileState(File file, ObjectState state, IDictionary<User, long> quotaCharge)
+        {
+            if (file is Document)
+            {
+                if (file.State != state)
+                {
+                    long size = GetLastDocumentVersion((Document)file).Blob.Size;
+
+                    if (state == ObjectState.Deleted)
+                        size = -size;
+
+                    AddQuotaCharge(quotaCharge, file.ParentFolder.Owner, size);
+                }
+            }
+            else if (file is Folder)
             {
                 foreach (var subFile in ((Folder)file).Files)
-                    SetFileState(subFile, state);
+                    SetFileState(subFile, state, quotaCharge);
             }
+
+            file.State = state;
         }
 
         private Changelist ApplyClientChanges(
-            long clientId,
+            Client client,
             ChangeNode clientNode,
             IDictionary<string, ClientChange> clientChangesByFullName,
             IDictionary<string, Blob> presentHashes
@@ -631,9 +664,10 @@ namespace FooBox.Models
 
             Changelist changelist = new Changelist
             {
-                ClientId = clientId,
+                ClientId = client.Id,
                 TimeStamp = DateTime.UtcNow
             };
+            var quotaCharge = new Dictionary<User, long>();
 
             while (queue.Count != 0)
             {
@@ -753,29 +787,32 @@ namespace FooBox.Models
                         {
                             string hash = clientChangesByFullName[node.FullName].Hash.ToUpperInvariant();
                             bool identicalVersion = false;
+                            long latestSize = 0;
 
                             if (!createDocument)
                             {
-                                string lastestHash = (
-                                    from version in ((Document)file).DocumentVersions.AsQueryable()
-                                    orderby version.TimeStamp descending
-                                    select version.Blob.Hash
-                                    ).First();
+                                var latestBlob = GetLastDocumentVersion((Document)file).Blob;
 
-                                if (hash == lastestHash)
+                                latestSize = latestBlob.Size;
+
+                                if (hash == latestBlob.Hash)
                                     identicalVersion = true;
                             }
 
                             if (!identicalVersion)
                             {
+                                var blob = presentHashes[hash];
+
                                 _context.DocumentVersions.Add(new DocumentVersion
                                 {
                                     TimeStamp = DateTime.UtcNow,
-                                    ClientId = clientId,
+                                    ClientId = client.Id,
                                     Document = (Document)file,
-                                    Blob = presentHashes[hash]
+                                    Blob = blob
                                 });
                                 createChange = true;
+
+                                AddQuotaCharge(quotaCharge, file.ParentFolder.Owner, -latestSize + blob.Size);
                             }
                         }
 
@@ -805,7 +842,7 @@ namespace FooBox.Models
                     case ChangeType.Delete:
                         if (file != null && file.State != ObjectState.Deleted)
                         {
-                            SetFileState(file, ObjectState.Deleted);
+                            SetFileState(file, ObjectState.Deleted, quotaCharge);
                             createChange = true;
                         }
                         break;
@@ -813,7 +850,7 @@ namespace FooBox.Models
                     case ChangeType.Undelete:
                         if (file != null && file is Document && file.State != ObjectState.Normal)
                         {
-                            SetFileState(file, ObjectState.Normal);
+                            SetFileState(file, ObjectState.Normal, quotaCharge);
                             createChange = true;
                         }
                         break;
@@ -840,6 +877,15 @@ namespace FooBox.Models
                             queue.Enqueue(subNode);
                     }
                 }
+            }
+
+            // Apply quotas.
+            foreach (var pair in quotaCharge)
+            {
+                if (pair.Key.QuotaCharged + pair.Value > pair.Key.QuotaLimit)
+                    throw new Exception("Quota exceeded for user '" + pair.Key.Name + "'");
+
+                pair.Key.QuotaCharged += pair.Value;
             }
 
             if (changelist.Changes.Count != 0)
