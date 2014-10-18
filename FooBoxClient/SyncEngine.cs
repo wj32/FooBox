@@ -130,20 +130,11 @@ namespace FooBoxClient
                 if (oldFolder != null && oldFolder.Files != null &&
                     oldFolder.Files.TryGetValue(newFile.Name, out oldFile))
                 {
-                    if (newFile.IsFolder != oldFile.IsFolder ||
+                    if (newFile.IsFolder != oldFile.IsFolder || (!newFile.IsFolder && (
                         newFile.LastWriteTimeUtc != oldFile.LastWriteTimeUtc ||
-                        newFile.Size != oldFile.Size)
+                        newFile.Size != oldFile.Size)))
                     {
                         add = true;
-                    }
-                    else if (newFile.DisplayName != oldFile.DisplayName)
-                    {
-                        changes.Add(new ClientChange
-                        {
-                            FullName = newFile.FullName,
-                            Type = ChangeType.SetDisplayName,
-                            DisplayName = newFile.DisplayName
-                        });
                     }
                 }
                 else
@@ -153,15 +144,41 @@ namespace FooBoxClient
 
                 if (add)
                 {
-                    changes.Add(new ClientChange
+                    string newHash = "";
+
+                    if (!newFile.IsFolder)
                     {
-                        FullName = newFile.FullName,
-                        Type = ChangeType.Add,
-                        IsFolder = newFile.IsFolder,
-                        DisplayName = newFile.DisplayName,
-                        Size = newFile.Size,
-                        Hash = Utilities.ComputeSha256Hash(GetLocalFullName(newFile.FullName))
-                    });
+                        newHash = Utilities.ComputeSha256Hash(GetLocalFullName(newFile.FullName));
+
+                        if (oldFile != null && !oldFile.IsFolder && oldFile.Hash == newHash)
+                            add = false; // The file hasn't really changed.
+                    }
+
+                    if (add)
+                    {
+                        changes.Add(new ClientChange
+                        {
+                            FullName = newFile.FullName,
+                            Type = ChangeType.Add,
+                            IsFolder = newFile.IsFolder,
+                            DisplayName = newFile.DisplayName,
+                            Size = newFile.Size,
+                            Hash = newHash
+                        });
+                    }
+                }
+
+                if (oldFile != null && newFile != null && !add)
+                {
+                    if (newFile.DisplayName != oldFile.DisplayName)
+                    {
+                        changes.Add(new ClientChange
+                        {
+                            FullName = newFile.FullName,
+                            Type = ChangeType.SetDisplayName,
+                            DisplayName = newFile.DisplayName
+                        });
+                    }
                 }
 
                 if (newFile.IsFolder)
@@ -245,7 +262,8 @@ namespace FooBoxClient
                                     System.IO.File.Move(newFullDisplayName, newFullDisplayName);
                                 }
 
-                                Requests.Download(clientChanges[node.FullName].Hash, newFullDisplayName);
+                                string hash = clientChanges[node.FullName].Hash;
+                                Requests.Download(hash, newFullDisplayName);
                                 FileInfo info = new FileInfo(newFullDisplayName);
 
                                 file = new File
@@ -255,6 +273,7 @@ namespace FooBoxClient
                                     DisplayName = newDisplayName,
                                     IsFolder = false,
                                     Size = info.Length,
+                                    Hash = hash,
                                     LastWriteTimeUtc = info.LastWriteTimeUtc
                                 };
                                 rootFolder.Files[file.Name] = file;

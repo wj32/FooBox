@@ -17,6 +17,7 @@ namespace FooBoxClient
 
         // For files
         public long Size { get; set; }
+        public string Hash { get; set; }
         public DateTime LastWriteTimeUtc { get; set; }
 
         public Dictionary<string, File> Files { get; set; }
