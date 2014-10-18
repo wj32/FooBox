@@ -153,7 +153,12 @@ namespace FooBox.Controllers
             model.Versions = (
                 from version in document.DocumentVersions
                 orderby version.TimeStamp descending
-                select new VersionHistoryViewModel.VersionEntry { TimeStamp = version.TimeStamp, VersionId = version.Id }
+                select new VersionHistoryViewModel.VersionEntry
+                {
+                    Size = version.Blob.Size,
+                    TimeStamp = version.TimeStamp,
+                    VersionId = version.Id
+                }
                 ).ToList();
 
             return View(model);

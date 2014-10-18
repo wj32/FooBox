@@ -122,18 +122,16 @@ namespace FooBox.Controllers
         }
 
         [HttpPost]
-        public ActionResult Upload(long? id, string secret, HttpPostedFileBase uploadFile)
+        public ActionResult Upload(long? id, string secret)
         {
             var client = FindClient(id, secret);
 
             if (client == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
-            if (uploadFile == null)
-                return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
 
             string hash;
             long fileSize;
-            ClientController.UploadBlob(_fileManager, client, uploadFile.InputStream, out hash, out fileSize);
+            ClientController.UploadBlob(_fileManager, client, Request.InputStream, out hash, out fileSize);
 
             return Json(new { hash = hash, fileSize = fileSize });
         }

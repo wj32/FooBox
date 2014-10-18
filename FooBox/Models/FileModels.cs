@@ -379,11 +379,14 @@ namespace FooBox.Models
 
                 if (clientData.BaseChangelistId == 0)
                 {
+                    long changelistId = GetLastChangelistId();
+
                     return new ClientSyncResult
                     {
                         State = ClientSyncResultState.Success,
-                        LastChangelistId = GetLastChangelistId(),
-                        Changes = GetChangesForFolder(client.User.RootFolder)
+                        LastChangelistId = changelistId,
+                        Changes = GetChangesForFolder(client.User.RootFolder),
+                        NewChangelistId = changelistId
                     };
                 }
 

@@ -12,13 +12,29 @@ namespace FooBox
     {
         private static string[] _sizeUnits = new string[] { "B", "KB", "MB", "GB" };
 
+        private static int _randomSeed = (new Random()).Next();
+        [ThreadStatic]
+        private static Random _random;
+
+        public static Random Random
+        {
+            get
+            {
+                if (_random == null)
+                {
+                    int seed = System.Threading.Interlocked.Increment(ref _randomSeed);
+                    _random = new Random(seed);
+                }
+                return _random;
+            }
+        }
+
         public static string GenerateRandomString(string alphabet, int length)
         {
-            Random r = new Random();
             char[] c = new char[length];
 
             for (int i = 0; i < c.Length; i++)
-                c[i] = alphabet[r.Next(0, alphabet.Length)];
+                c[i] = alphabet[Random.Next(0, alphabet.Length)];
 
             return new string(c);
         }

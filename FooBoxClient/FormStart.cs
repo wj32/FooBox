@@ -48,6 +48,30 @@ namespace FooBoxClient
                 labelError.Text = "Please select a directory to sync files to";
                 return;
             }
+
+            try
+            {
+                if (Directory.EnumerateFileSystemEntries(textBoxDirLoc.Text).Any())
+                {
+                    if (MessageBox.Show(
+                        "The directory you have selected is not empty and will be erased. Do you want to continue?",
+                        "FooBox",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button2
+                        ) == System.Windows.Forms.DialogResult.No)
+                        return;
+
+                    Directory.Delete(textBoxDirLoc.Text, true);
+                    Directory.CreateDirectory(textBoxDirLoc.Text);
+                }
+            }
+            catch (Exception ex)
+            {
+                labelError.Text = "Unable to access the directory: " + ex.Message;
+                return;
+            }
+
             string url = @"http://" + textBoxServerLoc.Text.Trim() +":" + textBoxServerPort.Text.Trim() + "/Account/ClientLogin";
 
            

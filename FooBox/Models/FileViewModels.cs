@@ -31,6 +31,7 @@ namespace FooBox.Models
     {
         public class VersionEntry
         {
+            public long Size { get; set; }
             public DateTime TimeStamp { get; set; }
             public long VersionId { get; set; }
         }

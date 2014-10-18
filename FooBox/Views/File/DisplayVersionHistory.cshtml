@@ -13,6 +13,7 @@
         <thead>
             <tr>
                 <th>Revision Date</th>
+                <th>Size</th>
                 <th></th>
                 <th></th>
             </tr>
@@ -21,6 +22,7 @@
         {
             <tr>
                 <td class="vert-align">@Html.Encode(version.TimeStamp.ToLocalTime().ToString("F"))</td>
+                <td class="vert-align">@Html.Encode(Utilities.SizeToString(version.Size))</td>
                 <td class="vert-align">@Html.ActionLink("Download", "DownloadVersion", new { id = version.VersionId }, new { @class = "btn btn-link" })</td>
                 <td class="vert-align">
                     @{

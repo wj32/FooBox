@@ -14,20 +14,38 @@ using System.Timers;
 using FooBox.Common;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
+using System.Threading;
+
 namespace FooBoxClient
 {
     public partial class FormSysTray : Form
     {
         private SyncEngine _engine;
+        private Thread _syncThread;
+        private AutoResetEvent _event;
+        private bool _closing;
 
         public FormSysTray()
         {
             InitializeComponent();
 
             _engine = new SyncEngine(Properties.Settings.Default.Root);
+            _syncThread = new Thread(this.SyncThreadStart);
+            _event = new AutoResetEvent(false);
         }
 
         private void FormSysTray_Load(object sender, EventArgs e)
+        {
+            _syncThread.Start();
+        }
+
+        private void FormSysTray_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _closing = true;
+            _event.Set();
+        }
+
+        private void SyncThreadStart()
         {
             try
             {
@@ -36,11 +54,11 @@ namespace FooBoxClient
             catch
             { }
 
-            var result = Requests.Sync(new ClientSyncData { BaseChangelistId = 0 });
-
-            _engine.Apply(result.Changes);
-            _engine.ChangelistId = result.NewChangelistId;
-            _engine.SaveState();
+            while (!_closing)
+            {
+                _engine.Sync();
+                _event.WaitOne(3000);
+            }
         }
     }
 }

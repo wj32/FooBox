@@ -42,6 +42,31 @@ namespace FooBoxClient
             }
         }
 
+        public static string Upload(string sourceFileName)
+        {
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret;
+            HttpWebRequest req = WebRequest.Create(MakeUrl("Upload", parameters)) as HttpWebRequest;
+
+            req.KeepAlive = true;
+            req.Method = "POST";
+
+            byte[] buffer = new byte[4096 * 4];
+            int bytesRead;
+
+            using (var requestStream = req.GetRequestStream())
+            using (var inStream = new FileStream(sourceFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                while ((bytesRead = inStream.Read(buffer, 0, buffer.Length)) != 0)
+                    requestStream.Write(buffer, 0, bytesRead);
+            }
+
+            using (var response = req.GetResponse())
+            using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8))
+            {
+                return reader.ReadToEnd();
+            }
+        }
+
         public static ClientSyncResult Sync(ClientSyncData data)
         {
             HttpWebRequest req = WebRequest.Create(MakeUrl("Sync")) as HttpWebRequest;
