@@ -23,7 +23,7 @@ namespace FooBoxClient
         private SyncEngine _engine;
         private Thread _syncThread;
         private AutoResetEvent _event;
-        private bool _closing;
+        private bool _closing = false;
         private Point _location;
         public FormSysTray()
         {
@@ -49,6 +49,8 @@ namespace FooBoxClient
         {
             this.WindowState = FormWindowState.Normal;
             this.Location = _location;
+            this.Focus();
+            this.Size = new Size(300, 300);
             this.Show();
         }
 
@@ -59,7 +61,12 @@ namespace FooBoxClient
 
         private void FormSysTray_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _closing = true;
+            if (!_closing)
+            {
+                e.Cancel = true;
+                hideSelf();
+            }
+
             _event.Set();
         }
 
@@ -85,41 +92,47 @@ namespace FooBoxClient
          */
         private void notifyFooBox_MouseClick(object sender, MouseEventArgs e)
         {
-            if (_location == new Point(0, 0))
+            if (e.Button == MouseButtons.Right)
             {
-                Rectangle r = WinAPI.GetTrayRectangle();
-                Rectangle resolution = Screen.PrimaryScreen.Bounds;
-               // this.Height = 300;
-              //  this.Width = 300;
-                if (r.X < resolution.Width / 2)
-                {
-                    _location = new Point(r.X + r.Width, r.Y - this.Height - 150);
-                    //sys tray is in bottom right corner
-                }
-                else if (r.Y < resolution.Height / 2)
-                {
-                  
-                    _location = new Point(r.X - this.Width, r.Y + r.Height);
-                    //systray is im top right coerner
-                }
-                else
-                {
-                    _location = new Point(Screen.PrimaryScreen.Bounds.Width - this.Width - 220, Screen.PrimaryScreen.Bounds.Height - this.Height - 350);
-                    //sys tray is in bottom corner
-                }
-               
             }
-            showSelf();
+            else
+            {
+                if (_location == new Point(0, 0))
+                {
+                    Rectangle r = WinAPI.GetTrayRectangle();
+                    Rectangle resolution = Screen.PrimaryScreen.Bounds;
+                    // this.Height = 300;
+                    //  this.Width = 300;
+                    if (r.X < resolution.Width / 2)
+                    {
+                        _location = new Point(r.X + r.Width, r.Y - this.Height - 150);
+                        //sys tray is in bottom right corner
+                    }
+                    else if (r.Y < resolution.Height / 2)
+                    {
+
+                        _location = new Point(r.X - this.Width, r.Y + r.Height);
+                        //systray is im top right coerner
+                    }
+                    else
+                    {
+                        _location = new Point(Screen.PrimaryScreen.Bounds.Width - this.Width - 220, Screen.PrimaryScreen.Bounds.Height - this.Height - 350);
+                        //sys tray is in bottom corner
+                    }
+
+                }
+                showSelf();
+            }
         }
 
-        private void FormSysTray_Deactivate(object sender, EventArgs e)
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            hideSelf();
+            _closing = true;
+            Application.Exit();
         }
 
-        private void FormSysTray_Resize(object sender, EventArgs e)
-        {
-        }
+
 
     }
 }
