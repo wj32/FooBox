@@ -403,8 +403,6 @@ namespace FooBox.Models
                         {
                             string displayName = clientChangesByFullName[node.FullName].DisplayName;
 
-                            if (node.Type != ChangeType.Undelete && string.IsNullOrEmpty(displayName))
-                                throw new Exception("Missing display name for " + node.Type.ToString() + " operation on '" + node.FullName + "'");
                             if (!string.IsNullOrEmpty(displayName) && displayName.ToUpperInvariant() != node.Name)
                                 throw new Exception("Invalid display name '" + displayName + "' for '" + node.FullName + "'");
                         }
@@ -741,7 +739,7 @@ namespace FooBox.Models
                             file = _context.Documents.Add(new Document
                             {
                                 Name = node.Name,
-                                DisplayName = clientChangesByFullName[node.FullName].DisplayName,
+                                DisplayName = clientChangesByFullName[node.FullName].DisplayName ?? node.Name,
                                 ParentFolder = parentFolder
                             });
                             createDocumentVersion = true;

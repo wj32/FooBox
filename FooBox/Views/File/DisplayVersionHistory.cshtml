@@ -3,6 +3,7 @@
 
 @{
     ViewBag.Title = "Version History";
+    bool first = true;
 }
 
 <h2>Version history for @Html.Encode(Model.DisplayName)</h2>
@@ -23,7 +24,6 @@
                 <td class="vert-align">@Html.ActionLink("Download", "DownloadVersion", new { id = version.VersionId }, new { @class = "btn btn-link" })</td>
                 <td class="vert-align">
                     @{
-                        bool first = true;
                         if (!first)
                         {
                             using (Html.BeginForm("RevertVersion", "File", FormMethod.Post, new { role = "form" }))
@@ -32,8 +32,8 @@
                                 @Html.Hidden("versionId", version.VersionId)
                                 <input type="submit" value="Revert" class="btn btn-link" />
                             }
-                            first = false;
                         }
+                        first = false;
                     }
                 </td>
             </tr>
