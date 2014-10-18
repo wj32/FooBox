@@ -35,6 +35,9 @@
   <PropertyGroup>
     <StartupObject>FooBoxClient.Program</StartupObject>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>FooBox.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -63,15 +66,25 @@
     <Compile Include="FormSysTray.Designer.cs">
       <DependentUpon>FormSysTray.cs</DependentUpon>
     </Compile>
+    <Compile Include="FooBoxIcon.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FooBoxIcon.resx</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Requests.cs" />
     <Compile Include="SyncEngine.cs" />
+    <Compile Include="WinAPI.cs" />
     <EmbeddedResource Include="FormStart.resx">
       <DependentUpon>FormStart.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormSysTray.resx">
       <DependentUpon>FormSysTray.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FooBoxIcon.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FooBoxIcon.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -101,6 +114,9 @@
       <Project>{b7cb45ed-29f7-4e71-9fb1-b70718c22a6b}</Project>
       <Name>FooBox.Common</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="FooBox.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
