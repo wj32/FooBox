@@ -28,22 +28,40 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormSysTray));
+            this.notifyFooBox = new System.Windows.Forms.NotifyIcon(this.components);
             this.SuspendLayout();
+            // 
+            // notifyFooBox
+            // 
+            this.notifyFooBox.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyFooBox.Icon")));
+            this.notifyFooBox.Text = "FooBox";
+            this.notifyFooBox.Visible = true;
+            this.notifyFooBox.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyFooBox_MouseClick);
             // 
             // FormSysTray
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(284, 261);
+            this.ClientSize = new System.Drawing.Size(280, 280);
+            this.ControlBox = false;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "FormSysTray";
-            this.Text = "FormSysTray";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.Deactivate += new System.EventHandler(this.FormSysTray_Deactivate);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormSysTray_FormClosing);
             this.Load += new System.EventHandler(this.FormSysTray_Load);
+            this.Resize += new System.EventHandler(this.FormSysTray_Resize);
             this.ResumeLayout(false);
 
         }
 
         #endregion
+
+        private System.Windows.Forms.NotifyIcon notifyFooBox;
 
     }
 }
