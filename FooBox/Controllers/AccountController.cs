@@ -8,6 +8,7 @@ using System.Web.Mvc;
 using Microsoft.Owin.Security;
 using FooBox.Models;
 using System.Web.Security;
+using FooBox.Common;
 
 namespace FooBox.Controllers
 {
@@ -30,19 +31,23 @@ namespace FooBox.Controllers
         // POST:  /Account/ClientLogin
         [HttpPost]
         [AllowAnonymous]
-        public String ClientLogin(string username, string password)
+        public ActionResult ClientLogin(string userName, string password, string clientName)
         {
-            var user = UserManager.FindUser(username, password);
+            var user = UserManager.FindUser(userName, password);
             if (user != null) {
                 using (var f = new FileManager(UserManager.Context))
                 {
-                    Client c = f.CreateClient(user.Id, user.Name);
+                    Client c = f.CreateClient(user.Id, clientName);
 
-                    return c.Id + "," + c.Secret;
-                    //Return json and secret
+                    return Json(new ClientLoginResult
+                    {
+                        Id = c.Id,
+                        Secret = c.Secret,
+                        UserId = c.UserId
+                    });
                 }
             }
-            return "fail";
+            return Content("fail");
         }
 
         //

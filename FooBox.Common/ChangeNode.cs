@@ -13,7 +13,8 @@ namespace FooBox.Common
         None,
 
         /// <summary>
-        /// Add a document, modify a document (add a document version), or add a folder.
+        /// Add a document, modify a document (add a document version), add a folder,
+        /// or rename a document or folder.
         /// </summary>
         Add,
 

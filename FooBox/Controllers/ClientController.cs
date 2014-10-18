@@ -96,7 +96,12 @@ namespace FooBox.Controllers
 
                 clientSyncPostData.Data.ClientId = clientSyncPostData.Id;
 
-                return Json(_fileManager.SyncClientChanges(clientSyncPostData.Data));
+                var result = _fileManager.SyncClientChanges(clientSyncPostData.Data);
+
+                if (result.State == ClientSyncResultState.Success)
+                    _fileManager.CleanClientUploadDirectory(client.Id);
+
+                return Json(result);
             }
         }
 

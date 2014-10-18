@@ -41,7 +41,7 @@
   <ItemGroup>
     <Compile Include="Api.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SyncEngine.cs" />
+    <Compile Include="ChangeNode.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

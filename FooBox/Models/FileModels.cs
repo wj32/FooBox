@@ -808,7 +808,7 @@ namespace FooBox.Models
                         break;
 
                     case ChangeType.Undelete:
-                        if (file != null && file.State != ObjectState.Normal)
+                        if (file != null && file is Document && file.State != ObjectState.Normal)
                         {
                             SetFileState(file, ObjectState.Normal);
                             createChange = true;

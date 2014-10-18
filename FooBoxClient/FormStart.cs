@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Net;
 using System.IO;
+using System.Web.Script.Serialization;
+using FooBox.Common;
 namespace FooBoxClient
 {
     public partial class FormStart : Form
@@ -50,7 +52,10 @@ namespace FooBoxClient
 
            
 
-            string postContent = "username=" + textBoxUsername.Text.Trim() + "&password=" + textBoxPassword.Text;
+            string postContent =
+                "userName=" + textBoxUsername.Text.Trim() +
+                "&password=" + textBoxPassword.Text +
+                "&clientName=" + Environment.MachineName;
 
             HttpWebRequest req = WebRequest.Create(url) as HttpWebRequest;
 
@@ -76,7 +81,8 @@ namespace FooBoxClient
             HttpWebResponse response = req.GetResponse() as HttpWebResponse;
             var encoding = UTF8Encoding.UTF8;
             string responseText = "";
-            using (var reader = new System.IO.StreamReader(response.GetResponseStream(), encoding))
+            using (var responseStream = response.GetResponseStream())
+            using (var reader = new System.IO.StreamReader(responseStream, encoding))
             {
                responseText = reader.ReadToEnd();
             }
@@ -86,12 +92,14 @@ namespace FooBoxClient
                 return;
             }
             //IF WE'VE GOT HERE WE'VE SUCCESFULLY AUTH'D
-            string[] content = responseText.Split(',');
-            Properties.Settings.Default.ID = content[0];
-            Properties.Settings.Default.Secret = content[1];
+            var result = (new JavaScriptSerializer()).Deserialize<ClientLoginResult>(responseText);
+            Properties.Settings.Default.ID = result.Id;
+            Properties.Settings.Default.Secret = result.Secret;
             Properties.Settings.Default.Port = int.Parse(textBoxServerPort.Text);
             Properties.Settings.Default.Server = textBoxServerLoc.Text;
             Properties.Settings.Default.Root = textBoxDirLoc.Text;
+            Properties.Settings.Default.ClientName = Environment.MachineName;
+            Properties.Settings.Default.UserID = result.UserId;
             Properties.Settings.Default.Save();
             
             

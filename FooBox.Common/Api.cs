@@ -100,4 +100,11 @@ namespace FooBox.Common
         public string Secret { get; set; }
         public ClientSyncData Data { get; set; }
     }
+
+    public class ClientLoginResult
+    {
+        public long Id { get; set; }
+        public string Secret { get; set; }
+        public long UserId { get; set; }
+    }
 }

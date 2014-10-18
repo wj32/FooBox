@@ -2,8 +2,8 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="FooBoxClient.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="ID" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="ID" Type="System.Int64" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="Secret" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
@@ -19,6 +19,12 @@
     </Setting>
     <Setting Name="ServerRoot" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ClientName" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="UserID" Type="System.Int64" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
   </Settings>
 </SettingsFile>

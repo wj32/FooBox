@@ -11,6 +11,7 @@
     <AssemblyName>FooBoxClient</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -49,7 +50,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FileSystem.cs" />
+    <Compile Include="File.cs" />
     <Compile Include="FormStart.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -64,6 +65,8 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Requests.cs" />
+    <Compile Include="SyncEngine.cs" />
     <EmbeddedResource Include="FormStart.resx">
       <DependentUpon>FormStart.cs</DependentUpon>
     </EmbeddedResource>
@@ -78,6 +81,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

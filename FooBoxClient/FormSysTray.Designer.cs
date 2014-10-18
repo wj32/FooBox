@@ -37,7 +37,7 @@
             this.ClientSize = new System.Drawing.Size(284, 261);
             this.Name = "FormSysTray";
             this.Text = "FormSysTray";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.FormSysTray_FormClosed);
+            this.Load += new System.EventHandler(this.FormSysTray_Load);
             this.ResumeLayout(false);
 
         }

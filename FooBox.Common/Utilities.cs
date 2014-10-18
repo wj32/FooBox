@@ -40,7 +40,7 @@ namespace FooBox
 
             using (var hashAlgorithm = System.Security.Cryptography.SHA256.Create())
             {
-                using (var fileStream = new FileStream(fileName, FileMode.Open))
+                using (var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) != 0)
                     {
