@@ -93,8 +93,20 @@ namespace FooBox
             this.DocumentVersions = new HashSet<DocumentVersion>();
         }
 
-
         public virtual ICollection<DocumentVersion> DocumentVersions { get; set; }
+    }
+
+    public class DocumentLink
+    {
+        public const int KeyLength = 32;
+
+        public long Id { get; set; }
+        [StringLength(KeyLength)]
+        [Index(IsUnique = true)]
+        public string Key { get; set; }
+        public string RelativeFullName { get; set; }
+
+        public virtual User User { get; set; }
     }
 
     public class DocumentVersion
@@ -194,6 +206,7 @@ namespace FooBox
         {
             this.Groups = new HashSet<Group>();
             this.Clients = new HashSet<Client>();
+            this.DocumentLinks = new HashSet<DocumentLink>();
         }
 
         public string PasswordHash { get; set; }
@@ -214,6 +227,7 @@ namespace FooBox
         public virtual ICollection<Group> Groups { get; set; }
         public virtual ICollection<Client> Clients { get; set; }
         public virtual Folder RootFolder { get; set; }
+        public virtual ICollection<DocumentLink> DocumentLinks { get; set; }
     }
 
     #endregion
@@ -242,6 +256,7 @@ namespace FooBox
         public virtual DbSet<Changelist> Changelists { get; set; }
         public virtual DbSet<Client> Clients { get; set; }
         public virtual DbSet<Document> Documents { get; set; }
+        public virtual DbSet<DocumentLink> DocumentLinks { get; set; }
         public virtual DbSet<DocumentVersion> DocumentVersions { get; set; }
         public virtual DbSet<File> Files { get; set; }
         public virtual DbSet<Folder> Folders { get; set; }
