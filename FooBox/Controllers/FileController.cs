@@ -214,6 +214,8 @@ namespace FooBox.Controllers
             return RedirectToAction("DisplayVersionHistory", new { fullName = fullName });
         }
 
+        
+
         private bool NameConflicts(Folder parent, string name, bool creatingDocument, bool newVersion)
         {
             File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
@@ -487,8 +489,8 @@ namespace FooBox.Controllers
             return RedirectToAction("Browse", new { path = fromPath });
         }
 
-        [HttpPost]
-        public ActionResult GenerateLink(string fullName, string fromPath)
+     
+        public string GetShareLink(string fullName)
         {
             var key = Utilities.GenerateRandomString(FileManager.IdChars, DocumentLink.KeyLength);
             long userId = User.Identity.GetUserId();
@@ -508,8 +510,8 @@ namespace FooBox.Controllers
             catch 
             {
             }
-            key = "http://" + Request.Url.Authority + "/File/DownloadKey?key=" + key;
-            return RedirectToAction("Browse", new { path = fromPath, dlkey = key });
+            var link = "http://" + Request.Url.Authority + "/File/DownloadKey?key=" + key;
+            return link;
         }
 
 
