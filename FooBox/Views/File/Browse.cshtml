@@ -4,7 +4,22 @@
 @{
     ViewBag.Title = Model.DisplayName;
 }
-
+<div class="modal fade" role="dialog" id="shareLinkModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Sharing Link</h4>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="shareLinkTextBox" class="form-control" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 <h2>
     @foreach (var parent in Model.Parents)
     {
@@ -96,6 +111,8 @@
                         @if (!item.IsFolder)
                         {
                             <li>@Html.ActionLink("Version History", "DisplayVersionHistory", new { fullName = item.FullDisplayName })</li>
+                            <li>@Ajax.ActionLink("Get Sharing Link", "GetShareLink", new { fullName = item.FullDisplayName },
+                             new AjaxOptions { UpdateTargetId = "shareLink", OnSuccess = "onSharingLinkSuccess" }, new { @class = "getShareLink" })</li>
                             <li class="divider"></li>
                         }
                         <li><a href="#" class="renameLink">Rename</a></li>
@@ -153,7 +170,7 @@
         }
     }
 </p>
-
+<span id="shareLink" class="hidden"></span>
 <script>
     $("document").ready(function () {
         $("#UploadFile").change(function () {
@@ -196,6 +213,8 @@
             $(".dropdown-toggle").show('slide');
             return false;
         });
+        $(".getShareLink").click(function () {
+        });
         $("#newFolderButton").click(function () {
             $("#newFolderButton").hide();
             $("#newFolderDialog").show('slide');
@@ -212,8 +231,17 @@
             $("#newFolderButton").show('slide');
             return false;
         });
+        $("#shareLinkTextBox").click(function () {
+            $(this).focus();
+            $(this).select();
+        });
+        
     });
     $("")
+    function onSharingLinkSuccess() {
+        $("#shareLinkTextBox").val($("#shareLink").html());
+        $("#shareLinkModal").modal('show');
+    }
 </script>
 
 <p id="debug"></p>

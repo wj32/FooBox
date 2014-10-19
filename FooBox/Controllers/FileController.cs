@@ -211,6 +211,12 @@ namespace FooBox.Controllers
             return RedirectToAction("DisplayVersionHistory", new { fullName = fullName });
         }
 
+        public string GetShareLink(string fullName)
+        {
+            // TODO: Implement and return share link
+            return fullName;
+        }
+
         private bool NameConflicts(Folder parent, string name, bool creatingDocument, bool newVersion)
         {
             File file = parent.Files.AsQueryable().Where(f => f.Name == name).SingleOrDefault();
