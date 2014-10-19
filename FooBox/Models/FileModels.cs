@@ -344,6 +344,25 @@ namespace FooBox.Models
 
         #endregion
 
+        #region DocumentLinks
+
+        public Document FindDocumentFromKey(string key)
+        {
+            string fullDisplayName;
+            var pair = (from doc in _context.DocumentLinks where doc.Key == key select new {doc.RelativeFullName, doc.User}).SingleOrDefault();
+            if (pair != null)
+            {
+                File file = FindFile(pair.RelativeFullName, pair.User.RootFolder, out fullDisplayName);
+                if (file is Document)
+                {
+                    return (Document)file;
+                }
+            }
+            return null;
+        }
+
+        #endregion
+
         #region Client upload
 
         public static readonly string ClientUploadDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Uploads");

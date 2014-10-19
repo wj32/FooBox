@@ -3,6 +3,19 @@
 
 @{
     ViewBag.Title = Model.DisplayName;
+    AjaxOptions options = new AjaxOptions
+    {
+        UpdateTargetId = "randomKeyResult",
+        Confirm = "Are you sure to start search?",
+        InsertionMode = InsertionMode.Replace,
+        LoadingElementId = "divLoading"
+    };
+}
+
+@if (ViewBag.key != null) 
+{ 
+    @*Vivian: change this to whatever nicer thing you want, bootstrap has this http://getbootstrap.com/javascript/#alerts*@
+    <b>HELLO HERE IS YOUR LINK! @ViewBag.key</b>
 }
 
 <h2>
@@ -85,6 +98,7 @@
                         </span>
                     </div><!-- /input-group -->
                      }
+
                 </div>
                 <!-- Split button -->
                 <div class="col-md-1 btn-group">
@@ -96,6 +110,7 @@
                         @if (!item.IsFolder)
                         {
                             <li>@Html.ActionLink("Version History", "DisplayVersionHistory", new { fullName = item.FullDisplayName })</li>
+                            <li><a href="#" class="generateLink">Generate Link</a></li>
                             <li class="divider"></li>
                         }
                         <li><a href="#" class="renameLink">Rename</a></li>
@@ -118,6 +133,17 @@
             </td>
             <td>
                 @Html.Encode(item.IsFolder ? "-" : item.TimeStamp.ToLocalTime().ToString("F"))
+            </td>
+
+            <td>
+                @*Vivian: change this to whatever nicer thing you want*@
+            @if (!item.IsFolder)
+            {
+                using (@Html.BeginForm("GenerateLink", "File", new { fullName = item.FullDisplayName, fromPath = Model.FullDisplayName}, FormMethod.Post, null)) 
+                {
+                    <button type="submit">Generate</button>
+                }
+            }
             </td>
         </tr>
     }
@@ -153,6 +179,9 @@
         }
     }
 </p>
+
+
+
 
 <script>
     $("document").ready(function () {

@@ -13,6 +13,7 @@ using System.Text;
 using System.IO;
 using System.Xml.Serialization;
 using FooBox.Common;
+using System.Data.Entity.Infrastructure;
 
 namespace FooBox.Controllers
 {
@@ -111,9 +112,11 @@ namespace FooBox.Controllers
             return File(blobFileName, MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
         }
 
-        public ActionResult Browse()
+        public ActionResult Browse(string dlkey)
         {
             string path = (string)RouteData.Values["path"] ?? "";
+            ViewBag.Key = dlkey;
+            
             string fullDisplayName = null;
             File file = _fileManager.FindFile(path, _fileManager.GetUserRootFolder(User.Identity.GetUserId()), out fullDisplayName);
 
@@ -482,6 +485,43 @@ namespace FooBox.Controllers
             _fileManager.SyncClientChanges(data);
 
             return RedirectToAction("Browse", new { path = fromPath });
+        }
+
+        [HttpPost]
+        public ActionResult GenerateLink(string fullName, string fromPath)
+        {
+            var key = Utilities.GenerateRandomString(FileManager.IdChars, DocumentLink.KeyLength);
+            long userId = User.Identity.GetUserId();
+            var dl = new DocumentLink
+            {
+                Key = key,
+                RelativeFullName = fullName,
+                User = _userManager.FindUser(userId)
+            };
+
+            try
+            {
+                var context = _fileManager.Context;
+                context.DocumentLinks.Add(dl);
+                context.SaveChanges();
+            }
+            catch 
+            {
+            }
+            key = "http://" + Request.Url.Authority + "/File/DownloadKey?key=" + key;
+            return RedirectToAction("Browse", new { path = fromPath, dlkey = key });
+        }
+
+
+
+        public ActionResult DownloadKey(string key)
+        {
+            var doc = _fileManager.FindDocumentFromKey(key);
+            if (doc != null)
+            {
+                return DownloadDocument(doc);
+            }
+            return RedirectToAction("Browse");         
         }
 
         protected override void Dispose(bool disposing)
