@@ -16,14 +16,26 @@ namespace FooBoxClient
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            if (Properties.Settings.Default.ID == 0)
+          //  if (Properties.Settings.Default.ID == 0)
+         //   {
+            FormStart frm = null;
+
+            if (!System.IO.Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\FooBoxClient"))
             {
-                Application.Run(new FormStart());
+                Properties.Settings.Default.Reset();
+                frm = new FormStart(FormWindowState.Normal);
             }
+            else { 
+                frm = new FormStart(FormWindowState.Minimized);
+            }
+            
+            Application.Run(frm);
+               // Application.Run(frm);
+        /*    }
             else
             {
                 Application.Run(new FormSysTray());
-            }
+            }*/
            
         }
     }

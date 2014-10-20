@@ -49,9 +49,9 @@
             // labelName
             // 
             this.labelName.Font = new System.Drawing.Font("Microsoft Sans Serif", 36F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelName.Location = new System.Drawing.Point(12, 19);
+            this.labelName.Location = new System.Drawing.Point(0, 19);
             this.labelName.Name = "labelName";
-            this.labelName.Size = new System.Drawing.Size(432, 51);
+            this.labelName.Size = new System.Drawing.Size(451, 51);
             this.labelName.TabIndex = 0;
             this.labelName.Text = "FooBox";
             this.labelName.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;

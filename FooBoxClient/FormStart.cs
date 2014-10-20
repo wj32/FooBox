@@ -15,9 +15,29 @@ namespace FooBoxClient
 {
     public partial class FormStart : Form
     {
-        public FormStart()
+        public FormStart(FormWindowState a)
         {
             InitializeComponent();
+            this.WindowState = a;
+            if (a == FormWindowState.Minimized)
+            {
+                this.ShowIcon = false;
+            }
+            checkStatus();
+        }
+        public FormSysTray _sender = null;
+
+      
+
+        public void checkStatus()
+        {
+            if (Properties.Settings.Default.UserName != "")
+            {
+                this.Hide();
+                FormSysTray sysTray = new FormSysTray();
+                sysTray._sender = this;
+                sysTray.ShowDialog();
+            }
         }
 
         private void buttonBrowse_Click(object sender, EventArgs e)
@@ -124,13 +144,16 @@ namespace FooBoxClient
             Properties.Settings.Default.Root = textBoxDirLoc.Text;
             Properties.Settings.Default.ClientName = Environment.MachineName;
             Properties.Settings.Default.UserID = result.UserId;
+            Properties.Settings.Default.UserName = textBoxUsername.Text;
             Properties.Settings.Default.Save();
             
             
 
             this.Hide();
             FormSysTray frm = new FormSysTray();
+            frm._sender = this;
             frm.Show();
+            
         }
 
 

@@ -44,7 +44,7 @@ namespace FooBoxClient
             _root.Files.Add(userRoot.Name, userRoot);
 
             _configDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\FooBoxClient";
-            _stateFileName = _configDirectory + "\\state.json";
+            _stateFileName = _configDirectory + "\\" + Properties.Settings.Default.UserName +".json";
         }
 
         public long ChangelistId

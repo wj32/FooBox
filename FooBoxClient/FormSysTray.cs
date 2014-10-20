@@ -15,6 +15,8 @@ using FooBox.Common;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 using System.Threading;
+using System.Diagnostics;
+using System.ComponentModel;
 
 namespace FooBoxClient
 {
@@ -25,6 +27,8 @@ namespace FooBoxClient
         private AutoResetEvent _event;
         private bool _closing = false;
         private Point _location;
+        public FormStart _sender = null; 
+        
         public FormSysTray()
         {
          
@@ -142,6 +146,31 @@ namespace FooBoxClient
                 CreateHandle();
             }
             base.SetVisibleCore(value);
+        }
+
+        private void logOutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.UserName = "";
+            _closing = true;
+            notifyFooBox.Visible = false;
+    
+            
+            _sender.Show();
+            _sender.WindowState = FormWindowState.Normal;
+            _sender.ShowIcon = true;
+            this.Close();
+        }
+
+        private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            FormSettings frm = new FormSettings(_syncThread, _engine);
+            frm.Show();
+        }
+
+        private void notifyFooBox_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            hideSelf();
+            Process.Start("explorer", Properties.Settings.Default.Root);
         }
 
     }
