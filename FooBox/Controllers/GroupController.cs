@@ -23,13 +23,13 @@ namespace FooBox.Controllers
         public ActionResult GroupCreate()
         {
             var mod = new AdminNewGroupViewModel();
-            List<UserSelectedViewModel> users = new List<UserSelectedViewModel>();
+            List<EntitySelectedViewModel> users = new List<EntitySelectedViewModel>();
 
 
             foreach (User u in um.Context.Users) 
             {
                 if (u.Name.Equals("__DEFAULT__") || u.State == ObjectState.Deleted) { continue; }
-                var a = new UserSelectedViewModel();
+                var a = new EntitySelectedViewModel();
                 a.Id = u.Id;
                 a.IsSelected = false;
                 a.Name = u.Name;
@@ -93,7 +93,7 @@ namespace FooBox.Controllers
                 return HttpNotFound();
             }
 
-            List<UserSelectedViewModel> users = new List<UserSelectedViewModel>();
+            List<EntitySelectedViewModel> users = new List<EntitySelectedViewModel>();
 
             var mod = new AdminEditGroupViewModel();   
             mod.Id = grp.Id;
@@ -103,7 +103,7 @@ namespace FooBox.Controllers
             foreach (User u in userList)
             {
                 if (u.Name.Equals("__DEFAULT__") || u.State == ObjectState.Deleted) { continue; }
-                var a = new UserSelectedViewModel();
+                var a = new EntitySelectedViewModel();
                 a.Id = u.Id;
                 a.IsSelected = grp.Users.Contains(u);
                 a.Name = u.Name;

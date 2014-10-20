@@ -77,7 +77,7 @@ namespace FooBox.Models
     
 
     
-        public List<UserSelectedViewModel> Users { get; set; }
+        public List<EntitySelectedViewModel> Users { get; set; }
     }
 
 
@@ -97,10 +97,10 @@ namespace FooBox.Models
         public string Description { get; set; }
 
 
-        public List<UserSelectedViewModel> Users { get; set; }
+        public List<EntitySelectedViewModel> Users { get; set; }
 
     }
-    public class UserSelectedViewModel
+    public class EntitySelectedViewModel
     {
         public long Id { get; set; }
 

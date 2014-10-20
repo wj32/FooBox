@@ -231,6 +231,7 @@
     <Content Include="Views\Group\GroupEdit.cshtml" />
     <Content Include="Views\File\Browse.cshtml" />
     <Content Include="Views\File\DisplayVersionHistory.cshtml" />
+    <Content Include="Views\File\FolderEdit.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

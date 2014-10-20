@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
 
@@ -41,4 +43,26 @@ namespace FooBox.Models
 
         public List<VersionEntry> Versions { get; set; }
     }
+
+
+    public class EditFolderViewModel
+    {
+        public long Id { get; set; }
+
+
+        [Required]
+        [DataType(DataType.Text)]
+        [DisplayName("Name")]
+        public string Name { get; set; }
+
+
+        [DataType(DataType.MultilineText)]
+        [DisplayName("Description")]
+        public string Description { get; set; }
+
+
+        public List<EntitySelectedViewModel> Users { get; set; }
+        public List<EntitySelectedViewModel> Groups { get; set; }
+    }
+
 }

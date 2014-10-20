@@ -122,6 +122,10 @@
                             <li>@Ajax.ActionLink("Get Sharing Link", "GetShareLink", new { fullName = item.FullDisplayName },
                              new AjaxOptions { UpdateTargetId = "shareLink", OnSuccess = "onSharingLinkSuccess" }, new { @class = "getShareLink" })</li>
                             <li class="divider"></li>
+                        } 
+                        else
+                        { 
+                            <li>@Html.ActionLink("Set Permissions", "FolderEdit", new { fullName = item.FullDisplayName })</li>
                         }
                         <li><a href="#" class="renameLink">Rename</a></li>
                         <li><a href="#" class="deleteLink">Delete</a></li>

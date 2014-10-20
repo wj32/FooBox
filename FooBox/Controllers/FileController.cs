@@ -526,6 +526,101 @@ namespace FooBox.Controllers
             return RedirectToAction("Browse");         
         }
 
+
+        
+        public ActionResult FolderEdit(string fullName)
+        {
+            if (fullName == null)
+                return RedirectToAction("Browse");
+
+            Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+            string fullDisplayName;
+            File file = _fileManager.FindFile(fullName, userRootFolder, out fullDisplayName);
+
+            if (file == null || file is Document)  
+            {
+                return HttpNotFound();
+            }
+
+            List<EntitySelectedViewModel> users = new List<EntitySelectedViewModel>();
+            List<EntitySelectedViewModel> groups = new List<EntitySelectedViewModel>();
+
+            var mod = new EditFolderViewModel();
+            mod.Id = file.Id;
+            mod.Name = file.DisplayName;
+            
+            var userList = _userManager.Context.Users.ToList();
+            foreach (User u in userList)
+            {
+                if (u.Name.Equals("__DEFAULT__") || u.State == ObjectState.Deleted) { continue; }
+                var a = new EntitySelectedViewModel();
+                a.Id = u.Id;
+                a.IsSelected = false; // LOGIC GOES HERE: IS THE USER ALREADY PERMISSIONED TO FOLDER?
+                a.Name = u.Name;
+                users.Add(a);
+            }
+            mod.Users = users;
+
+            var groupList = _userManager.Context.Groups.ToList();
+            foreach (Group g in groupList)
+            {
+                if (g.State == ObjectState.Deleted) { continue; }
+                var a = new EntitySelectedViewModel();
+                a.Id = g.Id;
+                a.IsSelected = false; // LOGIC GOES HERE: IS THE GROUP ALREADY PERMISSIONED TO FOLDER?
+                a.Name = g.Name;
+                groups.Add(a);
+            }
+            mod.Groups = groups;
+            ViewBag.Subheading = file.DisplayName;
+            return View(mod);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult FolderEdit(EditFolderViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                Folder f = _fileManager.FindFolder(model.Id);
+                ICollection<User> users = new LinkedList<User>(); // LOGIC HERE: point this to the correct db set for list of users with permmision
+                users.Clear();
+                users.Add(_userManager.GetDefaultUser());
+                foreach (var item in model.Users)
+                {
+                    if (item.IsSelected)
+                    {
+                        FooBox.User u = _userManager.FindUser(item.Id);
+                        if (u != null) users.Add(u);
+                    }
+                }
+
+                ICollection<Group> groups = new LinkedList<Group>(); // LOGIC HERE: point this to the correct db set for list of groups with permmision
+                groups.Clear();
+                foreach (var item in model.Groups)
+                {
+                    if (item.IsSelected)
+                    {
+                        FooBox.Group g = _userManager.FindGroup(item.Id);
+                        if (g != null) groups.Add(g);
+                    }
+                }
+
+                try
+                {
+                    _userManager.Context.SaveChanges();
+                }
+                catch
+                {
+        
+                    return View(model);
+                }
+                return RedirectToAction("Index");
+            }
+            return View(model);
+        }
+
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -534,5 +629,10 @@ namespace FooBox.Controllers
             }
             base.Dispose(disposing);
         }
+
+
+
+
+
     }
 }
