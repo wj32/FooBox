@@ -831,6 +831,9 @@ namespace FooBoxClient
                 {
                     this.SaveState();
                 }
+
+                if (_cancellationToken.IsCancellationRequested)
+                    return false;
             }
 
             CleanBlobDirectory();
