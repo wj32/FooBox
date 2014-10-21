@@ -112,11 +112,9 @@ namespace FooBox.Controllers
             return File(blobFileName, MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
         }
 
-        public ActionResult Browse(string dlkey)
+        public ActionResult Browse()
         {
             string path = (string)RouteData.Values["path"] ?? "";
-            ViewBag.Key = dlkey;
-            
             string fullDisplayName = null;
             File file = _fileManager.FindFile(path, _fileManager.GetUserRootFolder(User.Identity.GetUserId()), out fullDisplayName);
 
