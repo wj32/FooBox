@@ -51,13 +51,21 @@ namespace FooBoxClient
 
         public SyncEngine(string rootDirectory, long userId)
         {
-            _rootDirectory = rootDirectory;
-
+            this.RootDirectory = rootDirectory;
             this.ResetState(userId, Environment.MachineName);
 
-            _localSpecialFolder = _rootDirectory + "\\" + SpecialFolderName;
-            _stateFileName = _localSpecialFolder + "\\" + StateFileName;
             _specialFolderFullName = "/" + userId.ToString() + "/" + SpecialFolderName.ToUpperInvariant();
+        }
+
+        public string RootDirectory
+        {
+            get { return _rootDirectory; }
+            set
+            {
+                _rootDirectory = value;
+                _localSpecialFolder = _rootDirectory + "\\" + SpecialFolderName;
+                _stateFileName = _localSpecialFolder + "\\" + StateFileName;
+            }
         }
 
         public long ChangelistId

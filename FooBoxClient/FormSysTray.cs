@@ -10,6 +10,7 @@ namespace FooBoxClient
     {
         private SyncEngine _engine;
         private Thread _syncThread;
+        private object _engineSyncObject = new object();
         private bool _closing = false;
         private CancellationTokenSource _cancellationTokenSource;
         private Point _location;
@@ -66,7 +67,8 @@ namespace FooBoxClient
                 {
                     try
                     {
-                        noDelay = _engine.Run(_cancellationTokenSource.Token);
+                        lock (_engineSyncObject)
+                            noDelay = _engine.Run(_cancellationTokenSource.Token);
                     }
                     catch
                     { }
@@ -158,7 +160,7 @@ namespace FooBoxClient
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            FormSettings frm = new FormSettings(_syncThread, _engine);
+            FormSettings frm = new FormSettings(_engineSyncObject, _engine);
             frm.Show();
         }
 
