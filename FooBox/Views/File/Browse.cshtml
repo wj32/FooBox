@@ -98,7 +98,7 @@
             </td>
             <td class="col-md-6" id="@("file" + @i)">
                 <div class="col-md-6">
-                    <div id="@("nameFieldfile" + @i)" class="fileName">
+                    <div id="@("nameFieldfile" + @i)" class="fileName@(item.State == ObjectState.Deleted ? " deleted-file" : "")">
                         @Html.ActionLink(item.DisplayName, "Browse", new { path = item.FullDisplayName })
                     </div>
                     @using(@Html.BeginForm("Rename", "File", new { fromPath = Model.FullDisplayName, oldFileDisplayName = item.DisplayName }))

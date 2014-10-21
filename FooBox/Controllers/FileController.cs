@@ -51,7 +51,7 @@ namespace FooBox.Controllers
             model.State = folder.State;
             model.Files = (
                 from file in folder.Files.AsQueryable()
-                where file.State == ObjectState.Normal
+                where file.State == ObjectState.Normal || file.State == folder.State // Always show deleted files in a deleted folder
                 orderby !(file is Folder) ascending, file.Name ascending
                 let latestVersion = (file is Document) ? (from version in ((Document)file).DocumentVersions.AsQueryable()
                                                           orderby version.TimeStamp descending
