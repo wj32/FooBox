@@ -159,14 +159,24 @@ namespace FooBoxClient
                     JavaScriptSerializer serializer = new JavaScriptSerializer();
                     var state = serializer.Deserialize<SyncEngine.State>(System.IO.File.ReadAllText(stateFileName));
 
-                    if (state.UserId == Properties.Settings.Default.ID)
+                    if (state.UserId == Properties.Settings.Default.UserID)
                         keep = true;
                 }
 
                 if (!keep)
                 {
                     Utilities.DeleteDirectoryRecursive(Properties.Settings.Default.Root);
-                    Directory.CreateDirectory(Properties.Settings.Default.Root);
+
+                    // This sometimes doesn't work...
+                    for (int attempts = 0; attempts < 4; attempts++)
+                    {
+                        Directory.CreateDirectory(Properties.Settings.Default.Root);
+
+                        if (Directory.Exists(Properties.Settings.Default.Root))
+                            break;
+
+                        System.Threading.Thread.Sleep(500);
+                    }
                 }
             }
             catch (Exception ex)
