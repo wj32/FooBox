@@ -654,8 +654,8 @@ namespace FooBoxClient
                 }
             }
 
-            System.IO.File.SetLastWriteTimeUtc(destinationFileName, DateTime.Now);
             System.IO.File.SetAttributes(destinationFileName, FileAttributes.Normal);
+            System.IO.File.SetLastWriteTimeUtc(destinationFileName, DateTime.Now);
 
             return true;
         }

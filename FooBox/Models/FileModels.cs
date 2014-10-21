@@ -971,7 +971,7 @@ namespace FooBox.Models
                 {
                     var fileFolder = (Folder)file;
 
-                    if (fileFolder.InvitationId != 0)
+                    if (fileFolder.InvitationId.HasValue)
                         AddChangesForFolder(changes, fileFolder.Invitation.Target, "/@" + fileFolder.InvitationId.ToString());
                     else
                         AddChangesForFolder(changes, fileFolder, newFullName);
