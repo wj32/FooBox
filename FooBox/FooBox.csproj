@@ -232,6 +232,8 @@
     <Content Include="Views\File\Browse.cshtml" />
     <Content Include="Views\File\DisplayVersionHistory.cshtml" />
     <Content Include="Views\File\FolderEdit.cshtml" />
+    <Content Include="Views\File\DisplayShareLinks.cshtml" />
+    <Content Include="Views\File\_DocumentLinkURL.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

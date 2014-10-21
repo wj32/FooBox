@@ -1,0 +1,44 @@
+﻿@model IEnumerable<FooBox.DocumentLink>
+
+@{
+    ViewBag.Title = "DisplaySharedLinks";
+}
+
+<h2>My Shared Links</h2>
+
+<table class="table">
+    <tr>
+        <th>
+            File
+        </th>
+        <th>
+            Download Link
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td class="vert-align">
+            @Html.DisplayFor(modelItem => item.RelativeFullName)
+        </td>
+        <td class="vert-align">
+            @{Html.RenderPartial("_DocumentLinkURL", item.Key);}
+        </td>
+        <td class="vert-align">
+            @Html.ActionLink("Delete", "DeleteShareLink", new { id = item.Id })
+        </td>
+    </tr>
+}
+
+</table>
+
+<script>
+    $("document").ready(function () {
+        $(".shareLinkTextBox").click(function () {
+            $(this).focus();
+            $(this).select();
+        });
+    });
+    $("")
+</script>
