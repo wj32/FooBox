@@ -470,7 +470,7 @@ namespace FooBox.Controllers
             return RedirectToAction("Browse", new { path = fromPath });
         }
 
-        public string GetShareLink(string fullName)
+        public ActionResult GetShareLink(string fullName)
         {
             string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
 
@@ -495,8 +495,19 @@ namespace FooBox.Controllers
                 {
                 }
             }
+            return PartialView("_DocumentLinkURL", key);
+            //return Url.Action("DownloadKey", "File", new { key = key }, Request.Url.Scheme);
+        }
 
-            return Url.Action("DownloadKey", "File", new { key = key }, Request.Url.Scheme);
+        public ActionResult DisplayShareLinks()
+        {
+            return View(_fileManager.Context.DocumentLinks);
+        }
+
+        public ActionResult DeleteShareLink()
+        {
+            // TODO
+            return RedirectToAction("DisplayShareLinks");
         }
 
         public ActionResult DownloadKey(string key)
