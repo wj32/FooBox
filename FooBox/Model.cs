@@ -101,7 +101,7 @@ namespace FooBox
         public const int KeyLength = 32;
 
         public long Id { get; set; }
-        [StringLength(KeyLength)]
+        [MaxLength(KeyLength)]
         [Index(IsUnique = true)]
         public string Key { get; set; }
         public string RelativeFullName { get; set; }
@@ -149,19 +149,18 @@ namespace FooBox
         public Folder()
         {
             this.Files = new HashSet<File>();
-            this.ShareSubFolders = new HashSet<Folder>();
             this.RootOfUsers = new HashSet<User>();
-            this.TargetOfLinks = new HashSet<Link>();
+            this.TargetOfInvitations = new HashSet<Invitation>();
         }
 
         public long OwnerId { get; set; }
+        public long? InvitationId { get; set; }
 
         public virtual User Owner { get; set; }
         public virtual ICollection<File> Files { get; set; }
-        public virtual Folder ShareFolder { get; set; }
-        public virtual ICollection<Folder> ShareSubFolders { get; set; }
         public virtual ICollection<User> RootOfUsers { get; set; }
-        public virtual ICollection<Link> TargetOfLinks { get; set; }
+        public virtual ICollection<Invitation> TargetOfInvitations { get; set; }
+        public virtual Invitation Invitation { get; set; }
     }
 
     public class Group : Identity
@@ -193,11 +192,23 @@ namespace FooBox
         public ObjectState State { get; set; }
     }
 
-    public class Link : File
+    public class Invitation
     {
-        public long? TargetId { get; set; }
+        public Invitation()
+        {
+            this.AcceptedFolders = new HashSet<Folder>();
+        }
 
+        public long Id { get; set; }
+        public DateTime TimeStamp { get; set; }
+        [Index("IX_InvitationTargetUser", 1, IsUnique = true)]
+        public long TargetId { get; set; }
+        [Index("IX_InvitationTargetUser", 2, IsUnique = true)]
+        public long UserId { get; set; }
+
+        public virtual ICollection<Folder> AcceptedFolders { get; set; }
         public virtual Folder Target { get; set; }
+        public virtual User User { get; set; }
     }
 
     public class User : Identity
@@ -207,6 +218,7 @@ namespace FooBox
             this.Groups = new HashSet<Group>();
             this.Clients = new HashSet<Client>();
             this.DocumentLinks = new HashSet<DocumentLink>();
+            this.Invitations = new HashSet<Invitation>();
         }
 
         public string PasswordHash { get; set; }
@@ -228,6 +240,7 @@ namespace FooBox
         public virtual ICollection<Client> Clients { get; set; }
         public virtual Folder RootFolder { get; set; }
         public virtual ICollection<DocumentLink> DocumentLinks { get; set; }
+        public virtual ICollection<Invitation> Invitations { get; set; }
     }
 
     #endregion
@@ -246,8 +259,9 @@ namespace FooBox
             modelBuilder.Entity<DocumentVersion>().HasRequired(t => t.Client).WithMany().HasForeignKey(t => t.ClientId);
             modelBuilder.Entity<Folder>().HasMany(t => t.Files).WithOptional(t => t.ParentFolder).HasForeignKey(t => t.ParentFolderId);
             modelBuilder.Entity<Folder>().HasRequired(t => t.Owner).WithMany().HasForeignKey(t => t.OwnerId).WillCascadeOnDelete(false);
-            modelBuilder.Entity<Folder>().HasOptional(t => t.ShareFolder).WithMany(t => t.ShareSubFolders);
-            modelBuilder.Entity<Link>().HasOptional(t => t.Target).WithMany(t => t.TargetOfLinks).HasForeignKey(t => t.TargetId);
+            modelBuilder.Entity<Invitation>().HasMany(t => t.AcceptedFolders).WithOptional(t => t.Invitation).HasForeignKey(t => t.InvitationId);
+            modelBuilder.Entity<Invitation>().HasRequired(t => t.Target).WithMany(t => t.TargetOfInvitations).HasForeignKey(t => t.TargetId);
+            modelBuilder.Entity<Invitation>().HasRequired(t => t.User).WithMany(t => t.Invitations).HasForeignKey(t => t.UserId);
             modelBuilder.Entity<User>().HasOptional(t => t.RootFolder).WithMany(t => t.RootOfUsers);
         }
 
@@ -262,7 +276,7 @@ namespace FooBox
         public virtual DbSet<Folder> Folders { get; set; }
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<Identity> Identities { get; set; }
-        public virtual DbSet<Link> Links { get; set; }
+        public virtual DbSet<Invitation> Invitations { get; set; }
         public virtual DbSet<User> Users { get; set; }
     }
 

@@ -33,12 +33,26 @@ namespace FooBoxClient
             byte[] buffer = new byte[4096 * 4];
             int bytesRead;
 
-            using (var response = req.GetResponse())
-            using (var responseStream = response.GetResponseStream())
-            using (var outStream = new FileStream(destinationFileName, FileMode.Create))
+            try
             {
-                while ((bytesRead = responseStream.Read(buffer, 0, buffer.Length)) != 0)
-                    outStream.Write(buffer, 0, bytesRead);
+                using (var response = req.GetResponse())
+                using (var responseStream = response.GetResponseStream())
+                using (var outStream = new FileStream(destinationFileName, FileMode.Create))
+                {
+                    while ((bytesRead = responseStream.Read(buffer, 0, buffer.Length)) != 0)
+                        outStream.Write(buffer, 0, bytesRead);
+                }
+            }
+            catch
+            {
+                try
+                {
+                    System.IO.File.Delete(destinationFileName);
+                }
+                catch
+                { }
+
+                throw;
             }
         }
 

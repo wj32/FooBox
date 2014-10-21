@@ -60,7 +60,7 @@ namespace FooBox.Controllers
                     Name = model.Name,
                     FirstName = model.FirstName,
                     LastName = model.LastName,
-                    QuotaLimit = model.QuotaLimit * 1024
+                    QuotaLimit = model.QuotaLimit * (1024 * 1024)
                 };
                 um.CreateUser(template, model.Password);
                 DisplaySuccessMessage("User created");

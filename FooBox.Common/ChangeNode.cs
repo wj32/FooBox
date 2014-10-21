@@ -256,10 +256,13 @@ namespace FooBox.Common
         /// Note: a.PreservingConflicts(b) is always equal to b.PreservingConflicts(a).
         /// </summary>
         /// <param name="other">The other node.</param>
-        public bool PreservingConflicts(ChangeNode other)
+        /// <param name="callback">A callback invoked for each conflict.</param>
+        public bool PreservingConflicts(ChangeNode other, Action<ChangeNode, ChangeNode> callback = null)
         {
             if (Nodes == null || other.Nodes == null)
                 return false;
+
+            bool conflict = false;
 
             foreach (var otherNode in other.Nodes.Values)
             {
@@ -272,25 +275,47 @@ namespace FooBox.Common
                 {
                     case ChangeType.Add:
                         if (ourNode.Type == ChangeType.Add && (!ourNode.IsFolder || !otherNode.IsFolder))
-                            return true;
+                        {
+                            conflict = true;
+                            if (callback != null)
+                                callback(ourNode, otherNode);
+                            else
+                                return true;
+                        }
                         if (ourNode.Type == ChangeType.Undelete && otherNode.IsFolder)
-                            return true;
+                        {
+                            conflict = true;
+                            if (callback != null)
+                                callback(ourNode, otherNode);
+                            else
+                                return true;
+                        }
                         break;
                     case ChangeType.Undelete:
                         if (ourNode.Type == ChangeType.Add && ourNode.IsFolder)
-                            return true;
+                        {
+                            conflict = true;
+                            if (callback != null)
+                                callback(ourNode, otherNode);
+                            else
+                                return true;
+                        }
                         break;
                 }
 
-                if (ourNode.IsFolder && otherNode.IsFolder &&
+                if (!conflict && ourNode.IsFolder && otherNode.IsFolder &&
                     ourNode.Type != ChangeType.Delete && otherNode.Type != ChangeType.Delete)
                 {
-                    if (ourNode.PreservingConflicts(otherNode))
-                        return true;
+                    if (ourNode.PreservingConflicts(otherNode, callback))
+                    {
+                        conflict = true;
+                        if (callback == null)
+                            return true;
+                    }
                 }
             }
 
-            return false;
+            return conflict;
         }
 
         /// <summary>
@@ -369,7 +394,8 @@ namespace FooBox.Common
         /// <see cref="PreservingConflicts"/> returns true.
         /// </summary>
         /// <param name="other">The other node.</param>
-        public void MakeSequentialByPreserving(ChangeNode other)
+        /// <param name="callback">A callback invoked for each change removed.</param>
+        public void MakeSequentialByPreserving(ChangeNode other, Action<ChangeNode, ChangeNode> callback = null)
         {
             if (other.Nodes == null)
                 return;
@@ -390,13 +416,19 @@ namespace FooBox.Common
                             break;
                         case ChangeType.SetDisplayName:
                             if (ourNode.Type == ChangeType.Delete)
+                            {
+                                if (callback != null)
+                                    callback(ourNode, otherNode);
                                 otherNode.Type = ChangeType.None;
+                            }
                             break;
                         case ChangeType.Delete:
                             if (ourNode.Type == ChangeType.Add ||
                                 ourNode.Type == ChangeType.Delete ||
                                 ourNode.Type == ChangeType.Undelete)
                             {
+                                if (callback != null)
+                                    callback(ourNode, otherNode);
                                 otherNode.Type = ChangeType.None;
                             }
                             break;
@@ -407,6 +439,8 @@ namespace FooBox.Common
                             if (ourNode.Type == ChangeType.Add ||
                                 ourNode.Type == ChangeType.Undelete)
                             {
+                                if (callback != null)
+                                    callback(ourNode, otherNode);
                                 otherNode.Type = ChangeType.None;
                             }
                             break;
@@ -415,7 +449,7 @@ namespace FooBox.Common
                     if (ourNode.IsFolder && otherNode.IsFolder &&
                         ourNode.Type != ChangeType.Delete && otherNode.Type != ChangeType.Delete)
                     {
-                        ourNode.MakeSequentialByPreserving(otherNode);
+                        ourNode.MakeSequentialByPreserving(otherNode, callback);
                     }
                 }
             }

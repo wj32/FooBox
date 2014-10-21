@@ -1,0 +1,4 @@
+﻿@model string
+
+@Html.TextBox("shareLinkTextBox", @Url.Action("DownloadKey", "File", new { key = @Model }, Request.Url.Scheme), 
+    new { @class = "shareLinkTextBox form-control" })

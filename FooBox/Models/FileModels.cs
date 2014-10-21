@@ -12,7 +12,6 @@ namespace FooBox.Models
     {
         public const string RootFolderTag = "Root";
         public const string InternalClientTag = "Internal";
-        public const string IdChars = "abcdefghijklmnopqrstuvwxyz0123456789!@^_-";
 
         public static bool IsFooBoxSetUp()
         {
@@ -110,7 +109,7 @@ namespace FooBox.Models
 
         public string GenerateBlobKey()
         {
-            return Utilities.GenerateRandomString(IdChars, Blob.KeyLength);
+            return Utilities.GenerateRandomString(Utilities.IdChars, Blob.KeyLength);
         }
 
         public string GetBlobFileName(string blobKey)
@@ -293,7 +292,7 @@ namespace FooBox.Models
 
         private string GenerateClientSecret()
         {
-            return Utilities.GenerateRandomString(IdChars, 128);
+            return Utilities.GenerateRandomString(Utilities.IdChars, 128);
         }
 
         public Client CreateClient(long userId, string name, string tag = null)
@@ -344,7 +343,7 @@ namespace FooBox.Models
 
         #endregion
 
-        #region DocumentLinks
+        #region Document links
 
         public Document FindDocumentFromKey(string key)
         {
@@ -422,8 +421,9 @@ namespace FooBox.Models
                     };
                 }
 
-                var clientNode = ChangeNode.FromItems(clientData.Changes);
-                var clientChangesByFullName = clientData.Changes.ToDictionary(change => Utilities.NormalizeFullName(change.FullName).ToUpperInvariant());
+                var translatedChanges = TranslateClientChangesIn(clientData.Changes, client);
+                var clientNode = ChangeNode.FromItems(translatedChanges);
+                var clientChangesByFullName = translatedChanges.ToDictionary(change => Utilities.NormalizeFullName(change.FullName).ToUpperInvariant());
 
                 // Verify that the names are valid and the display names match the names.
                 // Also create missing entries in clientChangesByFullName.
@@ -491,13 +491,13 @@ namespace FooBox.Models
                 if (lastChangelistId != clientData.BaseChangelistId && !nextChangelistFound)
                     return new ClientSyncResult { State = ClientSyncResultState.TooOld };
 
-                if (clientData.Changes.Count == 0)
+                if (translatedChanges.Count == 0)
                 {
                     return new ClientSyncResult
                     {
                         State = ClientSyncResultState.Success,
                         LastChangelistId = lastChangelistId,
-                        Changes = GetChangesForNode(mergedNode),
+                        Changes = GetChangesForNode(mergedNode, client),
                         NewChangelistId = lastChangelistId
                     };
                 }
@@ -510,7 +510,7 @@ namespace FooBox.Models
                     {
                         State = ClientSyncResultState.Conflict,
                         LastChangelistId = lastChangelistId,
-                        Changes = GetChangesForNode(mergedNode),
+                        Changes = GetChangesForNode(mergedNode, client),
                         UploadRequiredFor = new HashSet<string>()
                     };
                 }
@@ -558,7 +558,7 @@ namespace FooBox.Models
                     {
                         State = ClientSyncResultState.UploadRequired,
                         LastChangelistId = lastChangelistId,
-                        Changes = GetChangesForNode(mergedNode),
+                        Changes = GetChangesForNode(mergedNode, client),
                         UploadRequiredFor = missingHashes
                     };
                 }
@@ -599,7 +599,7 @@ namespace FooBox.Models
                     {
                         State = ClientSyncResultState.Success,
                         LastChangelistId = lastChangelistId,
-                        Changes = GetChangesForNode(mergedNode),
+                        Changes = GetChangesForNode(mergedNode, client),
                         NewChangelistId = newChangelist.Id
                     };
                 }
@@ -614,7 +614,7 @@ namespace FooBox.Models
             }
         }
 
-        private void RenameAndDeleteConflictingFile(Folder parentFolder, File file, string reason)
+        private void RenameAndDeleteConflictingFile(Folder parentFolder, File file, string reason, Dictionary<User, long> quotaCharge)
         {
             string newDisplayName = file.DisplayName + " (" + reason + " " + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss-fff") + ")";
             string newName = newDisplayName.ToUpperInvariant();
@@ -625,14 +625,14 @@ namespace FooBox.Models
 
                 do
                 {
-                    newDisplayName = file.DisplayName + " (" + reason + " " + Utilities.GenerateRandomString(IdChars, 16) + ")";
+                    newDisplayName = file.DisplayName + " (" + reason + " " + Utilities.GenerateRandomString(Utilities.IdChars, 16) + ")";
                     newName = newDisplayName.ToUpperInvariant();
                 } while (parentFolder.Files.AsQueryable().Where(f => f.Name == newName).SingleOrDefault() != null);
             }
 
             file.Name = newName;
             file.DisplayName = newDisplayName;
-            file.State = ObjectState.Deleted;
+            SetFileState(file, ObjectState.Deleted, quotaCharge);
         }
 
         private void AddQuotaCharge(IDictionary<User, long> quotaCharge, User user, long charge)
@@ -659,7 +659,13 @@ namespace FooBox.Models
             }
             else if (file is Folder)
             {
-                foreach (var subFile in ((Folder)file).Files)
+                var folder = (Folder)file;
+
+                // Delete all incoming invitations.
+                if (state == ObjectState.Deleted)
+                    _context.Invitations.RemoveRange(folder.TargetOfInvitations);
+
+                foreach (var subFile in folder.Files)
                     SetFileState(subFile, state, quotaCharge);
             }
 
@@ -741,7 +747,7 @@ namespace FooBox.Models
                                 // Folder -> Document
                                 // The folder is implicitly being deleted.
 
-                                RenameAndDeleteConflictingFile(parentFolder, file, "Deleted");
+                                RenameAndDeleteConflictingFile(parentFolder, file, "Deleted", quotaCharge);
                                 replaced = true;
                                 createDocument = true;
                             }
@@ -753,7 +759,7 @@ namespace FooBox.Models
                                 // Document -> Folder
                                 // The document is implicitly being deleted.
 
-                                RenameAndDeleteConflictingFile(parentFolder, file, "Deleted");
+                                RenameAndDeleteConflictingFile(parentFolder, file, "Deleted", quotaCharge);
                                 replaced = true;
                                 createFolder = true;
                             }
@@ -789,6 +795,28 @@ namespace FooBox.Models
                                 Owner = parentFolder.Owner
                             });
                             createChange = true;
+
+                            long invitationId = clientChangesByFullName[node.FullName].InvitationId;
+
+                            if (invitationId != 0)
+                            {
+                                var invitation = (
+                                    from i in client.User.Invitations.AsQueryable()
+                                    where i.Id == invitationId
+                                    select i
+                                    ).SingleOrDefault();
+
+                                if (invitation != null)
+                                {
+                                    // Remove all other folders that link to this invitation.
+                                    invitation.AcceptedFolders.Clear();
+                                    invitation.AcceptedFolders.Add((Folder)file);
+                                }
+                            }
+                            else
+                            {
+                                ((Folder)file).InvitationId = null;
+                            }
                         }
                         else if (createDocument)
                         {
@@ -935,22 +963,30 @@ namespace FooBox.Models
                     IsFolder = file is Folder,
                     Size = size,
                     Hash = hash,
-                    DisplayName = file.DisplayName
+                    DisplayName = file.DisplayName,
+                    InvitationId = (file is Folder) ? (((Folder)file).InvitationId ?? 0) : 0
                 });
 
                 if (file is Folder)
-                    AddChangesForFolder(changes, (Folder)file, newFullName);
+                {
+                    var fileFolder = (Folder)file;
+
+                    if (fileFolder.InvitationId != 0)
+                        AddChangesForFolder(changes, fileFolder.Invitation.Target, "/@" + fileFolder.InvitationId.ToString());
+                    else
+                        AddChangesForFolder(changes, fileFolder, newFullName);
+                }
             }
         }
 
-        private ICollection<ClientChange> GetChangesForFolder(Folder folder)
+        private List<ClientChange> GetChangesForFolder(Folder folder)
         {
             var changes = new List<ClientChange>();
             AddChangesForFolder(changes, folder, GetFullName(folder));
             return changes;
         }
 
-        private ICollection<ClientChange> GetChangesForNode(ChangeNode rootNode)
+        private List<ClientChange> GetChangesForNode(ChangeNode rootNode, Client client)
         {
             var changes = new List<ClientChange>();
             Dictionary<string, File> fileCache = new Dictionary<string, File>();
@@ -978,6 +1014,7 @@ namespace FooBox.Models
                 long size = 0;
                 string hash = "";
                 string displayName = null;
+                long invitationId = 0;
 
                 if (file != null)
                 {
@@ -986,6 +1023,10 @@ namespace FooBox.Models
                         var blob = GetLastDocumentVersion((Document)file).Blob;
                         size = blob.Size;
                         hash = blob.Hash;
+                    }
+                    else if (file is Folder)
+                    {
+                        invitationId = ((Folder)file).InvitationId ?? 0;
                     }
 
                     displayName = file.DisplayName;
@@ -1006,11 +1047,98 @@ namespace FooBox.Models
                     IsFolder = node.IsFolder,
                     Size = size,
                     Hash = hash,
-                    DisplayName = displayName ?? node.Name
+                    DisplayName = displayName ?? node.Name,
+                    InvitationId = invitationId
                 });
             }
 
-            return changes;
+            return TranslateClientChangesOut(changes, client);
+        }
+
+        private List<ClientChange> TranslateClientChangesIn(ICollection<ClientChange> changes, Client client)
+        {
+            var translated = new List<ClientChange>();
+            var cache = new Dictionary<long, string>();
+            string userPrefix = "/" + client.UserId.ToString() + "/";
+
+            foreach (var change in changes)
+            {
+                if (change.Type == ChangeType.None)
+                    continue;
+
+                if (change.FullName.StartsWith(userPrefix))
+                {
+                    translated.Add(change);
+                }
+                else if (change.FullName.StartsWith("/@"))
+                {
+                    int indexOfSecondSlash = change.FullName.IndexOf('/', 2);
+
+                    if (indexOfSecondSlash == -1)
+                        continue;
+
+                    long invitationId;
+
+                    if (!long.TryParse(change.FullName.Substring(2, indexOfSecondSlash - 2), out invitationId))
+                        continue;
+
+                    string prefix = null;
+
+                    if (!cache.TryGetValue(invitationId, out prefix))
+                    {
+                        var target = (
+                            from i in client.User.Invitations.AsQueryable()
+                            where i.Id == invitationId
+                            select i.Target
+                            ).SingleOrDefault();
+
+                        if (target != null)
+                            prefix = GetFullName(target);
+
+                        cache.Add(invitationId, prefix);
+                    }
+
+                    if (prefix == null)
+                        continue;
+
+                    change.FullName = prefix + change.FullName.Substring(indexOfSecondSlash);
+                    translated.Add(change);
+                }
+            }
+
+            return translated;
+        }
+
+        private List<ClientChange> TranslateClientChangesOut(ICollection<ClientChange> changes, Client client)
+        {
+            var translated = new List<ClientChange>();
+            string userPrefix = "/" + client.UserId.ToString() + "/";
+            var map = client.User.Invitations.AsQueryable()
+                .SelectMany(invitation => invitation.AcceptedFolders)
+                .AsEnumerable()
+                .Select(folder => Tuple.Create(GetFullName(folder) + "/", "/@" + folder.InvitationId.Value.ToString() + "/"))
+                .ToList();
+
+            map.Add(Tuple.Create(userPrefix, userPrefix));
+
+            foreach (var change in changes)
+            {
+                if (change.Type == ChangeType.None)
+                    continue;
+
+                foreach (var pair in map)
+                {
+                    if (change.FullName.StartsWith(pair.Item1))
+                    {
+                        if (pair.Item1 != pair.Item2)
+                            change.FullName = pair.Item2 + change.FullName.Substring(pair.Item1.Length);
+                        translated.Add(change);
+                        break;
+                    }
+                }
+            }
+
+            return translated;
         }
 
         #endregion

@@ -48,6 +48,7 @@ namespace FooBox.Controllers
 
             model.FullDisplayName = fullDisplayName;
             model.DisplayName = folder == userRootFolder ? "Home" : folder.DisplayName;
+            model.State = folder.State;
             model.Files = (
                 from file in folder.Files.AsQueryable()
                 where file.State == ObjectState.Normal
@@ -63,7 +64,8 @@ namespace FooBox.Controllers
                     DisplayName = file.DisplayName,
                     IsFolder = file is Folder,
                     Size = latestVersion != null ? latestVersion.Blob.Size : 0,
-                    TimeStamp = latestVersion != null ? latestVersion.TimeStamp : DateTime.UtcNow
+                    TimeStamp = latestVersion != null ? latestVersion.TimeStamp : DateTime.UtcNow,
+                    State = file.State
                 }
                 ).ToList();
             model.Parents = new List<Tuple<string, string>>();
@@ -112,11 +114,9 @@ namespace FooBox.Controllers
             return File(blobFileName, MimeMapping.GetMimeMapping(document.DisplayName), document.DisplayName);
         }
 
-        public ActionResult Browse(string dlkey)
+        public ActionResult Browse()
         {
             string path = (string)RouteData.Values["path"] ?? "";
-            ViewBag.Key = dlkey;
-            
             string fullDisplayName = null;
             File file = _fileManager.FindFile(path, _fileManager.GetUserRootFolder(User.Identity.GetUserId()), out fullDisplayName);
 
@@ -160,7 +160,8 @@ namespace FooBox.Controllers
                 {
                     Size = version.Blob.Size,
                     TimeStamp = version.TimeStamp,
-                    VersionId = version.Id
+                    VersionId = version.Id,
+                    ClientName = version.Client.Name
                 }
                 ).ToList();
 
@@ -229,24 +230,6 @@ namespace FooBox.Controllers
             return true;
         }
 
-        private string GenerateNewName(string originalDisplayName, bool creatingDocument, string key)
-        {
-            if (creatingDocument)
-            {
-                int indexOfLastDot = originalDisplayName.LastIndexOf('.');
-
-                if (indexOfLastDot != -1 && indexOfLastDot != originalDisplayName.Length - 1)
-                {
-                    string firstPart = originalDisplayName.Substring(0, indexOfLastDot);
-                    string secondPart = originalDisplayName.Substring(indexOfLastDot + 1, originalDisplayName.Length - (indexOfLastDot + 1));
-
-                    return firstPart + " (" + key + ")." + secondPart;
-                }
-            }
-
-            return originalDisplayName + " (" + key + ")";
-        }
-
         private bool EnsureAvailableName(ref string destinationDisplayName, Folder parent, bool creatingDocument, bool newVersion = false)
         {
             const int MaxIterations = 10;
@@ -263,7 +246,7 @@ namespace FooBox.Controllers
                     if (iteration == MaxIterations)
                     {
                         // Try one last time with a random name.
-                        destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, Utilities.GenerateRandomString("0123456789", 8));
+                        destinationDisplayName = Utilities.GenerateNewName(originalDisplayName, creatingDocument, Utilities.GenerateRandomString("0123456789", 8));
                         name = destinationDisplayName.ToUpperInvariant();
                         iteration++;
                         continue;
@@ -273,7 +256,7 @@ namespace FooBox.Controllers
                         return false;
                     }
 
-                    destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, (iteration + 2).ToString());
+                    destinationDisplayName = Utilities.GenerateNewName(originalDisplayName, creatingDocument, (iteration + 2).ToString());
                     name = destinationDisplayName.ToUpperInvariant();
                     iteration++;
 
@@ -489,45 +472,59 @@ namespace FooBox.Controllers
             return RedirectToAction("Browse", new { path = fromPath });
         }
 
-     
-        public string GetShareLink(string fullName)
+        public ActionResult GetShareLink(string fullName)
         {
-            var key = Utilities.GenerateRandomString(FileManager.IdChars, DocumentLink.KeyLength);
-            long userId = User.Identity.GetUserId();
-            var dl = new DocumentLink
-            {
-                Key = key,
-                RelativeFullName = fullName,
-                User = _userManager.FindUser(userId)
-            };
+            string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
 
-            try
+            if (key == null)
             {
-                var context = _fileManager.Context;
-                context.DocumentLinks.Add(dl);
-                context.SaveChanges();
+                key = Utilities.GenerateRandomString(Utilities.LetterDigitChars, 8);
+                long userId = User.Identity.GetUserId();
+                var dl = new DocumentLink
+                {
+                    Key = key,
+                    RelativeFullName = fullName,
+                    User = _userManager.FindUser(userId)
+                };
+
+                try
+                {
+                    var context = _fileManager.Context;
+                    context.DocumentLinks.Add(dl);
+                    context.SaveChanges();
+                }
+                catch
+                {
+                }
             }
-            catch 
-            {
-            }
-            var link = "http://" + Request.Url.Authority + "/File/DownloadKey?key=" + key;
-            return link;
+            return PartialView("_DocumentLinkURL", key);
+            //return Url.Action("DownloadKey", "File", new { key = key }, Request.Url.Scheme);
         }
 
+        public ActionResult DisplayShareLinks()
+        {
+            return View(_fileManager.Context.DocumentLinks);
+        }
 
+        public ActionResult DeleteShareLink(long? id)
+        {
+            _fileManager.Context.DocumentLinks.RemoveRange(from linc in _fileManager.Context.DocumentLinks where linc.Id == id select linc);
+            _fileManager.Context.SaveChanges();
+            return RedirectToAction("DisplayShareLinks");
+        }
 
         public ActionResult DownloadKey(string key)
         {
+            if (key == null)
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
             var doc = _fileManager.FindDocumentFromKey(key);
-            if (doc != null)
-            {
-                return DownloadDocument(doc);
-            }
-            return RedirectToAction("Browse");         
+            if (doc == null || doc.State != ObjectState.Normal)
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound);
+
+            return DownloadDocument(doc);   
         }
 
-
-        
         public ActionResult FolderEdit(string fullName)
         {
             if (fullName == null)
@@ -542,12 +539,11 @@ namespace FooBox.Controllers
                 return HttpNotFound();
             }
 
+            Folder folder = (Folder)file;
             List<EntitySelectedViewModel> users = new List<EntitySelectedViewModel>();
-            List<EntitySelectedViewModel> groups = new List<EntitySelectedViewModel>();
 
             var mod = new EditFolderViewModel();
-            mod.Id = file.Id;
-            mod.Name = file.DisplayName;
+            mod.Id = folder.Id;
             
             var userList = _userManager.Context.Users.ToList();
             foreach (User u in userList)
@@ -555,24 +551,13 @@ namespace FooBox.Controllers
                 if (u.Name.Equals("__DEFAULT__") || u.State == ObjectState.Deleted) { continue; }
                 var a = new EntitySelectedViewModel();
                 a.Id = u.Id;
-                a.IsSelected = false; // LOGIC GOES HERE: IS THE USER ALREADY PERMISSIONED TO FOLDER?
+                a.IsSelected = UserHasLink(u, folder); 
                 a.Name = u.Name;
                 users.Add(a);
             }
             mod.Users = users;
 
-            var groupList = _userManager.Context.Groups.ToList();
-            foreach (Group g in groupList)
-            {
-                if (g.State == ObjectState.Deleted) { continue; }
-                var a = new EntitySelectedViewModel();
-                a.Id = g.Id;
-                a.IsSelected = false; // LOGIC GOES HERE: IS THE GROUP ALREADY PERMISSIONED TO FOLDER?
-                a.Name = g.Name;
-                groups.Add(a);
-            }
-            mod.Groups = groups;
-            ViewBag.Subheading = file.DisplayName;
+            ViewBag.Subheading = folder.DisplayName;
             return View(mod);
         }
 
@@ -583,43 +568,16 @@ namespace FooBox.Controllers
             if (ModelState.IsValid)
             {
                 Folder f = _fileManager.FindFolder(model.Id);
-                ICollection<User> users = new LinkedList<User>(); // LOGIC HERE: point this to the correct db set for list of users with permmision
-                users.Clear();
-                users.Add(_userManager.GetDefaultUser());
                 foreach (var item in model.Users)
                 {
-                    if (item.IsSelected)
-                    {
                         FooBox.User u = _userManager.FindUser(item.Id);
-                        if (u != null) users.Add(u);
-                    }
-                }
-
-                ICollection<Group> groups = new LinkedList<Group>(); // LOGIC HERE: point this to the correct db set for list of groups with permmision
-                groups.Clear();
-                foreach (var item in model.Groups)
-                {
-                    if (item.IsSelected)
-                    {
-                        FooBox.Group g = _userManager.FindGroup(item.Id);
-                        if (g != null) groups.Add(g);
-                    }
-                }
-
-                try
-                {
-                    _userManager.Context.SaveChanges();
-                }
-                catch
-                {
+                    SetUserHasLink(u, f, item.IsSelected);
         
-                    return View(model);
                 }
                 return RedirectToAction("Index");
             }
             return View(model);
         }
-
 
         protected override void Dispose(bool disposing)
         {
@@ -630,7 +588,55 @@ namespace FooBox.Controllers
             base.Dispose(disposing);
         }
 
+        private bool UserHasLink(User user, Folder folder) {
+            //var link = 
+            //(
+            //    from file in user.RootFolder.Files.AsQueryable()
+            //    where file.State == ObjectState.Normal && 
+            //            (file is Link) && 
+            //            ((Link)file).TargetId == folder.Id
+            //    select file
+            //).SingleOrDefault();
+            //return link != null;
+            return false;
+        }
 
+        private void SetUserHasLink(User user, Folder folder, bool hasPermission) {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+
+            if (hasPermission && !UserHasLink(user, folder))
+            { // add the link
+
+                
+
+            }
+            else if (!hasPermission && UserHasLink(user, folder))
+            { // remove the link
+                
+                //var link =
+                //(
+                //    from file in user.RootFolder.Files.AsQueryable()
+                //    where file.State == ObjectState.Normal &&
+                //            (file is Link) &&
+                //            ((Link)file).TargetId == folder.Id
+                //    select file
+                //).SingleOrDefault();
+
+                
+                //ClientSyncData data = new ClientSyncData();
+                //var fullDisplayName = _fileManager.GetFullDisplayName(link);
+                //data.ClientId = internalClient.Id;
+                //data.BaseChangelistId = _fileManager.GetLastChangelistId();
+                //data.Changes.Add(new ClientChange
+                //{
+                //    FullName = fullDisplayName,
+                //    Type = ChangeType.Delete
+                //});
+                //_fileManager.SyncClientChanges(data);
+
+            } 
+        }
 
 
 

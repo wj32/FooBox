@@ -10,6 +10,8 @@ namespace FooBox
 {
     public static class Utilities
     {
+        public const string LetterDigitChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        public const string IdChars = "abcdefghijklmnopqrstuvwxyz0123456789!@^_-";
         private static string[] _sizeUnits = new string[] { "B", "KB", "MB", "GB" };
 
         private static int _randomSeed = (new Random()).Next();
@@ -67,6 +69,58 @@ namespace FooBox
                 hashAlgorithm.TransformFinalBlock(new byte[0], 0, 0);
                 return (new SoapHexBinary(hashAlgorithm.Hash)).ToString();
             }
+        }
+
+        public static void DeleteDirectoryRecursive(string path)
+        {
+            foreach (string directory in Directory.GetDirectories(path))
+            {
+                DeleteDirectoryRecursive(directory);
+            }
+
+            try
+            {
+                Directory.Delete(path, true);
+            }
+            catch (IOException)
+            {
+                Directory.Delete(path, true);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Directory.Delete(path, true);
+            }
+        }
+
+        public static void DeleteFile(string fileName)
+        {
+            try
+            {
+                System.IO.File.Delete(fileName);
+            }
+            catch
+            {
+                System.IO.File.SetAttributes(fileName, FileAttributes.Normal);
+                System.IO.File.Delete(fileName);
+            }
+        }
+
+        public static string GenerateNewName(string originalDisplayName, bool isDocument, string key)
+        {
+            if (isDocument)
+            {
+                int indexOfLastDot = originalDisplayName.LastIndexOf('.');
+
+                if (indexOfLastDot != -1 && indexOfLastDot != originalDisplayName.Length - 1)
+                {
+                    string firstPart = originalDisplayName.Substring(0, indexOfLastDot);
+                    string secondPart = originalDisplayName.Substring(indexOfLastDot + 1, originalDisplayName.Length - (indexOfLastDot + 1));
+
+                    return firstPart + " (" + key + ")." + secondPart;
+                }
+            }
+
+            return originalDisplayName + " (" + key + ")";
         }
 
         public static string NormalizeFullName(string fullName)

@@ -19,7 +19,7 @@
                 <h4 class="modal-title">Sharing Link</h4>
             </div>
             <div class="modal-body">
-                <input type="text" id="shareLinkTextBox" class="form-control" />
+                <div id="shareLink"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -33,8 +33,12 @@
         <strong>@Html.ActionLink(parent.Item1, "Browse", new { path = parent.Item2 })</strong>
         @:&gt;
     }
-    <strong>@Html.Encode(Model.DisplayName)</strong>
+    <strong>@Model.DisplayName</strong>
 </h2>
+@if (Model.State == ObjectState.Deleted)
+{
+    <h4>(deleted)</h4>
+}
 <p>@Html.ValidationSummary(true)</p>
 <div class="row">
     <div class="col-md-3">
@@ -244,15 +248,20 @@
             $("#newFolderButton").show('slide');
             return false;
         });
-        $("#shareLinkTextBox").click(function () {
+        $("#shareLinkModal").on("shown.bs.modal", function () {
+            var input = $(".shareLinkTextBox"); // cache the variable
+            input.removeAttr('disabled'); // enable it first, so it can get focus
+            input.focus();
+            input.select();
+        });
+        $(".shareLinkTextBox").click(function () {
             $(this).focus();
             $(this).select();
         });
-        
     });
     $("")
     function onSharingLinkSuccess() {
-        $("#shareLinkTextBox").val($("#shareLink").html());
+        //$("#shareLinkTextBox").val($("#shareLink").html());
         $("#shareLinkModal").modal('show');
     }
 </script>

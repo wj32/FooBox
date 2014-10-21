@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormStart));
             this.labelName = new System.Windows.Forms.Label();
             this.labelWelcome = new System.Windows.Forms.Label();
             this.labelServerLocation = new System.Windows.Forms.Label();
@@ -71,9 +72,9 @@
             this.labelServerLocation.AutoSize = true;
             this.labelServerLocation.Location = new System.Drawing.Point(21, 152);
             this.labelServerLocation.Name = "labelServerLocation";
-            this.labelServerLocation.Size = new System.Drawing.Size(167, 13);
+            this.labelServerLocation.Size = new System.Drawing.Size(169, 13);
             this.labelServerLocation.TabIndex = 2;
-            this.labelServerLocation.Text = "Enter the name or ip of the server:";
+            this.labelServerLocation.Text = "Enter the name or IP of the server:";
             // 
             // textBoxServerLoc
             // 
@@ -167,7 +168,7 @@
             this.buttonNext.Name = "buttonNext";
             this.buttonNext.Size = new System.Drawing.Size(79, 23);
             this.buttonNext.TabIndex = 13;
-            this.buttonNext.Text = "Next >";
+            this.buttonNext.Text = "OK";
             this.buttonNext.UseVisualStyleBackColor = true;
             this.buttonNext.Click += new System.EventHandler(this.buttonNext_Click);
             // 
@@ -190,8 +191,10 @@
             // 
             // FormStart
             // 
+            this.AcceptButton = this.buttonNext;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.buttonCancel;
             this.ClientSize = new System.Drawing.Size(451, 317);
             this.Controls.Add(this.textBoxServerPort);
             this.Controls.Add(this.labelServerPort);
@@ -209,7 +212,12 @@
             this.Controls.Add(this.labelServerLocation);
             this.Controls.Add(this.labelWelcome);
             this.Controls.Add(this.labelName);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "FormStart";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FooBox Setup";
             this.ResumeLayout(false);
             this.PerformLayout();

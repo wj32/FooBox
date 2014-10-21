@@ -9,17 +9,19 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Threading;
+using FooBox;
 
 namespace FooBoxClient
 {
     public partial class FormSettings : Form
     {
-        private Thread _syncThread;
+        private object _syncObject;
         private SyncEngine _engine;
-        public FormSettings(Thread t, SyncEngine s)
+
+        public FormSettings(object syncObject, SyncEngine s)
         {
             InitializeComponent();
-            _syncThread = t;
+            _syncObject = syncObject;
             _engine = s;
         }
 
@@ -33,35 +35,58 @@ namespace FooBoxClient
             {
                 textBoxDirLoc.Text = fbd.SelectedPath;
             }
-            else
-            {
-                labelError.Text = "Invalid directory selected";
-            }
         }
 
         private void buttonSave_Click(object sender, EventArgs e)
         {
             string location = textBoxDirLoc.Text.Trim();
-            if (location != Properties.Settings.Default.Root)
+
+            if (!Directory.Exists(location))
             {
-                if (Directory.Exists(location))
-                {
-                    //need to stop syncing change directory and resume syncing leaving this for now
-                    
-                    //copy files across 
-                    foreach (string dirPath in Directory.GetDirectories(Properties.Settings.Default.Root, "*",
-                        SearchOption.AllDirectories))
-                        Directory.CreateDirectory(dirPath.Replace(Properties.Settings.Default.Root, location));
-
-                    //Copy all the files & Replaces any files with the same name
-                    foreach (string newPath in Directory.GetFiles(Properties.Settings.Default.Root, "*.*",
-                        SearchOption.AllDirectories))
-                        System.IO.File.Copy(newPath, newPath.Replace(Properties.Settings.Default.Root, location), true);
-
-                    Properties.Settings.Default.Root = location;
-                    Properties.Settings.Default.Save();
-                }
+                labelError.Text = "Invalid directory selected.";
+                return;
             }
+
+            location = Path.GetFullPath(location);
+
+            if (location == Path.GetFullPath(Properties.Settings.Default.Root))
+            {
+                this.Close();
+                return;
+            }
+
+            if (Directory.EnumerateFileSystemEntries(location).Any())
+            {
+                if (MessageBox.Show(
+                    "The directory you have selected is not empty and will be erased. Do you want to continue?",
+                    "FooBox",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2
+                    ) == System.Windows.Forms.DialogResult.No)
+                    return;
+            }
+
+            try
+            {
+                Utilities.DeleteDirectoryRecursive(location);
+            }
+            catch (Exception ex)
+            {
+                labelError.Text = "Unable to access the directory: " + ex.Message;
+                return;
+            }
+
+            // Lock the sync object to pause syncing.
+            lock (_syncObject)
+            {
+                Directory.Move(Properties.Settings.Default.Root, location);
+                _engine.RootDirectory = location;
+            }
+
+            Properties.Settings.Default.Root = location;
+            Properties.Settings.Default.Save();
+
             this.Close();
         }
 

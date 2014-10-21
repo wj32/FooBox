@@ -20,7 +20,12 @@ namespace FooBoxClient
         public string Hash { get; set; }
         public DateTime LastWriteTimeUtc { get; set; }
 
+        // For folders
+        public long InvitationId { get; set; }
+
         public Dictionary<string, File> Files { get; set; }
+
+        public string SourceLocalFileName { get; set; }
 
         public static File CreateRoot()
         {
@@ -34,30 +39,30 @@ namespace FooBoxClient
             };
         }
 
-        public static File FromFileSystem(string rootDirectory, string subRoot = null)
+        public static File FromFileSystem(string rootDirectory, string defaultSubRoot = null)
         {
             File rootFolder = CreateRoot();
-            File realRoot = rootFolder;
+            File subRoot = rootFolder;
 
-            if (subRoot != null)
+            if (defaultSubRoot != null)
             {
-                realRoot = new File
+                subRoot = new File
                 {
-                    FullName = "/" + subRoot,
-                    Name = subRoot.ToUpperInvariant(),
-                    DisplayName = subRoot,
+                    FullName = "/" + defaultSubRoot,
+                    Name = defaultSubRoot.ToUpperInvariant(),
+                    DisplayName = defaultSubRoot,
                     IsFolder = true,
                     Files = new Dictionary<string, File>()
                 };
-                rootFolder.Files.Add(realRoot.Name, realRoot);
+                rootFolder.Files.Add(subRoot.Name, subRoot);
             }
 
-            FromFileSystem(realRoot, rootDirectory);
+            FromFileSystem(rootFolder, subRoot, rootDirectory);
 
             return rootFolder;
         }
 
-        private static void FromFileSystem(File rootFolder, string rootDirectory)
+        private static void FromFileSystem(File absoluteRoot, File rootFolder, string rootDirectory)
         {
             DirectoryInfo di = new DirectoryInfo(rootDirectory);
 
@@ -69,10 +74,13 @@ namespace FooBoxClient
                     Name = info.Name.ToUpperInvariant(),
                     DisplayName = info.Name,
                     IsFolder = (info.Attributes & FileAttributes.Directory) != 0,
-                    LastWriteTimeUtc = info.LastWriteTimeUtc
+                    LastWriteTimeUtc = info.LastWriteTimeUtc,
+                    SourceLocalFileName = info.FullName
                 };
 
-                if (!file.IsFolder)
+                if (file.IsFolder)
+                    file.InvitationId = SyncEngine.ReadInvitationId(info.FullName);
+                else
                     file.Size = ((FileInfo)info).Length;
 
                 if (rootFolder.Files == null)
@@ -81,7 +89,53 @@ namespace FooBoxClient
                 rootFolder.Files.Add(file.Name, file);
 
                 if (file.IsFolder)
-                    FromFileSystem(file, info.FullName);
+                {
+                    if (file.InvitationId != 0)
+                    {
+                        string invitationName = "@" + file.InvitationId.ToString();
+
+                        if (!absoluteRoot.Files.ContainsKey(invitationName))
+                        {
+                            var invitationRoot = new File
+                            {
+                                FullName = "/" + invitationName,
+                                Name = invitationName,
+                                DisplayName = invitationName,
+                                IsFolder = true
+                            };
+                            absoluteRoot.Files.Add(invitationName, invitationRoot);
+                            FromFileSystem(absoluteRoot, invitationRoot, info.FullName);
+                        }
+                    }
+                    else
+                    {
+                        FromFileSystem(absoluteRoot, file, info.FullName);
+                    }
+                }
+            }
+        }
+
+        public IEnumerable<File> RecursiveEnumerate()
+        {
+            Stack<File> stack = new Stack<File>();
+
+            if (Files != null)
+            {
+                foreach (var file in Files.Values)
+                    stack.Push(file);
+            }
+
+            while (stack.Count != 0)
+            {
+                var file = stack.Pop();
+
+                yield return file;
+
+                if (file.Files != null)
+                {
+                    foreach (var subFile in file.Files.Values)
+                        stack.Push(subFile);
+                }
             }
         }
     }

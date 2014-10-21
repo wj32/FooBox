@@ -38,17 +38,17 @@
             // 
             // buttonBrowse
             // 
-            this.buttonBrowse.Location = new System.Drawing.Point(329, 31);
+            this.buttonBrowse.Location = new System.Drawing.Point(332, 10);
             this.buttonBrowse.Name = "buttonBrowse";
             this.buttonBrowse.Size = new System.Drawing.Size(75, 23);
             this.buttonBrowse.TabIndex = 13;
-            this.buttonBrowse.Text = "Browse";
+            this.buttonBrowse.Text = "Browse...";
             this.buttonBrowse.UseVisualStyleBackColor = true;
             this.buttonBrowse.Click += new System.EventHandler(this.buttonBrowse_Click);
             // 
             // textBoxDirLoc
             // 
-            this.textBoxDirLoc.Location = new System.Drawing.Point(91, 33);
+            this.textBoxDirLoc.Location = new System.Drawing.Point(91, 12);
             this.textBoxDirLoc.Name = "textBoxDirLoc";
             this.textBoxDirLoc.Size = new System.Drawing.Size(232, 20);
             this.textBoxDirLoc.TabIndex = 12;
@@ -56,26 +56,28 @@
             // labelSyncDirectory
             // 
             this.labelSyncDirectory.AutoSize = true;
-            this.labelSyncDirectory.Location = new System.Drawing.Point(12, 36);
+            this.labelSyncDirectory.Location = new System.Drawing.Point(12, 15);
             this.labelSyncDirectory.Name = "labelSyncDirectory";
-            this.labelSyncDirectory.Size = new System.Drawing.Size(76, 13);
+            this.labelSyncDirectory.Size = new System.Drawing.Size(74, 13);
             this.labelSyncDirectory.TabIndex = 11;
-            this.labelSyncDirectory.Text = "SyncDirectory:";
+            this.labelSyncDirectory.Text = "Sync location:";
             this.labelSyncDirectory.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
             // labelError
             // 
-            this.labelError.AutoSize = true;
+            this.labelError.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.labelError.ForeColor = System.Drawing.Color.Red;
-            this.labelError.Location = new System.Drawing.Point(12, 9);
+            this.labelError.Location = new System.Drawing.Point(12, 47);
             this.labelError.Name = "labelError";
-            this.labelError.Size = new System.Drawing.Size(0, 13);
+            this.labelError.Size = new System.Drawing.Size(395, 22);
             this.labelError.TabIndex = 14;
             this.labelError.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
             // buttonSave
             // 
-            this.buttonSave.Location = new System.Drawing.Point(15, 59);
+            this.buttonSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonSave.Location = new System.Drawing.Point(251, 74);
             this.buttonSave.Name = "buttonSave";
             this.buttonSave.Size = new System.Drawing.Size(75, 23);
             this.buttonSave.TabIndex = 15;
@@ -85,7 +87,9 @@
             // 
             // buttonCancel
             // 
-            this.buttonCancel.Location = new System.Drawing.Point(329, 60);
+            this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.buttonCancel.Location = new System.Drawing.Point(332, 74);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 16;
@@ -95,17 +99,23 @@
             // 
             // FormSettings
             // 
+            this.AcceptButton = this.buttonSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(419, 94);
+            this.CancelButton = this.buttonCancel;
+            this.ClientSize = new System.Drawing.Size(419, 109);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonSave);
             this.Controls.Add(this.labelError);
             this.Controls.Add(this.buttonBrowse);
             this.Controls.Add(this.textBoxDirLoc);
             this.Controls.Add(this.labelSyncDirectory);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "FormSettings";
-            this.Text = "FormSettings";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Text = "Settings";
             this.Load += new System.EventHandler(this.FormSettings_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
