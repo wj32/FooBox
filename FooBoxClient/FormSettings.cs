@@ -50,7 +50,10 @@ namespace FooBoxClient
             location = Path.GetFullPath(location);
 
             if (location == Path.GetFullPath(Properties.Settings.Default.Root))
+            {
+                this.Close();
                 return;
+            }
 
             if (Directory.EnumerateFileSystemEntries(location).Any())
             {

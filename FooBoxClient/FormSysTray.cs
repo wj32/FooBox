@@ -14,20 +14,11 @@ namespace FooBoxClient
         private bool _closing = false;
         private CancellationTokenSource _cancellationTokenSource;
         private Point _location;
-        public FormStart _sender = null;
         private bool _paused = false;
 
         public FormSysTray()
         {
-         
             InitializeComponent();
-            notifyFooBox.Icon = FooBoxIcon.FooBox;
-            this.Icon = FooBoxIcon.FooBox;
-            _engine = new SyncEngine(Properties.Settings.Default.Root, Properties.Settings.Default.UserID);
-            _syncThread = new Thread(this.SyncThreadStart);
-            _cancellationTokenSource = new CancellationTokenSource();
-            notifyFooBox.Visible = true;
-            this.Visible = false;
         }
 
         private void hideSelf()
@@ -45,6 +36,23 @@ namespace FooBoxClient
 
         private void FormSysTray_Load(object sender, EventArgs e)
         {
+            notifyFooBox.Icon = FooBoxIcon.FooBox;
+            this.Icon = FooBoxIcon.FooBox;
+
+            if (Properties.Settings.Default.UserID == 0)
+            {
+                FormStart startForm = new FormStart();
+
+                if (startForm.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
+                    Application.Exit();
+            }
+
+            _engine = new SyncEngine(Properties.Settings.Default.Root, Properties.Settings.Default.UserID);
+            _syncThread = new Thread(this.SyncThreadStart);
+            _cancellationTokenSource = new CancellationTokenSource();
+            notifyFooBox.Visible = true;
+            this.Visible = false;
+
             _syncThread.Start();
         }
 
@@ -63,12 +71,15 @@ namespace FooBoxClient
             {
                 bool noDelay = false;
 
-                if (!_paused)
+                if (!_paused && _engine != null)
                 {
                     try
                     {
                         lock (_engineSyncObject)
-                            noDelay = _engine.Run(_cancellationTokenSource.Token);
+                        {
+                            if (_engine != null)
+                                noDelay = _engine.Run(_cancellationTokenSource.Token);
+                        }
                     }
                     catch
                     { }
@@ -132,36 +143,27 @@ namespace FooBoxClient
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ShutDown();
+            _syncThread.Join();
             this.Close();
         }
 
-        protected override void SetVisibleCore(bool value)
+        private void changeUserToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (!this.IsHandleCreated)
+            lock (_engineSyncObject)
             {
-                value = false;
-                CreateHandle();
-            }
-            base.SetVisibleCore(value);
-        }
+                FormStart startForm = new FormStart();
 
-        private void logOutToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Properties.Settings.Default.UserName = "";
-            ShutDown();
-            notifyFooBox.Visible = false;
-    
-            
-            _sender.Show();
-            _sender.WindowState = FormWindowState.Normal;
-            _sender.ShowIcon = true;
-            this.Close();
+                if (startForm.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    _engine = new SyncEngine(Properties.Settings.Default.Root, Properties.Settings.Default.UserID);
+                }
+            }
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FormSettings frm = new FormSettings(_engineSyncObject, _engine);
-            frm.Show();
+            frm.ShowDialog();
         }
 
         private void notifyFooBox_MouseDoubleClick(object sender, MouseEventArgs e)
