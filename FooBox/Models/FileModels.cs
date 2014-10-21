@@ -717,6 +717,7 @@ namespace FooBox.Models
                         bool createDocument = false;
                         bool createDocumentVersion = false;
                         bool setDisplayName = false;
+                        bool undeleted = false;
                         bool replaced = false;
 
                         if (file == null)
@@ -781,6 +782,7 @@ namespace FooBox.Models
                             if (file.State != ObjectState.Normal)
                             {
                                 file.State = ObjectState.Normal;
+                                undeleted = true;
                                 createChange = true;
                             }
                         }
@@ -859,7 +861,11 @@ namespace FooBox.Models
                                 });
                                 createChange = true;
 
-                                AddQuotaCharge(quotaCharge, file.ParentFolder.Owner, -latestSize + blob.Size);
+                                AddQuotaCharge(quotaCharge, file.ParentFolder.Owner, (undeleted ? 0 : -latestSize) + blob.Size);
+                            }
+                            else if (undeleted)
+                            {
+                                AddQuotaCharge(quotaCharge, file.ParentFolder.Owner, latestSize);
                             }
                         }
 
