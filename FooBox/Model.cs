@@ -201,7 +201,9 @@ namespace FooBox
 
         public long Id { get; set; }
         public DateTime TimeStamp { get; set; }
+        [Index("IX_InvitationTargetUser", 1, IsUnique = true)]
         public long TargetId { get; set; }
+        [Index("IX_InvitationTargetUser", 2, IsUnique = true)]
         public long UserId { get; set; }
 
         public virtual ICollection<Folder> AcceptedFolders { get; set; }
