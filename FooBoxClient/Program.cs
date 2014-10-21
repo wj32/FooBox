@@ -20,7 +20,7 @@ namespace FooBoxClient
          //   {
             FormStart frm = null;
 
-            if (!System.IO.Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\FooBoxClient"))
+            if (Properties.Settings.Default.UserID == 0)
             {
                 Properties.Settings.Default.Reset();
                 frm = new FormStart(FormWindowState.Normal);

@@ -190,7 +190,7 @@ namespace FooBox.Models
                 return false;
 
             // Change the name to something random.
-            user.Name = DeletedPrefix + Utilities.GenerateRandomString(FileManager.IdChars, Identity.NameMaxLength - DeletedPrefix.Length);
+            user.Name = DeletedPrefix + Utilities.GenerateRandomString(Utilities.IdChars, Identity.NameMaxLength - DeletedPrefix.Length);
             user.State = ObjectState.Deleted;
 
             try
@@ -294,7 +294,7 @@ namespace FooBox.Models
                 return false;
 
             // Change the name to something random.
-            group.Name = DeletedPrefix + Utilities.GenerateRandomString(FileManager.IdChars, Identity.NameMaxLength - DeletedPrefix.Length);
+            group.Name = DeletedPrefix + Utilities.GenerateRandomString(Utilities.IdChars, Identity.NameMaxLength - DeletedPrefix.Length);
             group.State = ObjectState.Deleted;
 
             try
