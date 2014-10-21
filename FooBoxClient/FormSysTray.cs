@@ -44,7 +44,7 @@ namespace FooBoxClient
                 FormStart startForm = new FormStart();
 
                 if (startForm.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
-                    Application.Exit();
+                    Environment.Exit(0);
             }
 
             _engine = new SyncEngine(Properties.Settings.Default.Root, Properties.Settings.Default.UserID);

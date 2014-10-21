@@ -46,7 +46,6 @@
             this.notifyFooBox.ContextMenuStrip = this.contextMenuNotify;
             this.notifyFooBox.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyFooBox.Icon")));
             this.notifyFooBox.Text = "FooBox";
-            this.notifyFooBox.Visible = true;
             this.notifyFooBox.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyFooBox_MouseClick);
             this.notifyFooBox.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.notifyFooBox_MouseDoubleClick);
             // 
