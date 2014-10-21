@@ -91,6 +91,24 @@ namespace FooBox
             }
         }
 
+        public static string GenerateNewName(string originalDisplayName, bool isDocument, string key)
+        {
+            if (isDocument)
+            {
+                int indexOfLastDot = originalDisplayName.LastIndexOf('.');
+
+                if (indexOfLastDot != -1 && indexOfLastDot != originalDisplayName.Length - 1)
+                {
+                    string firstPart = originalDisplayName.Substring(0, indexOfLastDot);
+                    string secondPart = originalDisplayName.Substring(indexOfLastDot + 1, originalDisplayName.Length - (indexOfLastDot + 1));
+
+                    return firstPart + " (" + key + ")." + secondPart;
+                }
+            }
+
+            return originalDisplayName + " (" + key + ")";
+        }
+
         public static string NormalizeFullName(string fullName)
         {
             StringBuilder sb = new StringBuilder();

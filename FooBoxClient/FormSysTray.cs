@@ -13,7 +13,8 @@ namespace FooBoxClient
         private bool _closing = false;
         private CancellationTokenSource _cancellationTokenSource;
         private Point _location;
-        public FormStart _sender = null; 
+        public FormStart _sender = null;
+        private bool _paused = false;
 
         public FormSysTray()
         {
@@ -59,8 +60,20 @@ namespace FooBoxClient
         {
             while (!_closing)
             {
-                _engine.Run(_cancellationTokenSource.Token);
-                _cancellationTokenSource.Token.WaitHandle.WaitOne(3000);
+                bool noDelay = false;
+
+                if (!_paused)
+                {
+                    try
+                    {
+                        noDelay = _engine.Run(_cancellationTokenSource.Token);
+                    }
+                    catch
+                    { }
+                }
+
+                if (!noDelay)
+                    _cancellationTokenSource.Token.WaitHandle.WaitOne(3000);
             }
         }
 
@@ -155,5 +168,18 @@ namespace FooBoxClient
             Process.Start("explorer", Properties.Settings.Default.Root);
         }
 
+        private void pauseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_paused)
+            {
+                _paused = false;
+                pauseToolStripMenuItem.Text = "Pause syncing";
+            }
+            else
+            {
+                _paused = true;
+                pauseToolStripMenuItem.Text = "Resuming syncing";
+            }
+        }
     }
 }

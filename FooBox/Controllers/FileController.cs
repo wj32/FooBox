@@ -229,24 +229,6 @@ namespace FooBox.Controllers
             return true;
         }
 
-        private string GenerateNewName(string originalDisplayName, bool creatingDocument, string key)
-        {
-            if (creatingDocument)
-            {
-                int indexOfLastDot = originalDisplayName.LastIndexOf('.');
-
-                if (indexOfLastDot != -1 && indexOfLastDot != originalDisplayName.Length - 1)
-                {
-                    string firstPart = originalDisplayName.Substring(0, indexOfLastDot);
-                    string secondPart = originalDisplayName.Substring(indexOfLastDot + 1, originalDisplayName.Length - (indexOfLastDot + 1));
-
-                    return firstPart + " (" + key + ")." + secondPart;
-                }
-            }
-
-            return originalDisplayName + " (" + key + ")";
-        }
-
         private bool EnsureAvailableName(ref string destinationDisplayName, Folder parent, bool creatingDocument, bool newVersion = false)
         {
             const int MaxIterations = 10;
@@ -263,7 +245,7 @@ namespace FooBox.Controllers
                     if (iteration == MaxIterations)
                     {
                         // Try one last time with a random name.
-                        destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, Utilities.GenerateRandomString("0123456789", 8));
+                        destinationDisplayName = Utilities.GenerateNewName(originalDisplayName, creatingDocument, Utilities.GenerateRandomString("0123456789", 8));
                         name = destinationDisplayName.ToUpperInvariant();
                         iteration++;
                         continue;
@@ -273,7 +255,7 @@ namespace FooBox.Controllers
                         return false;
                     }
 
-                    destinationDisplayName = GenerateNewName(originalDisplayName, creatingDocument, (iteration + 2).ToString());
+                    destinationDisplayName = Utilities.GenerateNewName(originalDisplayName, creatingDocument, (iteration + 2).ToString());
                     name = destinationDisplayName.ToUpperInvariant();
                     iteration++;
 
@@ -489,7 +471,6 @@ namespace FooBox.Controllers
             return RedirectToAction("Browse", new { path = fromPath });
         }
 
-     
         public string GetShareLink(string fullName)
         {
             var key = Utilities.GenerateRandomString(Utilities.IdChars, DocumentLink.KeyLength);
@@ -514,8 +495,6 @@ namespace FooBox.Controllers
             return link;
         }
 
-
-
         public ActionResult DownloadKey(string key)
         {
             var doc = _fileManager.FindDocumentFromKey(key);
@@ -526,8 +505,6 @@ namespace FooBox.Controllers
             return RedirectToAction("Browse");         
         }
 
-
-        
         public ActionResult FolderEdit(string fullName)
         {
             if (fullName == null)
@@ -620,7 +597,6 @@ namespace FooBox.Controllers
             return View(model);
         }
 
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -629,10 +605,5 @@ namespace FooBox.Controllers
             }
             base.Dispose(disposing);
         }
-
-
-
-
-
     }
 }

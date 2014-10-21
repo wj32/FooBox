@@ -20,6 +20,8 @@ namespace FooBoxClient
         {
             public long UserId { get; set; }
 
+            public string ClientName { get; set; }
+
             /// <summary>
             /// The changelist ID that we are at. Any local changes that were made to reach this changelist ID
             /// must have already been synchronized with the server to check for conflicts and retrieve
@@ -51,7 +53,7 @@ namespace FooBoxClient
         {
             _rootDirectory = rootDirectory;
 
-            this.ResetState(userId);
+            this.ResetState(userId, Environment.MachineName);
 
             _localSpecialFolder = _rootDirectory + "\\" + SpecialFolderName;
             _stateFileName = _localSpecialFolder + "\\" + StateFileName;
@@ -63,11 +65,12 @@ namespace FooBoxClient
             get { return _state.ChangelistId; }
         }
 
-        private void ResetState(long userId)
+        private void ResetState(long userId, string clientName)
         {
             _state = new State
             {
                 UserId = userId,
+                ClientName = clientName,
                 ChangelistId = 0,
                 Root = File.CreateRoot(),
                 PendingChanges = new List<ICollection<ClientChange>>()
@@ -470,7 +473,33 @@ namespace FooBoxClient
             }
         }
 
-        public void Run(CancellationToken cancellationToken)
+        private void ResolveConflicts(ICollection<ClientChange> localChanges, ICollection<ClientChange> remoteChanges)
+        {
+            var localByName = localChanges.ToDictionary(local => local.FullName);
+            ChangeNode.FromItems(localChanges).PreservingConflicts(ChangeNode.FromItems(remoteChanges), (local, remote) =>
+                {
+                    if (local.Type != ChangeType.Add)
+                        return;
+
+                    var localClientChange = localByName[local.FullName];
+                    string parentPrefix = GetLocalFullName(local.Parent.FullName) + "\\";
+                    string fullDisplayName = parentPrefix + localClientChange.DisplayName;
+                    string newFullDisplayName;
+
+                    do
+                    {
+                        newFullDisplayName = parentPrefix + Utilities.GenerateNewName(
+                            localClientChange.DisplayName,
+                            local.IsFolder,
+                            _state.ClientName + "'s conflicted copy " + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss-fff")
+                            );
+                    } while (System.IO.File.Exists(newFullDisplayName) || System.IO.Directory.Exists(newFullDisplayName));
+
+                    MoveFileOrDirectory(fullDisplayName, newFullDisplayName);
+                });
+        }
+
+        public bool Run(CancellationToken cancellationToken)
         {
             _cancellationToken = cancellationToken;
 
@@ -487,21 +516,21 @@ namespace FooBoxClient
 
             long baseChangelistId = _state.ChangelistId;
             var fsFolder = File.FromFileSystem(_rootDirectory, _state.UserId.ToString());
-            var changes = this.Compare(fsFolder);
-            IgnoreSpecialFolder(changes);
+            var localChanges = this.Compare(fsFolder);
+            IgnoreSpecialFolder(localChanges);
 
             if (cancellationToken.IsCancellationRequested)
-                return;
+                return false;
 
             bool sync = true;
 
             // Sync with the server.
             while (sync)
             {
-                var result = Requests.Sync(new ClientSyncData { BaseChangelistId = baseChangelistId, Changes = changes });
+                var result = Requests.Sync(new ClientSyncData { BaseChangelistId = baseChangelistId, Changes = localChanges });
 
                 if (cancellationToken.IsCancellationRequested)
-                    return;
+                    return false;
 
                 switch (result.State)
                 {
@@ -512,13 +541,13 @@ namespace FooBoxClient
                     case ClientSyncResultState.Error:
                         throw new Exception("Sync error");
                     case ClientSyncResultState.Conflict:
-                        // TODO
-                        break;
+                        ResolveConflicts(localChanges, result.Changes);
+                        return true;
                     case ClientSyncResultState.UploadRequired:
                         {
                             var filesByHash = new Dictionary<string, string>();
 
-                            foreach (var change in changes)
+                            foreach (var change in localChanges)
                             {
                                 if (change.Type == ChangeType.Add && !change.IsFolder &&
                                     !string.IsNullOrEmpty(change.Hash) && !filesByHash.ContainsKey(change.Hash))
@@ -537,7 +566,7 @@ namespace FooBoxClient
                                 Requests.Upload(GetLocalFullName(sourceFullName));
 
                                 if (cancellationToken.IsCancellationRequested)
-                                    return;
+                                    return false;
                             }
                         }
                         break;
@@ -548,7 +577,13 @@ namespace FooBoxClient
                         if (result.Changes.Count != 0)
                         {
                             IgnoreSpecialFolder(result.Changes);
-                            _state.PendingChanges.Add(result.Changes);
+
+                            // Make the remote changes sequential with respect to our local changes.
+                            var remoteByName = result.Changes.ToDictionary(remote => remote.FullName);
+                            ChangeNode.FromItems(localChanges).MakeSequentialByPreserving(ChangeNode.FromItems(result.Changes),
+                                (local, remote) => remoteByName.Remove(remote.FullName));
+
+                            _state.PendingChanges.Add(remoteByName.Values.ToList());
                         }
 
                         this.SaveState();
@@ -573,6 +608,8 @@ namespace FooBoxClient
                     this.SaveState();
                 }
             }
+
+            return false;
         }
 
         private void MoveFileOrDirectory(string src, string dst)
