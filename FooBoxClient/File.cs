@@ -25,6 +25,8 @@ namespace FooBoxClient
 
         public Dictionary<string, File> Files { get; set; }
 
+        public string SourceLocalFileName { get; set; }
+
         public static File CreateRoot()
         {
             return new File
@@ -72,7 +74,8 @@ namespace FooBoxClient
                     Name = info.Name.ToUpperInvariant(),
                     DisplayName = info.Name,
                     IsFolder = (info.Attributes & FileAttributes.Directory) != 0,
-                    LastWriteTimeUtc = info.LastWriteTimeUtc
+                    LastWriteTimeUtc = info.LastWriteTimeUtc,
+                    SourceLocalFileName = info.FullName
                 };
 
                 if (file.IsFolder)
