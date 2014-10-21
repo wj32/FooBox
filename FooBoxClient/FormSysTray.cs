@@ -186,5 +186,60 @@ namespace FooBoxClient
                 pauseToolStripMenuItem.Text = "Resuming syncing";
             }
         }
+
+        private void FormSysTray_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+        }
+
+        private void FormSysTray_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            foreach (string file in files)
+            {
+                if (!System.IO.Directory.Exists(file))
+                {
+                    string hash = _engine.FileExists(file);
+                    if (hash != "")
+                    {
+                        string url = Requests.GetShareLink(hash);
+                        if (url != "")
+                        {
+                            notifyFooBox.BalloonTipText = "Public link copied to clip board";
+                        }
+                        else
+                        {
+                            notifyFooBox.BalloonTipText = "Failed to get shareable link";
+                        }
+                        notifyFooBox.ShowBalloonTip(3000);
+
+                        //show get public link
+                    }
+                    else
+                    {
+                        var confirmResult = MessageBox.Show("Add file to FooBox?","This will not move the original copy", MessageBoxButtons.YesNo);
+                        if (confirmResult == DialogResult.Yes)
+                        {
+                            //copy file 
+                            string fileName = file.Substring(file.LastIndexOf("\\"));
+                            if (!System.IO.File.Exists(_engine.RootDirectory + fileName)){
+                                System.IO.File.Copy(file, _engine.RootDirectory + fileName);
+                            } else {
+                                notifyFooBox.BalloonTipText = "File already exists in FooBox and was not copied";
+                                notifyFooBox.ShowBalloonTip(3000);
+
+                            }
+                            //sync engine will now do rest
+                        }
+                    }
+                }
+            }
+
+        }
+
+
     }
 }

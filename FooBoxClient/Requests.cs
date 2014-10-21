@@ -56,6 +56,20 @@ namespace FooBoxClient
             }
         }
 
+        public static string GetShareLink(string hash)
+        {
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&hash=" + hash;
+            HttpWebRequest req = WebRequest.Create(MakeUrl("GetShareLink", parameters)) as HttpWebRequest;
+
+            req.KeepAlive = true;
+            req.Method = "GET";
+
+            using (var response = req.GetResponse())
+            using (var reader  = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8)){
+                return reader.ReadToEnd();
+            } 
+        }
+
         public static string Upload(string sourceFileName)
         {
             string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret;

@@ -135,6 +135,25 @@ namespace FooBox.Controllers
 
             return Json(new { hash = hash, fileSize = fileSize });
         }
+        
+        [HttpGet]
+        public ActionResult GetShareLink(long? id, string secret, string hash)
+        {
+            string url = "";
+            var client = FindClient(id, secret);
+            if (client == null)
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+            hash = hash.ToUpper();
+            string key = (from blob in _fileManager.Context.Blobs where blob.Hash == hash select blob.Key).FirstOrDefault();
+
+            if (key == null)
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
+            //TODO: set url = public link for file here
+
+
+
+            return Content(url);
+        }
 
         private Client FindClient(long? id, string secret)
         {
