@@ -20,22 +20,7 @@ namespace FooBoxClient
         public FormSysTray()
         {
             InitializeComponent();
-        }
 
-        private void hideSelf()
-        {
-            this.Hide();
-        }
-
-        private void showSelf()
-        {
-            this.Location = _location;
-            this.Focus();
-            this.Show();
-        }
-
-        private void FormSysTray_Load(object sender, EventArgs e)
-        {
             notifyFooBox.Icon = FooBoxIcon.FooBox;
             this.Icon = FooBoxIcon.FooBox;
 
@@ -53,10 +38,24 @@ namespace FooBoxClient
             _cancellationTokenSource = new CancellationTokenSource();
             notifyFooBox.Visible = true;
             _correctSize = this.Size;
-            this.WindowState = FormWindowState.Minimized;
-            this.Visible = false;
 
             _syncThread.Start();
+        }
+
+        private void hideSelf()
+        {
+            this.Hide();
+        }
+
+        private void showSelf()
+        {
+            this.Location = _location;
+            this.Focus();
+            this.Show();
+        }
+
+        private void FormSysTray_Load(object sender, EventArgs e)
+        {
         }
 
         private void FormSysTray_FormClosing(object sender, FormClosingEventArgs e)
@@ -112,6 +111,8 @@ namespace FooBoxClient
                 Rectangle r = WinAPI.GetTrayRectangle();
                 Rectangle resolution = Screen.PrimaryScreen.Bounds;
 
+                if (!this.IsHandleCreated)
+                    this.CreateHandle();
                 if (this.WindowState == FormWindowState.Minimized)
                     this.WindowState = FormWindowState.Normal;
                 this.Size = _correctSize;
@@ -144,7 +145,7 @@ namespace FooBoxClient
             _closing = true;
             ShutDown();
             _syncThread.Join();
-            this.Close();
+            Application.Exit();
         }
 
         private void changeUserToolStripMenuItem_Click(object sender, EventArgs e)

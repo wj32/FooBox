@@ -16,7 +16,8 @@ namespace FooBoxClient
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FormSysTray());
+            var form = new FormSysTray();
+            Application.Run();
         }
     }
 }
