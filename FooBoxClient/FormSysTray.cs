@@ -112,30 +112,28 @@ namespace FooBoxClient
                 {
                     this.WindowState = FormWindowState.Normal;
                 }
-              //  if (_location == new Point(0, 0))
-              //  {
-                    Rectangle r = WinAPI.GetTrayRectangle();
-                    Rectangle resolution = Screen.PrimaryScreen.Bounds;
-                    // this.Height = 300;
-                    //  this.Width = 300;
-                    if (r.X < resolution.Width / 2)
-                    {
-                        _location = new Point(r.X + r.Width, r.Y - this.Height + 80);
-                        //sys tray is in bottom right corner
-                    }
-                    else if (r.Y < resolution.Height / 2)
-                    {
 
-                        _location = new Point(r.X - this.Width + 80, r.Y + r.Height);
-                        //systray is im top right coerner
-                    }
-                    else
-                    {
-                        _location = new Point(Screen.PrimaryScreen.Bounds.Width - this.Width - 75, Screen.PrimaryScreen.Bounds.Height - this.Height - 75);
-                        //sys tray is in bottom corner
-                    }
+                Rectangle r = WinAPI.GetTrayRectangle();
+                Rectangle resolution = Screen.PrimaryScreen.Bounds;
 
-               // }
+                if (r.X < resolution.Width / 2)
+                {
+                    _location = new Point(r.X + r.Width, r.Y - this.Height + 80);
+                    //sys tray is in bottom right corner
+                }
+                else if (r.Y < resolution.Height / 2)
+                {
+
+                    _location = new Point(r.X - this.Width + 80, r.Y + r.Height);
+                    //systray is im top right coerner
+                }
+                else
+                {
+                    _location = new Point(Screen.PrimaryScreen.Bounds.Width - this.Width - 75, Screen.PrimaryScreen.Bounds.Height - this.Height - 75);
+                    //sys tray is in bottom corner
+                }
+
+
                 showSelf();
             }
         }
@@ -143,6 +141,7 @@ namespace FooBoxClient
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            _closing = true;
             ShutDown();
             _syncThread.Join();
             this.Close();
