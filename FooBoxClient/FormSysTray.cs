@@ -209,7 +209,9 @@ namespace FooBoxClient
                         string url = Requests.GetShareLink(hash);
                         if (url != "")
                         {
+                            System.Windows.Forms.Clipboard.SetText(url);
                             notifyFooBox.BalloonTipText = "Public link copied to clip board";
+                            
                         }
                         else
                         {
