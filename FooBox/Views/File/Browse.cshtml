@@ -33,7 +33,7 @@
         <strong>@Html.ActionLink(parent.Item1, "Browse", new { path = parent.Item2 })</strong>
         @:&gt;
     }
-    <strong>@Html.Encode(Model.DisplayName)</strong>
+    <strong>@Model.DisplayName</strong>
 </h2>
 <p>@Html.ValidationSummary(true)</p>
 <div class="row">
