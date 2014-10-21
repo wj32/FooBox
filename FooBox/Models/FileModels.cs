@@ -343,7 +343,7 @@ namespace FooBox.Models
 
         #endregion
 
-        #region DocumentLinks
+        #region Document links
 
         public Document FindDocumentFromKey(string key)
         {
