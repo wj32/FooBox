@@ -717,7 +717,6 @@ namespace FooBox.Models
                         bool createDocument = false;
                         bool createDocumentVersion = false;
                         bool setDisplayName = false;
-                        bool setInvitation = false;
                         bool replaced = false;
 
                         if (file == null)
@@ -727,7 +726,6 @@ namespace FooBox.Models
                                 // Nothing -> Folder
                                 // Create the folder.
                                 createFolder = true;
-                                setInvitation = true;
                             }
                             else
                             {
@@ -743,7 +741,6 @@ namespace FooBox.Models
                                 // Folder -> Folder
                                 // Only a possible rename is needed.
                                 setDisplayName = true;
-                                setInvitation = true;
                             }
                             else
                             {
@@ -765,7 +762,6 @@ namespace FooBox.Models
                                 RenameAndDeleteConflictingFile(parentFolder, file, "Deleted", quotaCharge);
                                 replaced = true;
                                 createFolder = true;
-                                setInvitation = true;
                             }
                             else
                             {
@@ -799,6 +795,21 @@ namespace FooBox.Models
                                 Owner = parentFolder.Owner
                             });
                             createChange = true;
+
+                            long invitationId = clientChangesByFullName[node.FullName].InvitationId;
+
+                            if (invitationId != 0)
+                            {
+                                ((Folder)file).InvitationId = (
+                                    from invitation in client.User.Invitations.AsQueryable()
+                                    where invitation.Id == invitationId
+                                    select invitation.Id
+                                    ).SingleOrDefault();
+                            }
+                            else
+                            {
+                                ((Folder)file).InvitationId = null;
+                            }
                         }
                         else if (createDocument)
                         {
@@ -851,24 +862,6 @@ namespace FooBox.Models
                             {
                                 file.DisplayName = clientChangesByFullName[node.FullName].DisplayName;
                                 createChange = true;
-                            }
-                        }
-
-                        if (setInvitation)
-                        {
-                            long invitationId = clientChangesByFullName[node.FullName].InvitationId;
-
-                            if (invitationId != 0)
-                            {
-                                ((Folder)file).InvitationId = (
-                                    from invitation in client.User.Invitations.AsQueryable()
-                                    where invitation.Id == invitationId
-                                    select invitation.Id
-                                    ).SingleOrDefault();
-                            }
-                            else
-                            {
-                                ((Folder)file).InvitationId = 0;
                             }
                         }
 

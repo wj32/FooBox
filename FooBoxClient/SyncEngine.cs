@@ -15,6 +15,8 @@ namespace FooBoxClient
     {
         public const string SpecialFolderName = ".FooBox";
         public const string StateFileName = "state.json";
+        public const string InvitationFileName = ".FooBoxInvitation";
+        public const string InvitationFileNameFull = ".FOOBOXINVITATION";
 
         public class State
         {
@@ -40,6 +42,33 @@ namespace FooBoxClient
             public List<ICollection<ClientChange>> PendingChanges { get; set; }
         }
 
+        public static long ReadInvitationId(string directoryName)
+        {
+            try
+            {
+                return long.Parse(System.IO.File.ReadAllText(directoryName + "\\" + InvitationFileName).Trim());
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        public static void WriteInvitationId(string directoryName, long invitationId)
+        {
+            string fileName = directoryName + "\\" + InvitationFileName;
+
+            if (invitationId != 0)
+            {
+                System.IO.File.WriteAllText(fileName, invitationId.ToString());
+            }
+            else
+            {
+                if (System.IO.File.Exists(fileName))
+                    System.IO.File.Delete(fileName);
+            }
+        }
+
         private string _rootDirectory;
         private State _state;
         private bool _stateLoaded;
@@ -47,6 +76,7 @@ namespace FooBoxClient
 
         private string _localSpecialFolder;
         private string _stateFileName;
+        private string _blobFolder;
         private string _specialFolderFullName;
 
         public SyncEngine(string rootDirectory, long userId)
@@ -65,6 +95,7 @@ namespace FooBoxClient
                 _rootDirectory = value;
                 _localSpecialFolder = _rootDirectory + "\\" + SpecialFolderName;
                 _stateFileName = _localSpecialFolder + "\\" + StateFileName;
+                _blobFolder = _rootDirectory + "\\Blobs";
             }
         }
 
@@ -114,6 +145,14 @@ namespace FooBoxClient
             System.IO.File.WriteAllText(_stateFileName, serializer.Serialize(_state));
         }
 
+        private DirectoryInfo AccessBlobDirectory()
+        {
+            if (!Directory.Exists(_blobFolder))
+                return Directory.CreateDirectory(_blobFolder);
+
+            return new DirectoryInfo(_blobFolder);
+        }
+
         public string GetLocalFullName(string fullName)
         {
             string prefix = "/" + _state.UserId.ToString();
@@ -124,9 +163,13 @@ namespace FooBoxClient
             return _rootDirectory + fullName.Remove(0, prefix.Length).Replace('/', '\\');
         }
 
-        public void IgnoreSpecialFolder(List<ClientChange> changes)
+        public void IgnoreSpecialNames(List<ClientChange> changes)
         {
-            changes.RemoveAll(change => change.FullName == _specialFolderFullName || change.FullName.StartsWith(_specialFolderFullName + "/"));
+            changes.RemoveAll(change =>
+                change.FullName == _specialFolderFullName ||
+                change.FullName.StartsWith(_specialFolderFullName + "/") ||
+                change.FullName.EndsWith("/" + InvitationFileNameFull)
+                );
         }
 
         public List<ClientChange> Compare(File newFolder)
@@ -218,7 +261,8 @@ namespace FooBoxClient
                             IsFolder = newFile.IsFolder,
                             DisplayName = newFile.DisplayName,
                             Size = newFile.Size,
-                            Hash = newHash
+                            Hash = newHash,
+                            InvitationId = newFile.InvitationId
                         });
                     }
                 }
@@ -253,11 +297,13 @@ namespace FooBoxClient
                 return;
             }
 
-            Apply(_state.Root.Files[_state.UserId.ToString()], rootNode.Nodes[_state.UserId.ToString()], clientChanges);
+            // Fix up first-level nodes.
+            foreach (var node in rootNode.Nodes.Values)
+                node.Type = ChangeType.None;
 
-            if (!rootNode.Nodes.ContainsKey(_state.UserId.ToString()) ||
-                rootNode.Nodes[_state.UserId.ToString()].Nodes == null ||
-                rootNode.Nodes[_state.UserId.ToString()].Nodes.Count == 0)
+            Apply(_state.Root, rootNode, clientChanges);
+
+            if (rootNode.Nodes.Count == 0)
             {
                 // Signal that there are no more changes to apply.
                 changes.Clear();
@@ -311,7 +357,7 @@ namespace FooBoxClient
 
                                 if (file != null && !file.IsFolder)
                                 {
-                                    System.IO.File.Delete(GetLocalFullName(file.FullName));
+                                    System.IO.File.Delete(newFullDisplayName);
                                     file = null;
                                 }
 
@@ -319,6 +365,8 @@ namespace FooBoxClient
                                     System.IO.Directory.CreateDirectory(newFullDisplayName);
                                 else if (file != null && file.DisplayName != newDisplayName)
                                     MoveFileOrDirectory(newFullDisplayName, newFullDisplayName);
+
+                                WriteInvitationId(newFullDisplayName, clientChanges[node.FullName].InvitationId);
 
                                 if (file == null)
                                 {
@@ -357,7 +405,7 @@ namespace FooBoxClient
 
                                 if (file != null && file.IsFolder)
                                 {
-                                    System.IO.Directory.Delete(GetLocalFullName(file.FullName), true);
+                                    System.IO.Directory.Delete(newFullDisplayName, true);
                                     rootFolder.Files.Remove(file.Name);
                                     file = null;
                                 }
@@ -525,7 +573,7 @@ namespace FooBoxClient
             long baseChangelistId = _state.ChangelistId;
             var fsFolder = File.FromFileSystem(_rootDirectory, _state.UserId.ToString());
             var localChanges = this.Compare(fsFolder);
-            IgnoreSpecialFolder(localChanges);
+            IgnoreSpecialNames(localChanges);
 
             if (cancellationToken.IsCancellationRequested)
                 return false;
@@ -584,7 +632,7 @@ namespace FooBoxClient
 
                         if (result.Changes.Count != 0)
                         {
-                            IgnoreSpecialFolder(result.Changes);
+                            IgnoreSpecialNames(result.Changes);
 
                             // Make the remote changes sequential with respect to our local changes.
                             var remoteByName = result.Changes.ToDictionary(remote => remote.FullName);
