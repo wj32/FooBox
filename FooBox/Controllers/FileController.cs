@@ -160,7 +160,8 @@ namespace FooBox.Controllers
                 {
                     Size = version.Blob.Size,
                     TimeStamp = version.TimeStamp,
-                    VersionId = version.Id
+                    VersionId = version.Id,
+                    ClientName = version.Client.Name
                 }
                 ).ToList();
 
