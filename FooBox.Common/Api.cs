@@ -83,7 +83,7 @@ namespace FooBox.Common
         // >= Conflict
 
         public long LastChangelistId { get; set; }
-        public ICollection<ClientChange> Changes { get; set; }
+        public List<ClientChange> Changes { get; set; }
 
         // >= UploadRequired
 

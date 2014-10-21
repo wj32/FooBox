@@ -11,6 +11,7 @@ using System.Net;
 using System.IO;
 using System.Web.Script.Serialization;
 using FooBox.Common;
+using FooBox;
 namespace FooBoxClient
 {
     public partial class FormStart : Form
@@ -69,21 +70,23 @@ namespace FooBoxClient
                 return;
             }
 
+            string stateFileName = textBoxDirLoc.Text + "\\" + SyncEngine.SpecialFolderName + "\\" + SyncEngine.StateFileName;
+
             try
             {
                 if (Directory.EnumerateFileSystemEntries(textBoxDirLoc.Text).Any())
                 {
-                    if (MessageBox.Show(
-                        "The directory you have selected is not empty and will be erased. Do you want to continue?",
-                        "FooBox",
-                        MessageBoxButtons.YesNo,
-                        MessageBoxIcon.Warning,
-                        MessageBoxDefaultButton.Button2
-                        ) == System.Windows.Forms.DialogResult.No)
-                        return;
-
-                    Directory.Delete(textBoxDirLoc.Text, true);
-                    Directory.CreateDirectory(textBoxDirLoc.Text);
+                    if (!System.IO.File.Exists(stateFileName))
+                    {
+                        if (MessageBox.Show(
+                            "The directory you have selected is not empty and will be erased. Do you want to continue?",
+                            "FooBox",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning,
+                            MessageBoxDefaultButton.Button2
+                            ) == System.Windows.Forms.DialogResult.No)
+                            return;
+                    }
                 }
             }
             catch (Exception ex)
@@ -147,16 +150,35 @@ namespace FooBoxClient
             Properties.Settings.Default.UserName = textBoxUsername.Text;
             Properties.Settings.Default.Save();
             
-            
+            try
+            {
+                bool keep = false;
+
+                if (System.IO.File.Exists(stateFileName))
+                {
+                    JavaScriptSerializer serializer = new JavaScriptSerializer();
+                    var state = serializer.Deserialize<SyncEngine.State>(System.IO.File.ReadAllText(stateFileName));
+
+                    if (state.UserId == Properties.Settings.Default.ID)
+                        keep = true;
+                }
+
+                if (!keep)
+                {
+                    Utilities.DeleteDirectoryRecursive(Properties.Settings.Default.Root);
+                    Directory.CreateDirectory(Properties.Settings.Default.Root);
+                }
+            }
+            catch (Exception ex)
+            {
+                labelError.Text = "Unable to access the directory: " + ex.Message;
+                return;
+            }         
 
             this.Hide();
             FormSysTray frm = new FormSysTray();
             frm._sender = this;
             frm.Show();
-            
         }
-
-
-
     }
 }

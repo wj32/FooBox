@@ -493,7 +493,7 @@ namespace FooBox.Controllers
      
         public string GetShareLink(string fullName)
         {
-            var key = Utilities.GenerateRandomString(FileManager.IdChars, DocumentLink.KeyLength);
+            var key = Utilities.GenerateRandomString(Utilities.IdChars, DocumentLink.KeyLength);
             long userId = User.Identity.GetUserId();
             var dl = new DocumentLink
             {

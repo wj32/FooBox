@@ -16,7 +16,7 @@ namespace FooBox.Controllers
         public static void UploadBlob(FileManager fileManager, Client client, Stream stream, out string hash, out long size)
         {
             var clientUploadDirectory = fileManager.AccessClientUploadDirectory(client.Id);
-            var randomName = Utilities.GenerateRandomString(FileManager.IdChars, 32);
+            var randomName = Utilities.GenerateRandomString(Utilities.IdChars, 32);
             var tempUploadFileName = clientUploadDirectory.FullName + "\\" + randomName;
 
             byte[] buffer = new byte[4096 * 4];

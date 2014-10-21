@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
@@ -12,54 +13,80 @@ namespace FooBoxClient
 {
     public class SyncEngine
     {
-        private const string SpecialFolderName = ".FooBox";
+        public const string SpecialFolderName = ".FooBox";
+        public const string StateFileName = "state.json";
 
-        private class State
+        public class State
         {
+            public long UserId { get; set; }
+
+            /// <summary>
+            /// The changelist ID that we are at. Any local changes that were made to reach this changelist ID
+            /// must have already been synchronized with the server to check for conflicts and retrieve
+            /// the latest set of remote changes.
+            /// </summary>
             public long ChangelistId { get; set; }
+
+            /// <summary>
+            /// The file system corresponding to <see cref="ChangelistId"/>.
+            /// </summary>
             public File Root { get; set; }
+
+            /// <summary>
+            /// The changes that have not yet been applied.
+            /// </summary>
+            public List<ICollection<ClientChange>> PendingChanges { get; set; }
         }
 
         private string _rootDirectory;
-        private long _changelistId;
-        private File _root;
-        private long _userId;
-        private string _configDirectory;
-        private string _stateFileName;
+        private State _state;
+        private bool _stateLoaded;
+        private CancellationToken _cancellationToken;
 
-        public SyncEngine(string rootDirectory)
+        private string _localSpecialFolder;
+        private string _stateFileName;
+        private string _specialFolderFullName;
+
+        public SyncEngine(string rootDirectory, long userId)
         {
             _rootDirectory = rootDirectory;
-            _root = File.CreateRoot();
-            _userId = Properties.Settings.Default.UserID;
 
-            var userRoot = new File
-            {
-                FullName = "/" + _userId.ToString(),
-                Name = _userId.ToString(),
-                DisplayName = _userId.ToString(),
-                IsFolder = true,
-                Files = new Dictionary<string, File>()
-            };
-            _root.Files.Add(userRoot.Name, userRoot);
+            this.ResetState(userId);
 
-            _configDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\FooBoxClient";
-            _stateFileName = _configDirectory + "\\" + Properties.Settings.Default.UserName +".json";
+            _localSpecialFolder = _rootDirectory + "\\" + SpecialFolderName;
+            _stateFileName = _localSpecialFolder + "\\" + StateFileName;
+            _specialFolderFullName = "/" + userId.ToString() + "/" + SpecialFolderName.ToUpperInvariant();
         }
 
         public long ChangelistId
         {
-            get { return _changelistId; }
+            get { return _state.ChangelistId; }
+        }
+
+        private void ResetState(long userId)
+        {
+            _state = new State
+            {
+                UserId = userId,
+                ChangelistId = 0,
+                Root = File.CreateRoot(),
+                PendingChanges = new List<ICollection<ClientChange>>()
+            };
+            var userRoot = new File
+            {
+                FullName = "/" + userId.ToString(),
+                Name = userId.ToString(),
+                DisplayName = userId.ToString(),
+                IsFolder = true,
+                Files = new Dictionary<string, File>()
+            };
+            _state.Root.Files.Add(userRoot.Name, userRoot);
         }
 
         public void LoadState()
         {
             JavaScriptSerializer serializer = new JavaScriptSerializer();
-
-            var state = serializer.Deserialize<State>(System.IO.File.ReadAllText(_stateFileName));
-
-            _changelistId = state.ChangelistId;
-            _root = state.Root;
+            _state = serializer.Deserialize<State>(System.IO.File.ReadAllText(_stateFileName));
         }
 
         public void SaveState()
@@ -68,18 +95,17 @@ namespace FooBoxClient
             string directoryName = Path.GetDirectoryName(_stateFileName);
 
             if (!Directory.Exists(directoryName))
-                Directory.CreateDirectory(directoryName);
-
-            System.IO.File.WriteAllText(_stateFileName, serializer.Serialize(new State
             {
-                ChangelistId = _changelistId,
-                Root = _root
-            }));
+                var di = Directory.CreateDirectory(directoryName);
+                di.Attributes = FileAttributes.Directory | FileAttributes.Hidden;
+            }
+
+            System.IO.File.WriteAllText(_stateFileName, serializer.Serialize(_state));
         }
 
         public string GetLocalFullName(string fullName)
         {
-            string prefix = "/" + _userId.ToString();
+            string prefix = "/" + _state.UserId.ToString();
 
             if (!fullName.StartsWith(prefix))
                 throw new Exception("Invalid file name");
@@ -87,12 +113,17 @@ namespace FooBoxClient
             return _rootDirectory + fullName.Remove(0, prefix.Length).Replace('/', '\\');
         }
 
-        public ICollection<ClientChange> Compare(File newFolder)
+        public void IgnoreSpecialFolder(List<ClientChange> changes)
         {
-            return Compare(_root, newFolder);
+            changes.RemoveAll(change => change.FullName == _specialFolderFullName || change.FullName.StartsWith(_specialFolderFullName + "/"));
         }
 
-        private ICollection<ClientChange> Compare(File oldFolder, File newFolder)
+        public List<ClientChange> Compare(File newFolder)
+        {
+            return Compare(_state.Root, newFolder);
+        }
+
+        private List<ClientChange> Compare(File oldFolder, File newFolder)
         {
             var changes = new List<ClientChange>();
             Compare(changes, oldFolder, newFolder);
@@ -103,7 +134,7 @@ namespace FooBoxClient
         /// Compares two folders.
         /// Also updates the hashes in the new folder.
         /// </summary>
-        private void Compare(ICollection<ClientChange> changes, File oldFolder, File newFolder)
+        private void Compare(List<ClientChange> changes, File oldFolder, File newFolder)
         {
             if (oldFolder != null)
             {
@@ -205,9 +236,21 @@ namespace FooBoxClient
             var rootNode = ChangeNode.FromItems(changes);
 
             if (rootNode.Nodes == null || rootNode.Nodes.Count == 0)
+            {
+                // This shouldn't happen.
+                changes.Clear();
                 return;
+            }
 
-            Apply(_root.Files[_userId.ToString()], rootNode.Nodes[_userId.ToString()], clientChanges);
+            Apply(_state.Root.Files[_state.UserId.ToString()], rootNode.Nodes[_state.UserId.ToString()], clientChanges);
+
+            if (!rootNode.Nodes.ContainsKey(_state.UserId.ToString()) ||
+                rootNode.Nodes[_state.UserId.ToString()].Nodes == null ||
+                rootNode.Nodes[_state.UserId.ToString()].Nodes.Count == 0)
+            {
+                // Signal that there are no more changes to apply.
+                changes.Clear();
+            }
         }
 
         private void Apply(File rootFolder, ChangeNode rootNode, Dictionary<string, ClientChange> clientChanges)
@@ -215,7 +258,7 @@ namespace FooBoxClient
             if (rootNode.Nodes == null)
                 return;
 
-            foreach (ChangeNode node in rootNode.Nodes.Values)
+            foreach (ChangeNode node in rootNode.Nodes.Values.ToList())
             {
                 File file = null;
 
@@ -224,6 +267,24 @@ namespace FooBoxClient
 
                 switch (node.Type)
                 {
+                    case ChangeType.None:
+                        {
+                            // Process files in the folder.
+                            if (node.Nodes != null && node.Nodes.Count != 0)
+                                Apply(file, node, clientChanges);
+
+                            // State management
+
+                            if (node.Nodes == null || node.Nodes.Count == 0)
+                            {
+                                clientChanges.Remove(node.FullName); // If it exists
+                                node.Parent.Nodes.Remove(node.Name);
+                            }
+
+                            if (_cancellationToken.IsCancellationRequested)
+                                return;
+                        }
+                        break;
                     case ChangeType.Add:
                     case ChangeType.Undelete:
                         {
@@ -267,6 +328,17 @@ namespace FooBoxClient
                                 // Process files in the folder.
                                 if (node.Nodes != null && node.Nodes.Count != 0)
                                     Apply(file, node, clientChanges);
+
+                                // State management
+
+                                if (node.Nodes == null || node.Nodes.Count == 0)
+                                {
+                                    clientChanges.Remove(node.FullName);
+                                    node.Parent.Nodes.Remove(node.Name);
+                                }
+
+                                if (_cancellationToken.IsCancellationRequested)
+                                    return;
                             }
                             else
                             {
@@ -275,6 +347,7 @@ namespace FooBoxClient
                                 if (file != null && file.IsFolder)
                                 {
                                     System.IO.Directory.Delete(GetLocalFullName(file.FullName), true);
+                                    rootFolder.Files.Remove(file.Name);
                                     file = null;
                                 }
 
@@ -286,23 +359,67 @@ namespace FooBoxClient
                                 }
 
                                 string hash = clientChanges[node.FullName].Hash;
+                                bool valid = true;
 
                                 if (file == null || file.Hash != hash || !System.IO.File.Exists(newFullDisplayName))
-                                    Requests.Download(hash, newFullDisplayName);
-
-                                FileInfo info = new FileInfo(newFullDisplayName);
-
-                                file = new File
                                 {
-                                    FullName = node.FullName,
-                                    Name = node.Name,
-                                    DisplayName = newDisplayName,
-                                    IsFolder = false,
-                                    Size = info.Length,
-                                    Hash = hash,
-                                    LastWriteTimeUtc = info.LastWriteTimeUtc
-                                };
-                                rootFolder.Files[file.Name] = file;
+                                    string tempFileName = newFullDisplayName + "." + Utilities.GenerateRandomString(Utilities.IdChars, 8);
+
+                                    valid = false;
+                                    int attempts = 0;
+
+                                    while (true)
+                                    {
+                                        try
+                                        {
+                                            Requests.Download(hash, tempFileName);
+
+                                            if (System.IO.File.Exists(newFullDisplayName))
+                                                System.IO.File.Delete(newFullDisplayName);
+                                            MoveFileOrDirectory(tempFileName, newFullDisplayName);
+
+                                            break;
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            if (ex.Message.ToLowerInvariant().Contains("not found"))
+                                            {
+                                                // The server doesn't have the file anymore.
+                                                valid = false;
+                                                break;
+                                            }
+                                            else if (++attempts >= 4)
+                                            {
+                                                throw;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (valid)
+                                {
+                                    FileInfo info = new FileInfo(newFullDisplayName);
+
+                                    file = new File
+                                    {
+                                        FullName = node.FullName,
+                                        Name = node.Name,
+                                        DisplayName = newDisplayName,
+                                        IsFolder = false,
+                                        Size = info.Length,
+                                        Hash = hash,
+                                        LastWriteTimeUtc = info.LastWriteTimeUtc
+                                    };
+                                    rootFolder.Files[file.Name] = file;
+                                }
+
+                                // State management
+
+                                clientChanges.Remove(node.FullName);
+                                node.Parent.Nodes.Remove(node.Name);
+
+                                if (_cancellationToken.IsCancellationRequested)
+                                    return;
                             }
                         }
                         break;
@@ -317,6 +434,14 @@ namespace FooBoxClient
                                 MoveFileOrDirectory(newFullDisplayName, newFullDisplayName);
                                 file.DisplayName = newDisplayName;
                             }
+
+                            // State management
+
+                            clientChanges.Remove(node.FullName);
+                            node.Parent.Nodes.Remove(node.Name);
+
+                            if (_cancellationToken.IsCancellationRequested)
+                                return;
                         }
                         break;
 
@@ -331,137 +456,52 @@ namespace FooBoxClient
 
                                 rootFolder.Files.Remove(file.Name);
                             }
+
+                            // State management
+
+                            clientChanges.Remove(node.FullName);
+                            node.Parent.Nodes.Remove(node.Name);
+
+                            if (_cancellationToken.IsCancellationRequested)
+                                return;
                         }
                         break;
                 }
             }
         }
 
-        public void Replace(ICollection<ClientChange> changes)
+        public void Run(CancellationToken cancellationToken)
         {
-            var clientChanges = changes.ToDictionary(change => change.FullName);
-            var rootNode = ChangeNode.FromItems(changes);
+            _cancellationToken = cancellationToken;
 
-            _root.Files[_userId.ToString()].Files.Clear();
-
-            if (rootNode.Nodes == null || rootNode.Nodes.Count == 0)
+            if (!_stateLoaded)
             {
-                Directory.Delete(_rootDirectory, true);
-                Directory.CreateDirectory(_rootDirectory);
-                return;
+                try
+                {
+                    LoadState();
+                    _stateLoaded = true;
+                }
+                catch
+                { }
             }
 
-            Replace(_root.Files[_userId.ToString()], rootNode.Nodes[_userId.ToString()], clientChanges);
-        }
-
-        private void Replace(File rootFolder, ChangeNode rootNode, Dictionary<string, ClientChange> clientChanges)
-        {
-            if (rootNode.Nodes == null)
-                return;
-
-            // Delete any files not in the node.
-
-            foreach (var info in (new DirectoryInfo(GetLocalFullName(rootFolder.FullName))).EnumerateFileSystemInfos())
-            {
-                ChangeNode node;
-                bool delete = false;
-
-                if (rootNode.Nodes.TryGetValue(info.Name.ToUpperInvariant(), out node))
-                {
-                    if (node.IsFolder != ((info.Attributes & FileAttributes.Directory) != 0))
-                    {
-                        delete = true;
-                    }
-                }
-                else
-                {
-                    delete = true;
-                }
-
-                if (delete)
-                {
-                    if ((info.Attributes & FileAttributes.Directory) != 0)
-                        Directory.Delete(info.FullName, true);
-                    else
-                        System.IO.File.Delete(info.FullName);
-                }
-            }
-
-            foreach (ChangeNode node in rootNode.Nodes.Values)
-            {
-                if (node.Type != ChangeType.Add)
-                    throw new Exception("Non-add change in Replace.");
-
-                string newDisplayName = clientChanges[node.FullName].DisplayName;
-                string newFullDisplayName = GetLocalFullName(node.Parent.FullName) + "\\" + newDisplayName;
-
-                if (rootFolder.Files == null)
-                    rootFolder.Files = new Dictionary<string, File>();
-
-                if (node.IsFolder)
-                {
-                    // Add folder
-
-                    if (!System.IO.Directory.Exists(newFullDisplayName))
-                        System.IO.Directory.CreateDirectory(newFullDisplayName);
-                    else
-                        MoveFileOrDirectory(newFullDisplayName, newFullDisplayName);
-
-                    var file = new File
-                    {
-                        FullName = node.FullName,
-                        Name = node.Name,
-                        DisplayName = newDisplayName,
-                        IsFolder = true
-                    };
-                    rootFolder.Files[file.Name] = file;
-
-                    // Process files in the folder.
-                    if (node.Nodes != null && node.Nodes.Count != 0)
-                        Replace(file, node, clientChanges);
-                }
-                else
-                {
-                    // Add document
-
-                    string hash = clientChanges[node.FullName].Hash;
-                    string oldHash = "";
-
-                    if (System.IO.File.Exists(newFullDisplayName))
-                    {
-                        MoveFileOrDirectory(newFullDisplayName, newFullDisplayName);
-                        oldHash = Utilities.ComputeSha256Hash(newFullDisplayName);
-                    }
-
-                    if (oldHash != hash)
-                        Requests.Download(hash, newFullDisplayName);
-
-                    FileInfo info = new FileInfo(newFullDisplayName);
-
-                    var file = new File
-                    {
-                        FullName = node.FullName,
-                        Name = node.Name,
-                        DisplayName = newDisplayName,
-                        IsFolder = false,
-                        Size = info.Length,
-                        Hash = hash,
-                        LastWriteTimeUtc = info.LastWriteTimeUtc
-                    };
-                    rootFolder.Files[file.Name] = file;
-                }
-            }
-        }
-
-        public void Sync()
-        {
-            long baseChangelistId = _changelistId;
-            var fsFolder = File.FromFileSystem(_rootDirectory, _userId.ToString());
+            long baseChangelistId = _state.ChangelistId;
+            var fsFolder = File.FromFileSystem(_rootDirectory, _state.UserId.ToString());
             var changes = this.Compare(fsFolder);
+            IgnoreSpecialFolder(changes);
 
-            while (true)
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            bool sync = true;
+
+            // Sync with the server.
+            while (sync)
             {
                 var result = Requests.Sync(new ClientSyncData { BaseChangelistId = baseChangelistId, Changes = changes });
+
+                if (cancellationToken.IsCancellationRequested)
+                    return;
 
                 switch (result.State)
                 {
@@ -470,7 +510,7 @@ namespace FooBoxClient
                     case ClientSyncResultState.TooOld:
                         throw new NotImplementedException("TooOld");
                     case ClientSyncResultState.Error:
-                        return;
+                        throw new Exception("Sync error");
                     case ClientSyncResultState.Conflict:
                         // TODO
                         break;
@@ -495,15 +535,42 @@ namespace FooBoxClient
                                     throw new Exception("Upload required for a missing file.");
 
                                 Requests.Upload(GetLocalFullName(sourceFullName));
+
+                                if (cancellationToken.IsCancellationRequested)
+                                    return;
                             }
                         }
                         break;
                     case ClientSyncResultState.Success:
-                        _root = fsFolder;
-                        this.Apply(result.Changes);
-                        _changelistId = result.NewChangelistId;
+                        _state.ChangelistId = result.NewChangelistId;
+                        _state.Root = fsFolder;
+
+                        if (result.Changes.Count != 0)
+                        {
+                            IgnoreSpecialFolder(result.Changes);
+                            _state.PendingChanges.Add(result.Changes);
+                        }
+
                         this.SaveState();
-                        return;
+                        sync = false;
+
+                        break;
+                }
+            }
+
+            // Process pending changes.
+            while (_state.PendingChanges.Count != 0)
+            {
+                try
+                {
+                    this.Apply(_state.PendingChanges[0]);
+
+                    if (_state.PendingChanges[0].Count == 0) // Has the changelist been fully applied?
+                        _state.PendingChanges.RemoveAt(0);
+                }
+                finally
+                {
+                    this.SaveState();
                 }
             }
         }

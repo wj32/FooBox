@@ -1,22 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.IO;
-using System.Net;
-using System.Runtime.Serialization.Json;
-using System.Timers;
-using FooBox.Common;
-using System.Text.RegularExpressions;
-using System.Web.Script.Serialization;
-using System.Threading;
 using System.Diagnostics;
-using System.ComponentModel;
+using System.Drawing;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace FooBoxClient
 {
@@ -24,20 +10,20 @@ namespace FooBoxClient
     {
         private SyncEngine _engine;
         private Thread _syncThread;
-        private AutoResetEvent _event;
         private bool _closing = false;
+        private CancellationTokenSource _cancellationTokenSource;
         private Point _location;
         public FormStart _sender = null; 
-        
+
         public FormSysTray()
         {
          
             InitializeComponent();
             notifyFooBox.Icon = FooBoxIcon.FooBox;
             this.Icon = FooBoxIcon.FooBox;
-            _engine = new SyncEngine(Properties.Settings.Default.Root);
+            _engine = new SyncEngine(Properties.Settings.Default.Root, Properties.Settings.Default.UserID);
             _syncThread = new Thread(this.SyncThreadStart);
-            _event = new AutoResetEvent(false);
+            _cancellationTokenSource = new CancellationTokenSource();
             notifyFooBox.Visible = true;
             this.Visible = false;
         }
@@ -67,26 +53,22 @@ namespace FooBoxClient
                 e.Cancel = true;
                 hideSelf();
             }
-
-            _event.Set();
         }
 
         private void SyncThreadStart()
         {
-            try
-            {
-                _engine.LoadState();
-            }
-            catch
-            { }
-
             while (!_closing)
             {
-                _engine.Sync();
-                _event.WaitOne(3000);
+                _engine.Run(_cancellationTokenSource.Token);
+                _cancellationTokenSource.Token.WaitHandle.WaitOne(3000);
             }
         }
 
+        private void ShutDown()
+        {
+            _closing = true;
+            _cancellationTokenSource.Cancel();
+        }
         
         /*
          * Sets the location of the form for popping up
@@ -134,7 +116,7 @@ namespace FooBoxClient
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _closing = true;
+            ShutDown();
             this.Close();
         }
 
@@ -151,7 +133,7 @@ namespace FooBoxClient
         private void logOutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Properties.Settings.Default.UserName = "";
-            _closing = true;
+            ShutDown();
             notifyFooBox.Visible = false;
     
             

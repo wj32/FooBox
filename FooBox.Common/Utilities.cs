@@ -10,6 +10,7 @@ namespace FooBox
 {
     public static class Utilities
     {
+        public const string IdChars = "abcdefghijklmnopqrstuvwxyz0123456789!@^_-";
         private static string[] _sizeUnits = new string[] { "B", "KB", "MB", "GB" };
 
         private static int _randomSeed = (new Random()).Next();
@@ -66,6 +67,27 @@ namespace FooBox
 
                 hashAlgorithm.TransformFinalBlock(new byte[0], 0, 0);
                 return (new SoapHexBinary(hashAlgorithm.Hash)).ToString();
+            }
+        }
+
+        public static void DeleteDirectoryRecursive(string path)
+        {
+            foreach (string directory in Directory.GetDirectories(path))
+            {
+                DeleteDirectoryRecursive(directory);
+            }
+
+            try
+            {
+                Directory.Delete(path, true);
+            }
+            catch (IOException)
+            {
+                Directory.Delete(path, true);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Directory.Delete(path, true);
             }
         }
 

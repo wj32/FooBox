@@ -12,7 +12,6 @@ namespace FooBox.Models
     {
         public const string RootFolderTag = "Root";
         public const string InternalClientTag = "Internal";
-        public const string IdChars = "abcdefghijklmnopqrstuvwxyz0123456789!@^_-";
 
         public static bool IsFooBoxSetUp()
         {
@@ -110,7 +109,7 @@ namespace FooBox.Models
 
         public string GenerateBlobKey()
         {
-            return Utilities.GenerateRandomString(IdChars, Blob.KeyLength);
+            return Utilities.GenerateRandomString(Utilities.IdChars, Blob.KeyLength);
         }
 
         public string GetBlobFileName(string blobKey)
@@ -293,7 +292,7 @@ namespace FooBox.Models
 
         private string GenerateClientSecret()
         {
-            return Utilities.GenerateRandomString(IdChars, 128);
+            return Utilities.GenerateRandomString(Utilities.IdChars, 128);
         }
 
         public Client CreateClient(long userId, string name, string tag = null)
@@ -625,7 +624,7 @@ namespace FooBox.Models
 
                 do
                 {
-                    newDisplayName = file.DisplayName + " (" + reason + " " + Utilities.GenerateRandomString(IdChars, 16) + ")";
+                    newDisplayName = file.DisplayName + " (" + reason + " " + Utilities.GenerateRandomString(Utilities.IdChars, 16) + ")";
                     newName = newDisplayName.ToUpperInvariant();
                 } while (parentFolder.Files.AsQueryable().Where(f => f.Name == newName).SingleOrDefault() != null);
             }
@@ -943,14 +942,14 @@ namespace FooBox.Models
             }
         }
 
-        private ICollection<ClientChange> GetChangesForFolder(Folder folder)
+        private List<ClientChange> GetChangesForFolder(Folder folder)
         {
             var changes = new List<ClientChange>();
             AddChangesForFolder(changes, folder, GetFullName(folder));
             return changes;
         }
 
-        private ICollection<ClientChange> GetChangesForNode(ChangeNode rootNode)
+        private List<ClientChange> GetChangesForNode(ChangeNode rootNode)
         {
             var changes = new List<ClientChange>();
             Dictionary<string, File> fileCache = new Dictionary<string, File>();
