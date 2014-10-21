@@ -145,6 +145,7 @@ namespace FooBoxClient
             _closing = true;
             ShutDown();
             _syncThread.Join();
+            notifyFooBox.Visible = false;
             Application.Exit();
         }
 
