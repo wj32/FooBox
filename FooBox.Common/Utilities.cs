@@ -92,6 +92,19 @@ namespace FooBox
             }
         }
 
+        public static void DeleteFile(string fileName)
+        {
+            try
+            {
+                System.IO.File.Delete(fileName);
+            }
+            catch
+            {
+                System.IO.File.SetAttributes(fileName, FileAttributes.Normal);
+                System.IO.File.Delete(fileName);
+            }
+        }
+
         public static string GenerateNewName(string originalDisplayName, bool isDocument, string key)
         {
             if (isDocument)

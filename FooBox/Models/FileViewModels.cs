@@ -18,14 +18,13 @@ namespace FooBox.Models
             public bool IsFolder { get; set; }
             public long Size { get; set; }
             public DateTime TimeStamp { get; set; }
+            public ObjectState State { get; set; }
         }
 
         public string FullDisplayName { get; set; }
-
         public string DisplayName { get; set; }
-
+        public ObjectState State { get; set; }
         public List<FileEntry> Files { get; set; }
-
         public List<Tuple<string, string>> Parents { get; set; }
     }
 

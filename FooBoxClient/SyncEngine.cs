@@ -74,7 +74,7 @@ namespace FooBoxClient
             else
             {
                 if (System.IO.File.Exists(fileName))
-                    System.IO.File.Delete(fileName);
+                    Utilities.DeleteFile(fileName);
             }
         }
 
@@ -172,7 +172,7 @@ namespace FooBoxClient
             {
                 try
                 {
-                    System.IO.File.Delete(file.FullName);
+                    Utilities.DeleteFile(file.FullName);
                 }
                 catch
                 { }
@@ -188,7 +188,7 @@ namespace FooBoxClient
 
             if (string.IsNullOrEmpty(file.Hash) || System.IO.File.Exists(blobDirectory.FullName + "\\" + file.Hash))
             {
-                System.IO.File.Delete(localFullName);
+                Utilities.DeleteFile(localFullName);
                 return;
             }
 
@@ -198,7 +198,7 @@ namespace FooBoxClient
             }
             catch
             {
-                System.IO.File.Delete(localFullName);
+                Utilities.DeleteFile(localFullName);
             }
         }
 
@@ -625,32 +625,39 @@ namespace FooBoxClient
             if (System.IO.File.Exists(blobFileName))
             {
                 System.IO.File.Copy(blobFileName, destinationFileName, true);
-                return true;
             }
-
-            int attempts = 0;
-
-            while (true)
+            else
             {
-                try
+                int attempts = 0;
+
+                while (true)
                 {
-                    Requests.Download(hash, blobFileName);
-                    System.IO.File.Copy(blobFileName, destinationFileName);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.ToLowerInvariant().Contains("not found"))
+                    try
                     {
-                        // The server doesn't have the file anymore.
-                        return false;
+                        Requests.Download(hash, blobFileName);
+                        System.IO.File.SetAttributes(blobFileName, FileAttributes.Normal);
+                        System.IO.File.Copy(blobFileName, destinationFileName);
+                        break;
                     }
-                    else if (++attempts >= 4)
+                    catch (Exception ex)
                     {
-                        throw;
+                        if (ex.Message.ToLowerInvariant().Contains("not found"))
+                        {
+                            // The server doesn't have the file anymore.
+                            return false;
+                        }
+                        else if (++attempts >= 4)
+                        {
+                            throw;
+                        }
                     }
                 }
             }
+
+            System.IO.File.SetLastWriteTimeUtc(destinationFileName, DateTime.Now);
+            System.IO.File.SetAttributes(destinationFileName, FileAttributes.Normal);
+
+            return true;
         }
 
         private void ResolveConflicts(ICollection<ClientChange> localChanges, ICollection<ClientChange> remoteChanges)

@@ -48,6 +48,7 @@ namespace FooBox.Controllers
 
             model.FullDisplayName = fullDisplayName;
             model.DisplayName = folder == userRootFolder ? "Home" : folder.DisplayName;
+            model.State = folder.State;
             model.Files = (
                 from file in folder.Files.AsQueryable()
                 where file.State == ObjectState.Normal
@@ -63,7 +64,8 @@ namespace FooBox.Controllers
                     DisplayName = file.DisplayName,
                     IsFolder = file is Folder,
                     Size = latestVersion != null ? latestVersion.Blob.Size : 0,
-                    TimeStamp = latestVersion != null ? latestVersion.TimeStamp : DateTime.UtcNow
+                    TimeStamp = latestVersion != null ? latestVersion.TimeStamp : DateTime.UtcNow,
+                    State = file.State
                 }
                 ).ToList();
             model.Parents = new List<Tuple<string, string>>();
