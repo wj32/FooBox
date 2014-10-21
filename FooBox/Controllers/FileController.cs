@@ -504,9 +504,10 @@ namespace FooBox.Controllers
             return View(_fileManager.Context.DocumentLinks);
         }
 
-        public ActionResult DeleteShareLink()
+        public ActionResult DeleteShareLink(long? id)
         {
-            // TODO
+            _fileManager.Context.DocumentLinks.RemoveRange(from linc in _fileManager.Context.DocumentLinks where linc.Id == id select linc);
+            _fileManager.Context.SaveChanges();
             return RedirectToAction("DisplayShareLinks");
         }
 

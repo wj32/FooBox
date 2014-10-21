@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<FooBox.DocumentLink>
 
 @{
-    ViewBag.Title = "DisplaySharedLinks";
+    ViewBag.Title = "My Shared Links";
 }
 
 <h2>My Shared Links</h2>
@@ -28,6 +28,17 @@
         <td class="vert-align">
             @Html.ActionLink("Delete", "DeleteShareLink", new { id = item.Id })
         </td>
+    </tr>
+}
+
+@if (!Model.Any())
+{
+    <tr>
+        <td>
+            <em>No links to display.</em>
+        </td>
+        <td></td>
+        <td></td>
     </tr>
 }
 
