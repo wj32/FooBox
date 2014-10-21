@@ -41,16 +41,21 @@ namespace FooBoxClient
             /// </summary>
             public List<ICollection<ClientChange>> PendingChanges { get; set; }
 
-            public Dictionary<long, string> Invitations { get; set; }
+            public Dictionary<string, string> Invitations { get; set; }
 
-            public Dictionary<long, string> NewInvitations { get; set; }
+            public Dictionary<string, string> NewInvitations { get; set; }
         }
 
         public static long ReadInvitationId(string directoryName)
         {
             try
             {
-                return long.Parse(System.IO.File.ReadAllText(directoryName + "\\" + InvitationFileName).Trim());
+                string invitationFileName = directoryName + "\\" + InvitationFileName;
+
+                if (!System.IO.File.Exists(invitationFileName))
+                    return 0;
+
+                return long.Parse(System.IO.File.ReadAllText(invitationFileName).Trim());
             }
             catch
             {
@@ -99,7 +104,7 @@ namespace FooBoxClient
                 _rootDirectory = value;
                 _localSpecialFolder = _rootDirectory + "\\" + SpecialFolderName;
                 _stateFileName = _localSpecialFolder + "\\" + StateFileName;
-                _blobFolder = _rootDirectory + "\\Blobs";
+                _blobFolder = _localSpecialFolder + "\\Blobs";
             }
         }
 
@@ -117,8 +122,8 @@ namespace FooBoxClient
                 ChangelistId = 0,
                 Root = File.CreateRoot(),
                 PendingChanges = new List<ICollection<ClientChange>>(),
-                Invitations = new Dictionary<long, string>(),
-                NewInvitations = new Dictionary<long, string>()
+                Invitations = new Dictionary<string, string>(),
+                NewInvitations = new Dictionary<string, string>()
             };
             var userRoot = new File
             {
@@ -159,6 +164,55 @@ namespace FooBoxClient
             return new DirectoryInfo(_blobFolder);
         }
 
+        public void CleanBlobDirectory()
+        {
+            DirectoryInfo directory = AccessBlobDirectory();
+
+            foreach (var file in directory.EnumerateFiles())
+            {
+                try
+                {
+                    System.IO.File.Delete(file.FullName);
+                }
+                catch
+                { }
+            }
+        }
+
+        private void SalvageAndDeleteDocument(File file, string localFullName = null)
+        {
+            var blobDirectory = AccessBlobDirectory();
+
+            if (localFullName == null)
+                localFullName = GetLocalFullName(file.FullName);
+
+            if (string.IsNullOrEmpty(file.Hash) || System.IO.File.Exists(blobDirectory.FullName + "\\" + file.Hash))
+            {
+                System.IO.File.Delete(localFullName);
+                return;
+            }
+
+            try
+            {
+                MoveFileOrDirectory(localFullName, blobDirectory.FullName + "\\" + file.Hash);
+            }
+            catch
+            {
+                System.IO.File.Delete(localFullName);
+            }
+        }
+
+        private void SalvageAndDeleteFolder(File file, string localFullName = null)
+        {
+            foreach (var subFile in file.RecursiveEnumerate())
+            {
+                if (!subFile.IsFolder)
+                    SalvageAndDeleteDocument(subFile);
+            }
+
+            Utilities.DeleteDirectoryRecursive(localFullName ?? GetLocalFullName(file.FullName));
+        }
+
         private string GetFirstComponent(string fullName)
         {
             if (fullName.Length == 0 || fullName[0] != '/')
@@ -180,12 +234,10 @@ namespace FooBoxClient
                 return _rootDirectory + fullName.Remove(0, userPrefix.Length).Replace('/', '\\');
 
             var firstComponent = GetFirstComponent(fullName);
-            long invitationId;
             string newPrefixFullName;
 
             if (firstComponent.Length != 0 && firstComponent[0] == '@' &&
-                long.TryParse(firstComponent.Substring(1), out invitationId) &&
-                _state.Invitations.TryGetValue(invitationId, out newPrefixFullName))
+                _state.Invitations.TryGetValue(firstComponent.Substring(1), out newPrefixFullName))
             {
                 return GetLocalFullName(newPrefixFullName) + fullName.Remove(0, 1 + firstComponent.Length).Remove('/', '\\');
             }
@@ -237,8 +289,8 @@ namespace FooBoxClient
                     {
                         if (oldFile.InvitationId != 0)
                         {
-                            _state.Invitations.Remove(oldFile.InvitationId);
-                            _state.NewInvitations.Remove(oldFile.InvitationId);
+                            _state.Invitations.Remove(oldFile.InvitationId.ToString());
+                            _state.NewInvitations.Remove(oldFile.InvitationId.ToString());
                         }
 
                         if (newFolder.Files == null || !newFolder.Files.ContainsKey(oldFile.Name))
@@ -288,8 +340,8 @@ namespace FooBoxClient
                     {
                         if (newFile.InvitationId != 0)
                         {
-                            if (_state.Invitations.ContainsKey(newFile.InvitationId) ||
-                                _state.NewInvitations.ContainsKey(newFile.InvitationId))
+                            if (_state.Invitations.ContainsKey(newFile.InvitationId.ToString()) ||
+                                _state.NewInvitations.ContainsKey(newFile.InvitationId.ToString()))
                             {
                                 // The user has probably copied a folder with an invitation. Delete
                                 // this duplicate invitation.
@@ -298,7 +350,7 @@ namespace FooBoxClient
                             }
                             else
                             {
-                                _state.NewInvitations[newFile.InvitationId] = newFile.FullName;
+                                _state.NewInvitations[newFile.InvitationId.ToString()] = newFile.FullName;
                             }
                         }
                     }
@@ -416,7 +468,7 @@ namespace FooBoxClient
 
                                 if (file != null && !file.IsFolder)
                                 {
-                                    System.IO.File.Delete(newFullDisplayName);
+                                    SalvageAndDeleteDocument(file, newFullDisplayName);
                                     file = null;
                                 }
 
@@ -429,7 +481,7 @@ namespace FooBoxClient
                                 WriteInvitationId(newFullDisplayName, invitationId);
 
                                 if (invitationId != 0 && (file == null || file.InvitationId != invitationId))
-                                    _state.NewInvitations[invitationId] = node.FullName;
+                                    _state.NewInvitations[invitationId.ToString()] = node.FullName;
 
                                 if (file == null)
                                 {
@@ -468,7 +520,7 @@ namespace FooBoxClient
 
                                 if (file != null && file.IsFolder)
                                 {
-                                    Utilities.DeleteDirectoryRecursive(newFullDisplayName);
+                                    SalvageAndDeleteFolder(file, newFullDisplayName);
                                     rootFolder.Files.Remove(file.Name);
                                     file = null;
                                 }
@@ -485,37 +537,7 @@ namespace FooBoxClient
 
                                 if (file == null || file.Hash != hash || !System.IO.File.Exists(newFullDisplayName))
                                 {
-                                    string tempFileName = newFullDisplayName + "." + Utilities.GenerateRandomString(Utilities.IdChars, 8);
-
-                                    valid = false;
-                                    int attempts = 0;
-
-                                    while (true)
-                                    {
-                                        try
-                                        {
-                                            Requests.Download(hash, tempFileName);
-
-                                            if (System.IO.File.Exists(newFullDisplayName))
-                                                System.IO.File.Delete(newFullDisplayName);
-                                            MoveFileOrDirectory(tempFileName, newFullDisplayName);
-
-                                            break;
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            if (ex.Message.ToLowerInvariant().Contains("not found"))
-                                            {
-                                                // The server doesn't have the file anymore.
-                                                valid = false;
-                                                break;
-                                            }
-                                            else if (++attempts >= 4)
-                                            {
-                                                throw;
-                                            }
-                                        }
-                                    }
+                                    valid = DownloadDocument(hash, newFullDisplayName);
                                 }
 
                                 if (valid)
@@ -572,12 +594,12 @@ namespace FooBoxClient
                             if (file != null)
                             {
                                 if (file.IsFolder)
-                                    Utilities.DeleteDirectoryRecursive(GetLocalFullName(file.FullName));
+                                    SalvageAndDeleteFolder(file, GetLocalFullName(file.FullName));
                                 else
-                                    System.IO.File.Delete(GetLocalFullName(file.FullName));
+                                    SalvageAndDeleteDocument(file, GetLocalFullName(file.FullName));
 
                                 if (file.InvitationId != 0)
-                                    _state.Invitations.Remove(file.InvitationId);
+                                    _state.Invitations.Remove(file.InvitationId.ToString());
 
                                 rootFolder.Files.Remove(file.Name);
                             }
@@ -591,6 +613,42 @@ namespace FooBoxClient
                                 return;
                         }
                         break;
+                }
+            }
+        }
+
+        private bool DownloadDocument(string hash, string destinationFileName)
+        {
+            var blobDirectory = AccessBlobDirectory();
+            string blobFileName = blobDirectory.FullName + "\\" + hash;
+
+            if (System.IO.File.Exists(blobFileName))
+            {
+                System.IO.File.Copy(blobFileName, destinationFileName, true);
+                return true;
+            }
+
+            int attempts = 0;
+
+            while (true)
+            {
+                try
+                {
+                    Requests.Download(hash, blobFileName);
+                    System.IO.File.Copy(blobFileName, destinationFileName);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.ToLowerInvariant().Contains("not found"))
+                    {
+                        // The server doesn't have the file anymore.
+                        return false;
+                    }
+                    else if (++attempts >= 4)
+                    {
+                        throw;
+                    }
                 }
             }
         }
@@ -767,6 +825,8 @@ namespace FooBoxClient
                     this.SaveState();
                 }
             }
+
+            CleanBlobDirectory();
 
             return false;
         }

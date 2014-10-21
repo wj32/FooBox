@@ -39,7 +39,8 @@ namespace FooBoxClient
             notifyFooBox.Icon = FooBoxIcon.FooBox;
             this.Icon = FooBoxIcon.FooBox;
 
-            if (Properties.Settings.Default.UserID == 0)
+            if (Properties.Settings.Default.UserID == 0 ||
+                !System.IO.Directory.Exists(Properties.Settings.Default.Root))
             {
                 FormStart startForm = new FormStart();
 

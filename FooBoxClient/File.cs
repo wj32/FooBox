@@ -114,5 +114,29 @@ namespace FooBoxClient
                 }
             }
         }
+
+        public IEnumerable<File> RecursiveEnumerate()
+        {
+            Stack<File> stack = new Stack<File>();
+
+            if (Files != null)
+            {
+                foreach (var file in Files.Values)
+                    stack.Push(file);
+            }
+
+            while (stack.Count != 0)
+            {
+                var file = stack.Pop();
+
+                yield return file;
+
+                if (file.Files != null)
+                {
+                    foreach (var subFile in file.Files.Values)
+                        stack.Push(subFile);
+                }
+            }
+        }
     }
 }
