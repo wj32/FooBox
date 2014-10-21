@@ -26,6 +26,12 @@ namespace FooBox
                 );
 
             routes.MapRoute(
+                name: "DownloadKey",
+                url: "k/{key}",
+                defaults: new { controller = "File", action = "DownloadKey" }
+                );
+
+            routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }

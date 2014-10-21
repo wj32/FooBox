@@ -101,7 +101,7 @@ namespace FooBox
         public const int KeyLength = 32;
 
         public long Id { get; set; }
-        [StringLength(KeyLength)]
+        [MaxLength(KeyLength)]
         [Index(IsUnique = true)]
         public string Key { get; set; }
         public string RelativeFullName { get; set; }

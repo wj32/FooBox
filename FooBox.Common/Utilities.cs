@@ -10,6 +10,7 @@ namespace FooBox
 {
     public static class Utilities
     {
+        public const string LetterDigitChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         public const string IdChars = "abcdefghijklmnopqrstuvwxyz0123456789!@^_-";
         private static string[] _sizeUnits = new string[] { "B", "KB", "MB", "GB" };
 

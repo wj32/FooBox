@@ -19,7 +19,7 @@
                 <h4 class="modal-title">Sharing Link</h4>
             </div>
             <div class="modal-body">
-                <input type="text" id="shareLinkTextBox" class="form-control" />
+                <input type="text" id="shareLinkTextBox" readonly class="form-control" />
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -248,7 +248,12 @@
             $(this).focus();
             $(this).select();
         });
-        
+        $("#shareLinkModal").on("shown.bs.modal", function () {
+            var input = $("#shareLinkTextBox"); // cache the variable
+            input.removeAttr('disabled'); // enable it first, so it can get focus
+            input.focus();
+            input.select();
+        });
     });
     $("")
     function onSharingLinkSuccess() {

@@ -474,36 +474,43 @@ namespace FooBox.Controllers
 
         public string GetShareLink(string fullName)
         {
-            var key = Utilities.GenerateRandomString(Utilities.IdChars, DocumentLink.KeyLength);
-            long userId = User.Identity.GetUserId();
-            var dl = new DocumentLink
-            {
-                Key = key,
-                RelativeFullName = fullName,
-                User = _userManager.FindUser(userId)
-            };
+            string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
 
-            try
+            if (key == null)
             {
-                var context = _fileManager.Context;
-                context.DocumentLinks.Add(dl);
-                context.SaveChanges();
+                key = Utilities.GenerateRandomString(Utilities.LetterDigitChars, 8);
+                long userId = User.Identity.GetUserId();
+                var dl = new DocumentLink
+                {
+                    Key = key,
+                    RelativeFullName = fullName,
+                    User = _userManager.FindUser(userId)
+                };
+
+                try
+                {
+                    var context = _fileManager.Context;
+                    context.DocumentLinks.Add(dl);
+                    context.SaveChanges();
+                }
+                catch
+                {
+                }
             }
-            catch 
-            {
-            }
-            var link = "http://" + Request.Url.Authority + "/File/DownloadKey?key=" + key;
-            return link;
+
+            return Url.Action("DownloadKey", "File", new { key = key }, Request.Url.Scheme);
         }
 
         public ActionResult DownloadKey(string key)
         {
+            if (key == null)
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
             var doc = _fileManager.FindDocumentFromKey(key);
-            if (doc != null)
-            {
-                return DownloadDocument(doc);
-            }
-            return RedirectToAction("Browse");         
+            if (doc == null || doc.State != ObjectState.Normal)
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound);
+
+            return DownloadDocument(doc);   
         }
 
         public ActionResult FolderEdit(string fullName)
