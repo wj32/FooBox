@@ -11,6 +11,7 @@ namespace FooBox.Common
         public long Size { get; set; }
         public string Hash { get; set; }
         public string DisplayName { get; set; }
+        public long InvitationId { get; set; }
     }
 
     public class ClientSyncData

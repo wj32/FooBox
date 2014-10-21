@@ -575,15 +575,16 @@ namespace FooBox.Controllers
         }
 
         private bool UserHasLink(User user, Folder folder) {
-            var link = 
-            (
-                from file in user.RootFolder.Files.AsQueryable()
-                where file.State == ObjectState.Normal && 
-                        (file is Link) && 
-                        ((Link)file).TargetId == folder.Id
-                select file
-            ).SingleOrDefault();
-            return link != null;
+            //var link = 
+            //(
+            //    from file in user.RootFolder.Files.AsQueryable()
+            //    where file.State == ObjectState.Normal && 
+            //            (file is Link) && 
+            //            ((Link)file).TargetId == folder.Id
+            //    select file
+            //).SingleOrDefault();
+            //return link != null;
+            return false;
         }
 
         private void SetUserHasLink(User user, Folder folder, bool hasPermission) {
@@ -599,14 +600,14 @@ namespace FooBox.Controllers
             else if (!hasPermission && UserHasLink(user, folder))
             { // remove the link
                 
-                var link =
-                (
-                    from file in user.RootFolder.Files.AsQueryable()
-                    where file.State == ObjectState.Normal &&
-                            (file is Link) &&
-                            ((Link)file).TargetId == folder.Id
-                    select file
-                ).SingleOrDefault();
+                //var link =
+                //(
+                //    from file in user.RootFolder.Files.AsQueryable()
+                //    where file.State == ObjectState.Normal &&
+                //            (file is Link) &&
+                //            ((Link)file).TargetId == folder.Id
+                //    select file
+                //).SingleOrDefault();
 
                 
                 //ClientSyncData data = new ClientSyncData();
