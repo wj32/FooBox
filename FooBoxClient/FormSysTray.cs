@@ -15,6 +15,7 @@ namespace FooBoxClient
         private CancellationTokenSource _cancellationTokenSource;
         private Point _location;
         private bool _paused = false;
+        private Size _correctSize;
 
         public FormSysTray()
         {
@@ -23,7 +24,6 @@ namespace FooBoxClient
 
         private void hideSelf()
         {
-           // this.WindowState = FormWindowState.Minimized;
             this.Hide();
         }
 
@@ -52,6 +52,8 @@ namespace FooBoxClient
             _syncThread = new Thread(this.SyncThreadStart);
             _cancellationTokenSource = new CancellationTokenSource();
             notifyFooBox.Visible = true;
+            _correctSize = this.Size;
+            this.WindowState = FormWindowState.Minimized;
             this.Visible = false;
 
             _syncThread.Start();
@@ -107,14 +109,12 @@ namespace FooBoxClient
             }
             else
             {
-                //This code is need for an initial state
-                if (this.WindowState == FormWindowState.Minimized)
-                {
-                    this.WindowState = FormWindowState.Normal;
-                }
-
                 Rectangle r = WinAPI.GetTrayRectangle();
                 Rectangle resolution = Screen.PrimaryScreen.Bounds;
+
+                if (this.WindowState == FormWindowState.Minimized)
+                    this.WindowState = FormWindowState.Normal;
+                this.Size = _correctSize;
 
                 if (r.X < resolution.Width / 2)
                 {

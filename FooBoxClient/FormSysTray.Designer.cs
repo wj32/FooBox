@@ -109,7 +109,6 @@
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.TopMost = true;
-            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormSysTray_FormClosing);
             this.Load += new System.EventHandler(this.FormSysTray_Load);
             this.contextMenuNotify.ResumeLayout(false);
