@@ -40,6 +40,10 @@ namespace FooBoxClient
             /// The changes that have not yet been applied.
             /// </summary>
             public List<ICollection<ClientChange>> PendingChanges { get; set; }
+
+            public Dictionary<long, string> Invitations { get; set; }
+
+            public Dictionary<long, string> NewInvitations { get; set; }
         }
 
         public static long ReadInvitationId(string directoryName)
@@ -112,7 +116,9 @@ namespace FooBoxClient
                 ClientName = clientName,
                 ChangelistId = 0,
                 Root = File.CreateRoot(),
-                PendingChanges = new List<ICollection<ClientChange>>()
+                PendingChanges = new List<ICollection<ClientChange>>(),
+                Invitations = new Dictionary<long, string>(),
+                NewInvitations = new Dictionary<long, string>()
             };
             var userRoot = new File
             {
@@ -153,14 +159,38 @@ namespace FooBoxClient
             return new DirectoryInfo(_blobFolder);
         }
 
+        private string GetFirstComponent(string fullName)
+        {
+            if (fullName.Length == 0 || fullName[0] != '/')
+                return "";
+
+            int indexOfSlash = fullName.IndexOf('/', 1);
+
+            if (indexOfSlash == -1)
+                indexOfSlash = fullName.Length;
+
+            return fullName.Substring(1, indexOfSlash - 1);
+        }
+
         public string GetLocalFullName(string fullName)
         {
-            string prefix = "/" + _state.UserId.ToString();
+            string userPrefix = "/" + _state.UserId.ToString();
 
-            if (!fullName.StartsWith(prefix))
-                throw new Exception("Invalid file name");
+            if (fullName.StartsWith(userPrefix))
+                return _rootDirectory + fullName.Remove(0, userPrefix.Length).Replace('/', '\\');
 
-            return _rootDirectory + fullName.Remove(0, prefix.Length).Replace('/', '\\');
+            var firstComponent = GetFirstComponent(fullName);
+            long invitationId;
+            string newPrefixFullName;
+
+            if (firstComponent.Length != 0 && firstComponent[0] == '@' &&
+                long.TryParse(firstComponent.Substring(1), out invitationId) &&
+                _state.Invitations.TryGetValue(invitationId, out newPrefixFullName))
+            {
+                return GetLocalFullName(newPrefixFullName) + fullName.Remove(0, 1 + firstComponent.Length).Remove('/', '\\');
+            }
+
+            throw new Exception("Invalid file name '" + fullName + "'");
         }
 
         public void IgnoreSpecialNames(List<ClientChange> changes)
@@ -170,6 +200,11 @@ namespace FooBoxClient
                 change.FullName.StartsWith(_specialFolderFullName + "/") ||
                 change.FullName.EndsWith("/" + InvitationFileNameFull)
                 );
+        }
+
+        private void FilterTopLevelNames(List<ClientChange> changes, ISet<string> prefixes)
+        {
+            changes.RemoveAll(change => !prefixes.Contains(GetFirstComponent(change.FullName)));
         }
 
         public List<ClientChange> Compare(File newFolder)
@@ -200,6 +235,12 @@ namespace FooBoxClient
                 {
                     foreach (File oldFile in oldFolder.Files.Values)
                     {
+                        if (oldFile.InvitationId != 0)
+                        {
+                            _state.Invitations.Remove(oldFile.InvitationId);
+                            _state.NewInvitations.Remove(oldFile.InvitationId);
+                        }
+
                         if (newFolder.Files == null || !newFolder.Files.ContainsKey(oldFile.Name))
                         {
                             changes.Add(new ClientChange
@@ -243,9 +284,27 @@ namespace FooBoxClient
                 {
                     string newHash = "";
 
-                    if (!newFile.IsFolder)
+                    if (newFile.IsFolder)
                     {
-                        newHash = Utilities.ComputeSha256Hash(GetLocalFullName(newFile.FullName));
+                        if (newFile.InvitationId != 0)
+                        {
+                            if (_state.Invitations.ContainsKey(newFile.InvitationId) ||
+                                _state.NewInvitations.ContainsKey(newFile.InvitationId))
+                            {
+                                // The user has probably copied a folder with an invitation. Delete
+                                // this duplicate invitation.
+                                WriteInvitationId(newFile.SourceLocalFileName, 0);
+                                newFile.InvitationId = 0;
+                            }
+                            else
+                            {
+                                _state.NewInvitations[newFile.InvitationId] = newFile.FullName;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        newHash = Utilities.ComputeSha256Hash(newFile.SourceLocalFileName);
                         newFile.Hash = newHash;
 
                         if (oldFile != null && !oldFile.IsFolder && oldFile.Hash == newHash)
@@ -366,7 +425,11 @@ namespace FooBoxClient
                                 else if (file != null && file.DisplayName != newDisplayName)
                                     MoveFileOrDirectory(newFullDisplayName, newFullDisplayName);
 
-                                WriteInvitationId(newFullDisplayName, clientChanges[node.FullName].InvitationId);
+                                long invitationId = clientChanges[node.FullName].InvitationId;
+                                WriteInvitationId(newFullDisplayName, invitationId);
+
+                                if (invitationId != 0 && (file == null || file.InvitationId != invitationId))
+                                    _state.NewInvitations[invitationId] = node.FullName;
 
                                 if (file == null)
                                 {
@@ -405,7 +468,7 @@ namespace FooBoxClient
 
                                 if (file != null && file.IsFolder)
                                 {
-                                    System.IO.Directory.Delete(newFullDisplayName, true);
+                                    Utilities.DeleteDirectoryRecursive(newFullDisplayName);
                                     rootFolder.Files.Remove(file.Name);
                                     file = null;
                                 }
@@ -509,9 +572,12 @@ namespace FooBoxClient
                             if (file != null)
                             {
                                 if (file.IsFolder)
-                                    System.IO.Directory.Delete(GetLocalFullName(file.FullName), true);
+                                    Utilities.DeleteDirectoryRecursive(GetLocalFullName(file.FullName));
                                 else
                                     System.IO.File.Delete(GetLocalFullName(file.FullName));
+
+                                if (file.InvitationId != 0)
+                                    _state.Invitations.Remove(file.InvitationId);
 
                                 rootFolder.Files.Remove(file.Name);
                             }
@@ -536,6 +602,13 @@ namespace FooBoxClient
                 {
                     if (local.Type != ChangeType.Add)
                         return;
+
+                    if (localByName[local.FullName].InvitationId != 0)
+                    {
+                        // Cannot resolve a conflict on a shared folder. Just delete our copy.
+                        Utilities.DeleteDirectoryRecursive(GetLocalFullName(local.FullName));
+                        return;
+                    }
 
                     var localClientChange = localByName[local.FullName];
                     string parentPrefix = GetLocalFullName(local.Parent.FullName) + "\\";
@@ -634,12 +707,18 @@ namespace FooBoxClient
                         {
                             IgnoreSpecialNames(result.Changes);
 
+                            // Delete nodes corresponding to invitations we don't know about (yet).
+                            var allowed = new HashSet<string>(_state.Invitations.Keys.Select(x => "@" + x.ToString()));
+                            allowed.Add(_state.UserId.ToString());
+                            FilterTopLevelNames(result.Changes, allowed);
+
                             // Make the remote changes sequential with respect to our local changes.
                             var remoteByName = result.Changes.ToDictionary(remote => remote.FullName);
                             ChangeNode.FromItems(localChanges).MakeSequentialByPreserving(ChangeNode.FromItems(result.Changes),
                                 (local, remote) => remoteByName.Remove(remote.FullName));
+                            var changes = remoteByName.Values.ToList();
 
-                            _state.PendingChanges.Add(remoteByName.Values.ToList());
+                            _state.PendingChanges.Add(changes);
                         }
 
                         this.SaveState();
@@ -648,6 +727,30 @@ namespace FooBoxClient
                         break;
                 }
             }
+
+            if (cancellationToken.IsCancellationRequested)
+                return false;
+
+            // Process new invitations.
+            if (_state.NewInvitations.Count != 0)
+            {
+                // Get a complete list of files in the shared folders so we can download everything.
+                var result = Requests.Sync(new ClientSyncData { BaseChangelistId = 0 });
+
+                IgnoreSpecialNames(result.Changes);
+                FilterTopLevelNames(result.Changes, new HashSet<string>(_state.NewInvitations.Keys.Select(x => x.ToString())));
+
+                _state.PendingChanges.Insert(0, result.Changes); // Insert at the front because this must applied first.
+
+                foreach (var pair in _state.NewInvitations)
+                    _state.Invitations[pair.Key] = pair.Value;
+                _state.NewInvitations.Clear();
+
+                this.SaveState();
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+                return false;
 
             // Process pending changes.
             while (_state.PendingChanges.Count != 0)

@@ -800,11 +800,18 @@ namespace FooBox.Models
 
                             if (invitationId != 0)
                             {
-                                ((Folder)file).InvitationId = (
-                                    from invitation in client.User.Invitations.AsQueryable()
-                                    where invitation.Id == invitationId
-                                    select invitation.Id
+                                var invitation = (
+                                    from i in client.User.Invitations.AsQueryable()
+                                    where i.Id == invitationId
+                                    select i
                                     ).SingleOrDefault();
+
+                                if (invitation != null)
+                                {
+                                    // Remove all other folders that link to this invitation.
+                                    invitation.AcceptedFolders.Clear();
+                                    invitation.AcceptedFolders.Add((Folder)file);
+                                }
                             }
                             else
                             {
