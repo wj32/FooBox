@@ -36,10 +36,13 @@ namespace FooBox.Models
             public long Size { get; set; }
             public DateTime TimeStamp { get; set; }
             public long VersionId { get; set; }
+            public string ClientName { get; set; }
+
         }
 
         public string DisplayName { get; set; }
         public string FullDisplayName { get; set; }
+
 
         public List<VersionEntry> Versions { get; set; }
     }
@@ -50,19 +53,9 @@ namespace FooBox.Models
         public long Id { get; set; }
 
 
-        [Required]
-        [DataType(DataType.Text)]
-        [DisplayName("Name")]
-        public string Name { get; set; }
-
-
-        [DataType(DataType.MultilineText)]
-        [DisplayName("Description")]
-        public string Description { get; set; }
-
-
         public List<EntitySelectedViewModel> Users { get; set; }
-        public List<EntitySelectedViewModel> Groups { get; set; }
+
+        //public List<EntitySelectedViewModel> Groups { get; set; }
     }
 
 }

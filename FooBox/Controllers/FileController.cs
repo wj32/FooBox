@@ -160,7 +160,8 @@ namespace FooBox.Controllers
                 {
                     Size = version.Blob.Size,
                     TimeStamp = version.TimeStamp,
-                    VersionId = version.Id
+                    VersionId = version.Id,
+                    ClientName = version.Client.Name
                 }
                 ).ToList();
 
@@ -519,12 +520,11 @@ namespace FooBox.Controllers
                 return HttpNotFound();
             }
 
+            Folder folder = (Folder)file;
             List<EntitySelectedViewModel> users = new List<EntitySelectedViewModel>();
-            List<EntitySelectedViewModel> groups = new List<EntitySelectedViewModel>();
 
             var mod = new EditFolderViewModel();
-            mod.Id = file.Id;
-            mod.Name = file.DisplayName;
+            mod.Id = folder.Id;
             
             var userList = _userManager.Context.Users.ToList();
             foreach (User u in userList)
@@ -532,24 +532,13 @@ namespace FooBox.Controllers
                 if (u.Name.Equals("__DEFAULT__") || u.State == ObjectState.Deleted) { continue; }
                 var a = new EntitySelectedViewModel();
                 a.Id = u.Id;
-                a.IsSelected = false; // LOGIC GOES HERE: IS THE USER ALREADY PERMISSIONED TO FOLDER?
+                a.IsSelected = UserHasLink(u, folder); 
                 a.Name = u.Name;
                 users.Add(a);
             }
             mod.Users = users;
 
-            var groupList = _userManager.Context.Groups.ToList();
-            foreach (Group g in groupList)
-            {
-                if (g.State == ObjectState.Deleted) { continue; }
-                var a = new EntitySelectedViewModel();
-                a.Id = g.Id;
-                a.IsSelected = false; // LOGIC GOES HERE: IS THE GROUP ALREADY PERMISSIONED TO FOLDER?
-                a.Name = g.Name;
-                groups.Add(a);
-            }
-            mod.Groups = groups;
-            ViewBag.Subheading = file.DisplayName;
+            ViewBag.Subheading = folder.DisplayName;
             return View(mod);
         }
 
@@ -560,37 +549,11 @@ namespace FooBox.Controllers
             if (ModelState.IsValid)
             {
                 Folder f = _fileManager.FindFolder(model.Id);
-                ICollection<User> users = new LinkedList<User>(); // LOGIC HERE: point this to the correct db set for list of users with permmision
-                users.Clear();
-                users.Add(_userManager.GetDefaultUser());
                 foreach (var item in model.Users)
                 {
-                    if (item.IsSelected)
-                    {
                         FooBox.User u = _userManager.FindUser(item.Id);
-                        if (u != null) users.Add(u);
-                    }
-                }
-
-                ICollection<Group> groups = new LinkedList<Group>(); // LOGIC HERE: point this to the correct db set for list of groups with permmision
-                groups.Clear();
-                foreach (var item in model.Groups)
-                {
-                    if (item.IsSelected)
-                    {
-                        FooBox.Group g = _userManager.FindGroup(item.Id);
-                        if (g != null) groups.Add(g);
-                    }
-                }
-
-                try
-                {
-                    _userManager.Context.SaveChanges();
-                }
-                catch
-                {
+                    SetUserHasLink(u, f, item.IsSelected);
         
-                    return View(model);
                 }
                 return RedirectToAction("Index");
             }
@@ -605,5 +568,57 @@ namespace FooBox.Controllers
             }
             base.Dispose(disposing);
         }
+
+        private bool UserHasLink(User user, Folder folder) {
+            var link = 
+            (
+                from file in user.RootFolder.Files.AsQueryable()
+                where file.State == ObjectState.Normal && 
+                        (file is Link) && 
+                        ((Link)file).TargetId == folder.Id
+                select file
+            ).SingleOrDefault();
+            return link != null;
+        }
+
+        private void SetUserHasLink(User user, Folder folder, bool hasPermission) {
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+
+            if (hasPermission && !UserHasLink(user, folder))
+            { // add the link
+
+                
+
+            }
+            else if (!hasPermission && UserHasLink(user, folder))
+            { // remove the link
+                
+                var link =
+                (
+                    from file in user.RootFolder.Files.AsQueryable()
+                    where file.State == ObjectState.Normal &&
+                            (file is Link) &&
+                            ((Link)file).TargetId == folder.Id
+                    select file
+                ).SingleOrDefault();
+
+                
+                //ClientSyncData data = new ClientSyncData();
+                //var fullDisplayName = _fileManager.GetFullDisplayName(link);
+                //data.ClientId = internalClient.Id;
+                //data.BaseChangelistId = _fileManager.GetLastChangelistId();
+                //data.Changes.Add(new ClientChange
+                //{
+                //    FullName = fullDisplayName,
+                //    Type = ChangeType.Delete
+                //});
+                //_fileManager.SyncClientChanges(data);
+
+            } 
+        }
+
+
+
     }
 }
