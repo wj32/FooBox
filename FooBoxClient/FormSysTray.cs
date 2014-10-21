@@ -141,13 +141,9 @@ namespace FooBoxClient
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-<<<<<<< HEAD
             _closing = true;
-            _sender.Close();
-=======
             ShutDown();
             _syncThread.Join();
->>>>>>> f0fbef15937f4fd57a120db497cddd24533f65f7
             this.Close();
         }
 
