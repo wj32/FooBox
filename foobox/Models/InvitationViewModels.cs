@@ -21,8 +21,10 @@ namespace FooBox.Models
 
         public List<InvitationVM> FolderInvitations { get; set; }
 
+        [DisplayName("Users")]
         public List<EntitySelectedViewModel> UsersToInvite { get; set; }
 
+        [DisplayName("Group")]
         public List<EntitySelectedViewModel> GroupsToInvite { get; set; }
 
     }

@@ -15,7 +15,7 @@
         </button>
         <ul class="dropdown-menu" role="menu">
             <li><a id="inviteUsers" href="#">Users</a></li>
-            <li><a id="inviteGroup" href="#">Group</a></li>
+            <li><a id="inviteGroup" href="#">Groups</a></li>
         </ul>
     </div>
 </p>
@@ -96,10 +96,47 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Save changes</button>
+                <button type="submit" class="btn btn-success">Invite</button>
             </div>
             @Html.HiddenFor(model => model.FullName)
         }
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+
+<div class="modal fade" id="groupModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @using (@Html.BeginForm("NewInvitation", "Invitation", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Invite Groups</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.GroupsToInvite, htmlAttributes: new { @class = "control-label col-md-2" })
+                        <div class="col-md-10">
+                            @for (int i = 0; i < Model.GroupsToInvite.Count(); ++i)
+                            {
+                                @Html.HiddenFor(model => model.GroupsToInvite[i].Id)
+                                @Html.CheckBoxFor(model => model.GroupsToInvite[i].IsSelected)
+                                @Html.DisplayFor(model => model.GroupsToInvite[i].Name)
+                                @Html.HiddenFor(model => model.GroupsToInvite[i].Name)
+                                <br>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">Invite</button>
+                </div>
+                @Html.HiddenFor(model => model.FullName)
+            }
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->

@@ -43,8 +43,6 @@ namespace FooBox.Controllers
             mod.FullName = fullName;
             
             var invitations = _fileManager.Context.Invitations.ToList();
-            var usersAlreadyInvited = new HashSet<User>();
-            var allUsers = _fileManager.Context.Users.ToList();
             foreach (Invitation i in invitations)
             {
                 if (i.TargetId == folder.Id)
@@ -57,12 +55,11 @@ namespace FooBox.Controllers
                         Accepted = i.AcceptedFolders.Any()
                     };
                     mod.FolderInvitations.Add(ivm);
-                    usersAlreadyInvited.Add(i.User);
                 }
             }
-            var uninvitedUsers = allUsers.Except(usersAlreadyInvited);
 
-            foreach (User u in uninvitedUsers)
+            var uninvited = uninvitedUsers(fullName);
+            foreach (User u in uninvited)
             {
                 var e = new EntitySelectedViewModel
                 {
@@ -92,8 +89,7 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult NewInvitation(EditInvitationsViewModel model)
         {
-            
-            HashSet<User> uninvitedUsers = new HashSet<User>();
+            List<User> uninvited = new List<User>(uninvitedUsers(model.FullName));
             if (ModelState.IsValid)
             {
                 Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
@@ -111,14 +107,10 @@ namespace FooBox.Controllers
                             User = u,
                             UserId = u.Id,
                             TimeStamp = DateTime.Now
-                        }; // ADD TIMESTAMP
+                        };
                         _userManager.Context.Invitations.Add(invitation);
                         _userManager.Context.SaveChanges();
                     } 
-                    else 
-                    {
-                        uninvitedUsers.Add(_userManager.FindUser(item.Id));
-                    }
                 }
                 foreach (var item in model.GroupsToInvite)
                 {
@@ -127,9 +119,9 @@ namespace FooBox.Controllers
                         FooBox.Group g = _userManager.FindGroup(item.Id);
                         foreach (User u in g.Users)
                         {
-                            if (uninvitedUsers.Contains(u))
+                            if (uninvited.Contains(u))
                             {
-                                uninvitedUsers.Remove(u);
+                                uninvited.Remove(u);
                                 var invitation = new Invitation
                                 {
                                     Target = f,
@@ -137,7 +129,7 @@ namespace FooBox.Controllers
                                     User = u,
                                     UserId = u.Id,
                                     TimeStamp = DateTime.Now
-                                }; // ADD TIMESTAMP
+                                }; 
                                 _userManager.Context.Invitations.Add(invitation);
                                 _userManager.Context.SaveChanges();
                             }
@@ -159,6 +151,31 @@ namespace FooBox.Controllers
             _userManager.Context.Invitations.Remove(inv);
             _userManager.Context.SaveChanges();
             return RedirectToAction("Index", new { fullName = model.FullName });
+        }
+
+        private IEnumerable<User> uninvitedUsers(string fullName) 
+        {
+            Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+            string fullDisplayName;
+            File file = _fileManager.FindFile(fullName, userRootFolder, out fullDisplayName);
+
+            if (file == null || file is Document)
+            {
+                return null;
+            }
+
+            Folder folder = (Folder)file;
+            var invitations = _fileManager.Context.Invitations.ToList();
+            var usersAlreadyInvited = new HashSet<User>();
+            var allUsers = _fileManager.Context.Users.ToList();
+            foreach (Invitation i in invitations)
+            {
+                if (i.TargetId == folder.Id)
+                {
+                    usersAlreadyInvited.Add(i.User);
+                }
+            }
+            return allUsers.Except(usersAlreadyInvited);
         }
 
 
