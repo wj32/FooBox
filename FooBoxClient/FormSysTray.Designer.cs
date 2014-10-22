@@ -36,11 +36,19 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.changeUserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.contextMenuDropFiles = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.getPublicLinkToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewPreviousVersionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.contextMenuDropFolder = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.shareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuNotify.SuspendLayout();
+            this.contextMenuDropFiles.SuspendLayout();
+            this.contextMenuDropFolder.SuspendLayout();
             this.SuspendLayout();
             // 
             // notifyFooBox
             // 
+            this.notifyFooBox.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
             this.notifyFooBox.ContextMenuStrip = this.contextMenuNotify;
             this.notifyFooBox.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyFooBox.Icon")));
             this.notifyFooBox.Text = "FooBox";
@@ -85,6 +93,42 @@
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
+            // contextMenuDropFiles
+            // 
+            this.contextMenuDropFiles.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.getPublicLinkToolStripMenuItem,
+            this.viewPreviousVersionsToolStripMenuItem});
+            this.contextMenuDropFiles.Name = "contextMenuDropFiles";
+            this.contextMenuDropFiles.Size = new System.Drawing.Size(166, 48);
+            // 
+            // getPublicLinkToolStripMenuItem
+            // 
+            this.getPublicLinkToolStripMenuItem.Name = "getPublicLinkToolStripMenuItem";
+            this.getPublicLinkToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
+            this.getPublicLinkToolStripMenuItem.Text = "Get public link";
+            this.getPublicLinkToolStripMenuItem.Click += new System.EventHandler(this.getPublicLinkToolStripMenuItem_Click);
+            // 
+            // viewPreviousVersionsToolStripMenuItem
+            // 
+            this.viewPreviousVersionsToolStripMenuItem.Name = "viewPreviousVersionsToolStripMenuItem";
+            this.viewPreviousVersionsToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
+            this.viewPreviousVersionsToolStripMenuItem.Text = "Previous versions";
+            this.viewPreviousVersionsToolStripMenuItem.Click += new System.EventHandler(this.viewPreviousVersionsToolStripMenuItem_Click);
+            // 
+            // contextMenuDropFolder
+            // 
+            this.contextMenuDropFolder.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.shareToolStripMenuItem});
+            this.contextMenuDropFolder.Name = "contextMenuDropFolder";
+            this.contextMenuDropFolder.Size = new System.Drawing.Size(153, 48);
+            // 
+            // shareToolStripMenuItem
+            // 
+            this.shareToolStripMenuItem.Name = "shareToolStripMenuItem";
+            this.shareToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.shareToolStripMenuItem.Text = "Sharing";
+            this.shareToolStripMenuItem.Click += new System.EventHandler(this.shareToolStripMenuItem_Click);
+            // 
             // FormSysTray
             // 
             this.AllowDrop = true;
@@ -105,6 +149,8 @@
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.FormSysTray_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.FormSysTray_DragEnter);
             this.contextMenuNotify.ResumeLayout(false);
+            this.contextMenuDropFiles.ResumeLayout(false);
+            this.contextMenuDropFolder.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -117,6 +163,11 @@
         private System.Windows.Forms.ToolStripMenuItem changeUserToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem pauseToolStripMenuItem;
+        private System.Windows.Forms.ContextMenuStrip contextMenuDropFiles;
+        private System.Windows.Forms.ToolStripMenuItem getPublicLinkToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewPreviousVersionsToolStripMenuItem;
+        private System.Windows.Forms.ContextMenuStrip contextMenuDropFolder;
+        private System.Windows.Forms.ToolStripMenuItem shareToolStripMenuItem;
 
     }
 }

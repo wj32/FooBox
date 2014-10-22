@@ -18,8 +18,14 @@ namespace FooBox.Controllers
             _userManager = new UserManager(_fileManager.Context);
         }
 
-
-
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _fileManager.Dispose();
+            }
+            base.Dispose(disposing);
+        }
        
 
         public ActionResult Index(string fullName)

@@ -684,7 +684,7 @@ namespace FooBoxClient
                     {
                         newFullDisplayName = parentPrefix + Utilities.GenerateNewName(
                             localClientChange.DisplayName,
-                            local.IsFolder,
+                            !local.IsFolder,
                             _state.ClientName + "'s conflicted copy " + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss-fff")
                             );
                     } while (System.IO.File.Exists(newFullDisplayName) || System.IO.Directory.Exists(newFullDisplayName));
@@ -841,22 +841,20 @@ namespace FooBoxClient
             return false;
         }
 
-        /*
-         * Checks if the given file exists in the sync engine
-         */
-
-        public string FileExists(string fullName)
+        public File FindFile(string fullName)
         {
+            // TODO(WJ): FIX! THIS IS WRONG BUT WE DON'T NEED IT YET
+
             foreach (File f in _state.Root.RecursiveEnumerate()){
                 string fileLocalName = f.FullName.Substring(f.FullName.IndexOf("/") + 2);
                 fileLocalName = fileLocalName.Replace("/", "\\");
                 fileLocalName = RootDirectory + fileLocalName;
                 if (fileLocalName.ToLower() == fullName.ToLower())
                 {
-                    return f.Hash;
+                    return f;
                 }
             }
-            return "";
+            return null;
         }
 
         private void MoveFileOrDirectory(string src, string dst)

@@ -16,6 +16,7 @@ namespace FooBoxClient
         private Point _location;
         private bool _paused = false;
         private Size _correctSize;
+        private string _currentFileRelativePath = null;
 
         public FormSysTray()
         {
@@ -199,50 +200,87 @@ namespace FooBoxClient
         private void FormSysTray_DragDrop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (string file in files)
-            {
-                if (!System.IO.Directory.Exists(file))
-                {
-                    string hash = _engine.FileExists(file);
-                    if (hash != "")
-                    {
-                        string url = Requests.GetShareLink(hash);
-                        if (url != "")
-                        {
-                            System.Windows.Forms.Clipboard.SetText(url);
-                            notifyFooBox.BalloonTipText = "Public link copied to clip board";
-                            
-                        }
-                        else
-                        {
-                            notifyFooBox.BalloonTipText = "Failed to get shareable link";
-                        }
-                        notifyFooBox.ShowBalloonTip(3000);
 
-                        //show get public link
+            if (files == null || files.Length == 0)
+                return;
+
+            string file = files[0];
+
+            // Don't block drag and drop.
+            this.BeginInvoke(new Action(() =>
+            {
+                if (!System.IO.Directory.Exists(file) && !System.IO.File.Exists(file))
+                    return;
+
+                string fullPath = System.IO.Path.GetFullPath(file);
+
+                if (fullPath.StartsWith(Properties.Settings.Default.Root))
+                {
+                    string relativePath = fullPath.Substring(Properties.Settings.Default.Root.Length).Replace('\\', '/');
+
+                    if (!relativePath.StartsWith("/"))
+                        relativePath = "/" + relativePath;
+
+                    _currentFileRelativePath = relativePath;
+
+                    if (System.IO.Directory.Exists(file))
+                    {
+                        contextMenuDropFolder.Show(new Point(e.X, e.Y));
+                        //show share popup
                     }
                     else
                     {
-                        var confirmResult = MessageBox.Show("Add file to FooBox?","This will not move the original copy", MessageBoxButtons.YesNo);
-                        if (confirmResult == DialogResult.Yes)
-                        {
-                            //copy file 
-                            string fileName = file.Substring(file.LastIndexOf("\\"));
-                            if (!System.IO.File.Exists(_engine.RootDirectory + fileName)){
-                                System.IO.File.Copy(file, _engine.RootDirectory + fileName);
-                            } else {
-                                notifyFooBox.BalloonTipText = "File already exists in FooBox and was not copied";
-                                notifyFooBox.ShowBalloonTip(3000);
-
-                            }
-                            //sync engine will now do rest
-                        }
+                        contextMenuDropFiles.Show(new Point(e.X, e.Y));
+                        //show previos version and get link popup
                     }
                 }
-            }
-
+                else
+                {
+                    string fileName = file.Substring(file.LastIndexOf("\\"));
+                    if (!System.IO.File.Exists(_engine.RootDirectory + fileName))
+                    {
+                        System.IO.File.Copy(file, _engine.RootDirectory + fileName);
+                        notifyFooBox.ShowBalloonTip(3000, "FooBox", "The file was copied to FooBox.", ToolTipIcon.Info);
+                    }
+                    else
+                    {
+                        notifyFooBox.ShowBalloonTip(3000, "FooBox", "The file already exists in FooBox and was not copied.", ToolTipIcon.Info);
+                    }
+                    //sync engine will now do rest
+                }
+            }));
         }
 
+        private void shareToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Requests.Sharing(_currentFileRelativePath);
+        }
 
+        private void getPublicLinkToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string url = "";
+
+            try
+            {
+                url = Requests.GetShareLink(_currentFileRelativePath);
+            }
+            catch
+            { }
+
+            if (url != "")
+            {
+                System.Windows.Forms.Clipboard.SetText(url);
+                notifyFooBox.ShowBalloonTip(3000, "FooBox", "Public link copied to clipboard.", ToolTipIcon.Info);
+            }
+            else
+            {
+                notifyFooBox.ShowBalloonTip(3000, "FooBox", "Failed to get share link.", ToolTipIcon.Info);
+            }
+        }
+
+        private void viewPreviousVersionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Requests.PreviousVersions(_currentFileRelativePath);
+        }
     }
 }

@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
-
+using System.Diagnostics;
 namespace FooBoxClient
 {
     public static class Requests
@@ -56,18 +56,19 @@ namespace FooBoxClient
             }
         }
 
-        public static string GetShareLink(string hash)
+        public static string GetShareLink(string relativeFullName)
         {
-            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&hash=" + hash;
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&relativeFullName=" + Uri.EscapeDataString(relativeFullName);
             HttpWebRequest req = WebRequest.Create(MakeUrl("GetShareLink", parameters)) as HttpWebRequest;
 
             req.KeepAlive = true;
             req.Method = "GET";
 
             using (var response = req.GetResponse())
-            using (var reader  = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8)){
+            using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8))
+            {
                 return reader.ReadToEnd();
-            } 
+            }
         }
 
         public static string Upload(string sourceFileName)
@@ -120,6 +121,26 @@ namespace FooBoxClient
             {
                 return serializer.Deserialize<ClientSyncResult>(reader.ReadToEnd());
             }
+        }
+
+        public static void PreviousVersions(string fullName)
+        {
+            
+            string retUrl = "/File/DisplayVersionHistory/?fullName=" + fullName;
+            retUrl = Uri.EscapeDataString(retUrl);
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
+            string requestUrl = MakeUrl("Authenticate", parameters);
+            System.Diagnostics.Process.Start(requestUrl);
+        }
+
+        public static void Sharing(string fullName)
+        {
+
+            string retUrl = "/Invitation?fullName=" + fullName;
+            retUrl = Uri.EscapeDataString(retUrl);
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
+            string requestUrl = MakeUrl("Authenticate", parameters);
+            System.Diagnostics.Process.Start(requestUrl);
         }
     }
 }
