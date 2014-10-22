@@ -56,33 +56,19 @@ namespace FooBoxClient
             }
         }
 
-<<<<<<< HEAD
-        public static string GetShareLink(string fullName)
-        {
-            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&fullName=" + fullName;
-=======
         public static string GetShareLink(string relativeFullName)
         {
             string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&relativeFullName=" + Uri.EscapeDataString(relativeFullName);
->>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
             HttpWebRequest req = WebRequest.Create(MakeUrl("GetShareLink", parameters)) as HttpWebRequest;
 
             req.KeepAlive = true;
             req.Method = "GET";
 
             using (var response = req.GetResponse())
-<<<<<<< HEAD
-            using (var reader  = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8)){
-                string url = reader.ReadToEnd();
-                url = "http://" + Properties.Settings.Default.Server + ":" + Properties.Settings.Default.Port + "/k/" + url;
-                return url;
-            } 
-=======
             using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8))
             {
                 return reader.ReadToEnd();
             }
->>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
         }
 
         public static string Upload(string sourceFileName)

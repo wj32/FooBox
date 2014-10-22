@@ -841,13 +841,10 @@ namespace FooBoxClient
             return false;
         }
 
-<<<<<<< HEAD
-        /*
-         * Checks if the given file exists in the sync engine
-         */
-
-        public File FileExists(string fullName)
+        public File FindFile(string fullName)
         {
+            // TODO(WJ): FIX! THIS IS WRONG BUT WE DON'T NEED IT YET
+
             foreach (File f in _state.Root.RecursiveEnumerate()){
                 string fileLocalName = f.FullName.Substring(f.FullName.IndexOf("/") + 2);
                 fileLocalName = fileLocalName.Replace("/", "\\");
@@ -860,8 +857,6 @@ namespace FooBoxClient
             return null;
         }
 
-=======
->>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
         private void MoveFileOrDirectory(string src, string dst)
         {
             if (!MoveFile(src, dst))

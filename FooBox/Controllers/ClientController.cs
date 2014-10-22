@@ -138,68 +138,39 @@ namespace FooBox.Controllers
         }
         
         [HttpGet]
-<<<<<<< HEAD
-        public ActionResult GetShareLink(long? id, string secret, string fullName)
-=======
         public ActionResult GetShareLink(long? id, string secret, string relativeFullName)
->>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
         {
             var client = FindClient(id, secret);
             if (client == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
 
-<<<<<<< HEAD
-            //TODO: set url = public link for file here
-            string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
-
-            if (key == null)
-            {
-                key = Utilities.GenerateRandomString(Utilities.LetterDigitChars, 8);
-
-                var dl = new DocumentLink
-                {
-                    Key = key,
-                    RelativeFullName = fullName,
-                    User = _userManager.FindUser(client.Id)
-                };
-
-                try
-                {
-                    var context = _fileManager.Context;
-                    context.DocumentLinks.Add(dl);
-                    context.SaveChanges();
-                }
-                catch
-                {
-                }
-            }
-
-            return Content(key);
-        }
-
-
-
-        /*
-         * Authenticates the client wihth the server
-         */
-        public ActionResult Authenticate(long? id, string secret, string returnUrl) {
-            var client = FindClient(id, secret);
-            if (client == null){
-                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
-            }
-            var user = _userManager.FindUser(id.Value);
-            IAuthenticationManager auth = HttpContext.GetOwinContext().Authentication;
-            var identity = _userManager.CreateIdentity(user, "ApplicationCookie");
-            auth.SignIn(new AuthenticationProperties() { IsPersistent = true }, identity);
-            
-            return Redirect(Uri.EscapeDataString(returnUrl));
-=======
             string key = _fileManager.CreateShareLink(relativeFullName, client.User);
             if (key == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
 
             return Content(Url.Action("DownloadKey", "File", new { key = key }, Request.Url.Scheme));
->>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
+        }
+
+        /// <summary>
+        /// Logs into the website by using a client ID and secret.
+        /// </summary>
+        public ActionResult Authenticate(long? id, string secret, string returnUrl)
+        {
+            var client = FindClient(id, secret);
+            if (client == null)
+            {
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+            }
+
+            // Check if we're already logged in.
+            if (string.IsNullOrEmpty(User.Identity.Name) || User.Identity.GetUserId() != client.UserId)
+            {
+                IAuthenticationManager auth = HttpContext.GetOwinContext().Authentication;
+                var identity = _userManager.CreateIdentity(client.User, "ApplicationCookie");
+                auth.SignIn(new AuthenticationProperties() { IsPersistent = false }, identity);
+            }
+
+            return Redirect(Uri.EscapeDataString(returnUrl));
         }
 
         private Client FindClient(long? id, string secret)

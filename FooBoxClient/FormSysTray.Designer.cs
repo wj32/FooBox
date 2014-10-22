@@ -105,14 +105,14 @@
             // 
             this.getPublicLinkToolStripMenuItem.Name = "getPublicLinkToolStripMenuItem";
             this.getPublicLinkToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
-            this.getPublicLinkToolStripMenuItem.Text = "Get Public Link";
+            this.getPublicLinkToolStripMenuItem.Text = "Get public link";
             this.getPublicLinkToolStripMenuItem.Click += new System.EventHandler(this.getPublicLinkToolStripMenuItem_Click);
             // 
             // viewPreviousVersionsToolStripMenuItem
             // 
             this.viewPreviousVersionsToolStripMenuItem.Name = "viewPreviousVersionsToolStripMenuItem";
             this.viewPreviousVersionsToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
-            this.viewPreviousVersionsToolStripMenuItem.Text = "View Previous Versions";
+            this.viewPreviousVersionsToolStripMenuItem.Text = "Previous versions";
             this.viewPreviousVersionsToolStripMenuItem.Click += new System.EventHandler(this.viewPreviousVersionsToolStripMenuItem_Click);
             // 
             // contextMenuDropFolder
