@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace FooBox.Common
 {
+    public class InviteStatus
+    {
+        public bool New { get; set; }
+        public bool Accepted { get; set; }
+    }
+
     public class ClientChange : ChangeItem
     {
         public long Size { get; set; }

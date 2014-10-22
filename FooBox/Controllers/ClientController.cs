@@ -172,6 +172,30 @@ namespace FooBox.Controllers
             return Redirect(returnUrl);
         }
 
+        [HttpGet]
+        public ActionResult CheckInvites(long? id, string secret, DateTime since)
+        {
+            InviteStatus invites = new InviteStatus();
+            var client = FindClient(id, secret);
+            if (client == null)
+            {
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+            }
+            foreach(Invitation i in client.User.Invitations){
+                //if invitation is newer than since
+                if (i.TimeStamp.CompareTo(since) > 0)
+                {
+                    invites.New = true;
+          
+                }
+                if (i.AcceptedFolders.Count > 0)
+                {
+                    invites.Accepted = true;
+                }
+            }
+            return Json(invites);
+        }
+
         private Client FindClient(long? id, string secret)
         {
             if (!id.HasValue)

@@ -142,5 +142,21 @@ namespace FooBoxClient
             string requestUrl = MakeUrl("Authenticate", parameters);
             System.Diagnostics.Process.Start(requestUrl);
         }
+
+
+        public static InviteStatus GetInviteStatus(DateTime since){
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&since=" + since.ToString() ;
+            HttpWebRequest req = WebRequest.Create(MakeUrl("CheckInvites", parameters)) as HttpWebRequest;
+
+            req.KeepAlive = true;
+            req.Method = "GET";
+
+            using (var response = req.GetResponse())
+            using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8))
+            {
+                var serializer = new JavaScriptSerializer();
+                return serializer.Deserialize<InviteStatus>(reader.ReadToEnd());
+            }  
+        }
     }
 }

@@ -8,6 +8,7 @@ using System.Web;
 
 namespace FooBox
 {
+
     public static class Utilities
     {
         public const string LetterDigitChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
