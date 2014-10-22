@@ -27,7 +27,7 @@
             User
         </th>
         <th>
-            Timestamp
+            Date Invited
         </th>
         <th>
             Accepted
@@ -45,7 +45,7 @@
                 @Html.DisplayFor(modelItem => item.UserName)
             </td>
             <td class="col-md-3">
-                @Html.DisplayFor(modelItem => item.Timestamp)
+                @Html.Encode(item.Timestamp.ToLocalTime().ToString("F"))
             </td>
             <td class="col-md-1">
                 @if (item.Accepted)
