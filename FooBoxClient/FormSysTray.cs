@@ -16,6 +16,7 @@ namespace FooBoxClient
         private Point _location;
         private bool _paused = false;
         private Size _correctSize;
+        private File _currentFile = null;
 
         public FormSysTray()
         {
@@ -201,46 +202,66 @@ namespace FooBoxClient
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (string file in files)
             {
-                if (!System.IO.Directory.Exists(file))
-                {
-                    string hash = _engine.FileExists(file);
-                    if (hash != "")
+                    File f = _engine.FileExists(file);
+                    if (f != null)
                     {
-                        string url = Requests.GetShareLink(hash);
-                        if (url != "")
+                        _currentFile = f;
+                        if (f.IsFolder)
                         {
-                            System.Windows.Forms.Clipboard.SetText(url);
-                            notifyFooBox.BalloonTipText = "Public link copied to clip board";
-                            
+
+                            contextMenuDropFolder.Show(new Point(e.X, e.Y));
+                            //show share popup
                         }
                         else
                         {
-                            notifyFooBox.BalloonTipText = "Failed to get shareable link";
-                        }
-                        notifyFooBox.ShowBalloonTip(3000);
+                            contextMenuDropFiles.Show(new Point(e.X, e.Y));
+                            //show previos version and get link popup
 
-                        //show get public link
+                        }
                     }
                     else
                     {
-                        var confirmResult = MessageBox.Show("Add file to FooBox?","This will not move the original copy", MessageBoxButtons.YesNo);
-                        if (confirmResult == DialogResult.Yes)
-                        {
-                            //copy file 
-                            string fileName = file.Substring(file.LastIndexOf("\\"));
-                            if (!System.IO.File.Exists(_engine.RootDirectory + fileName)){
-                                System.IO.File.Copy(file, _engine.RootDirectory + fileName);
-                            } else {
-                                notifyFooBox.BalloonTipText = "File already exists in FooBox and was not copied";
-                                notifyFooBox.ShowBalloonTip(3000);
+                        string fileName = file.Substring(file.LastIndexOf("\\"));
+                        if (!System.IO.File.Exists(_engine.RootDirectory + fileName)){
+                            System.IO.File.Copy(file, _engine.RootDirectory + fileName);
+                        } else {
+                            notifyFooBox.BalloonTipText = "File already exists in FooBox and was not copied";
+                            notifyFooBox.ShowBalloonTip(3000);
 
-                            }
-                            //sync engine will now do rest
                         }
+                        //sync engine will now do rest
+
                     }
-                }
+         
             }
 
+        }
+
+        private void shareToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void getPublicLinkToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string url = Requests.GetShareLink("/" + _currentFile.DisplayName);
+            if (url != "")
+            {
+                url = "http://" + Properties.Settings.Default.Server +":" +Properties.Settings.Default.Port + "/k/" + url;
+                System.Windows.Forms.Clipboard.SetText(url);
+                notifyFooBox.BalloonTipText = "Public link copied to clip board";
+
+            }
+            else
+            {
+                notifyFooBox.BalloonTipText = "Failed to get shareable link";
+            }
+            notifyFooBox.ShowBalloonTip(3000);
+        }
+
+        private void viewPreviousVersionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string url = Requests.ViewPreviousVersions("/" + _currentFile.DisplayName);
         }
 
 

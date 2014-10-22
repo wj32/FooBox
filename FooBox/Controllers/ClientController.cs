@@ -137,22 +137,50 @@ namespace FooBox.Controllers
         }
         
         [HttpGet]
-        public ActionResult GetShareLink(long? id, string secret, string hash)
+        public ActionResult GetShareLink(long? id, string secret, string fullName)
         {
-            string url = "";
             var client = FindClient(id, secret);
             if (client == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
-            hash = hash.ToUpper();
-            string key = (from blob in _fileManager.Context.Blobs where blob.Hash == hash select blob.Key).FirstOrDefault();
+
+            //TODO: set url = public link for file here
+            string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
 
             if (key == null)
-                return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
+            {
+                key = Utilities.GenerateRandomString(Utilities.LetterDigitChars, 8);
+
+                var dl = new DocumentLink
+                {
+                    Key = key,
+                    RelativeFullName = fullName,
+                    User = _userManager.FindUser(client.Id)
+                };
+
+                try
+                {
+                    var context = _fileManager.Context;
+                    context.DocumentLinks.Add(dl);
+                    context.SaveChanges();
+                }
+                catch
+                {
+                }
+            }
+
+            return Content(key);
+        }
+
+        [HttpGet]
+        public ActionResult PreviousVersions(long? id, string secret, string fullName)
+        {
+            var client = FindClient(id, secret);
+            if (client == null)
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+
             //TODO: set url = public link for file here
-
-
-
-            return Content(url);
+            string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
+            return Content(key);
         }
 
         private Client FindClient(long? id, string secret)

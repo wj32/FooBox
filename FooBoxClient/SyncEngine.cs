@@ -845,7 +845,7 @@ namespace FooBoxClient
          * Checks if the given file exists in the sync engine
          */
 
-        public string FileExists(string fullName)
+        public File FileExists(string fullName)
         {
             foreach (File f in _state.Root.RecursiveEnumerate()){
                 string fileLocalName = f.FullName.Substring(f.FullName.IndexOf("/") + 2);
@@ -853,10 +853,10 @@ namespace FooBoxClient
                 fileLocalName = RootDirectory + fileLocalName;
                 if (fileLocalName.ToLower() == fullName.ToLower())
                 {
-                    return f.Hash;
+                    return f;
                 }
             }
-            return "";
+            return null;
         }
 
         private void MoveFileOrDirectory(string src, string dst)

@@ -56,9 +56,9 @@ namespace FooBoxClient
             }
         }
 
-        public static string GetShareLink(string hash)
+        public static string GetShareLink(string fullName)
         {
-            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&hash=" + hash;
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&fullName=" + fullName;
             HttpWebRequest req = WebRequest.Create(MakeUrl("GetShareLink", parameters)) as HttpWebRequest;
 
             req.KeepAlive = true;
@@ -120,6 +120,12 @@ namespace FooBoxClient
             {
                 return serializer.Deserialize<ClientSyncResult>(reader.ReadToEnd());
             }
+        }
+
+        public static string ViewPreviousVersions(string fullName)
+        {
+            string url = "";
+            return url;
         }
     }
 }
