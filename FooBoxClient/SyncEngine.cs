@@ -722,8 +722,7 @@ namespace FooBoxClient
             while (sync)
             {
                 var result = Requests.Sync(new ClientSyncData { BaseChangelistId = baseChangelistId, Changes = localChanges });
-                InviteStatus invites = Requests.GetInviteStatus(DateTime.Now);
-                //TODO: give this status to formsystray, also give an actual time
+
                 if (cancellationToken.IsCancellationRequested)
                     return false;
 
