@@ -4,8 +4,10 @@
     ViewBag.Title = "Invitations";
 }
 
-<h2>Invitations</h2>
-<h4>@ViewBag.Subheading</h4>
+
+<h2>@ViewBag.Subheading</h2>
+<h4>Invitations</h4>
+
 
 
 <p>
@@ -28,7 +30,7 @@
             Timestamp
         </th>
         <th>
-            Accepted?
+            Accepted
         </th>
         <th>
 
@@ -46,7 +48,14 @@
                 @Html.DisplayFor(modelItem => item.Timestamp)
             </td>
             <td class="col-md-1">
-                @Html.DisplayFor(modelItem => item.Accepted)
+                @if (item.Accepted)
+                {
+                    <span class="label label-success">Accepted</span>
+                }
+                else
+                {
+                    <span class="label label-default">Pending</span>
+                }
             </td>
             <td id="@("inv" + @i)" class="col-md-1">
                 <a href="#" class="deleteLink">Delete</a>
