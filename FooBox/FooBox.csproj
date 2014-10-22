@@ -237,6 +237,7 @@
     <Content Include="Views\File\DisplayShareLinks.cshtml" />
     <Content Include="Views\File\_DocumentLinkURL.cshtml" />
     <Content Include="Views\Invitation\Index.cshtml" />
+    <Content Include="Views\Shared\_NotificationsPartial.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
