@@ -18,8 +18,14 @@ namespace FooBox.Controllers
             _userManager = new UserManager(_fileManager.Context);
         }
 
-
-
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _fileManager.Dispose();
+            }
+            base.Dispose(disposing);
+        }
        
 
         public ActionResult Index(string fullName)
@@ -109,7 +115,7 @@ namespace FooBox.Controllers
                             TargetId = f.Id,
                             User = u,
                             UserId = u.Id,
-                            TimeStamp = DateTime.Now
+                            TimeStamp = DateTime.UtcNow
                         };
                         _userManager.Context.Invitations.Add(invitation);
                         _userManager.Context.SaveChanges();
@@ -132,7 +138,7 @@ namespace FooBox.Controllers
                                     TargetId = f.Id,
                                     User = u,
                                     UserId = u.Id,
-                                    TimeStamp = DateTime.Now
+                                    TimeStamp = DateTime.UtcNow
                                 }; 
                                 _userManager.Context.Invitations.Add(invitation);
                                 _userManager.Context.SaveChanges();
@@ -155,6 +161,23 @@ namespace FooBox.Controllers
             _userManager.Context.Invitations.Remove(inv);
             _userManager.Context.SaveChanges();
             return RedirectToAction("Index", new { fullName = model.FullName });
+        }
+
+        [HttpPost]
+        public void EditStatus(long id, string submit)
+        {
+            if (submit.Equals("Accept"))
+            {
+                //TODO
+            }
+            else if (submit.Equals("Decline"))
+            {
+                //TODO
+            }
+            else
+            {
+                // ERROR
+            }
         }
 
         private IEnumerable<User> uninvitedUsers(string fullName) 

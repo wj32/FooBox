@@ -474,31 +474,12 @@ namespace FooBox.Controllers
 
         public ActionResult GetShareLink(string fullName)
         {
-            string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
-
+            string key = _fileManager.CreateShareLink(fullName, _userManager.FindUser(User.Identity.GetUserId()));
+            
             if (key == null)
-            {
-                key = Utilities.GenerateRandomString(Utilities.LetterDigitChars, 8);
-                long userId = User.Identity.GetUserId();
-                var dl = new DocumentLink
-                {
-                    Key = key,
-                    RelativeFullName = fullName,
-                    User = _userManager.FindUser(userId)
-                };
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
 
-                try
-                {
-                    var context = _fileManager.Context;
-                    context.DocumentLinks.Add(dl);
-                    context.SaveChanges();
-                }
-                catch
-                {
-                }
-            }
             return PartialView("_DocumentLinkURL", key);
-            //return Url.Action("DownloadKey", "File", new { key = key }, Request.Url.Scheme);
         }
 
         public ActionResult DisplayShareLinks()
@@ -525,8 +506,6 @@ namespace FooBox.Controllers
             return DownloadDocument(doc);   
         }
 
-       
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -535,58 +514,5 @@ namespace FooBox.Controllers
             }
             base.Dispose(disposing);
         }
-
-        private bool UserHasLink(User user, Folder folder) {
-            //var link = 
-            //(
-            //    from file in user.RootFolder.Files.AsQueryable()
-            //    where file.State == ObjectState.Normal && 
-            //            (file is Link) && 
-            //            ((Link)file).TargetId == folder.Id
-            //    select file
-            //).SingleOrDefault();
-            //return link != null;
-            return false;
-        }
-
-        private void SetUserHasLink(User user, Folder folder, bool hasPermission) {
-            long userId = User.Identity.GetUserId();
-            var internalClient = _fileManager.GetInternalClient(userId);
-
-            if (hasPermission && !UserHasLink(user, folder))
-            { // add the link
-
-                
-
-            }
-            else if (!hasPermission && UserHasLink(user, folder))
-            { // remove the link
-                
-                //var link =
-                //(
-                //    from file in user.RootFolder.Files.AsQueryable()
-                //    where file.State == ObjectState.Normal &&
-                //            (file is Link) &&
-                //            ((Link)file).TargetId == folder.Id
-                //    select file
-                //).SingleOrDefault();
-
-                
-                //ClientSyncData data = new ClientSyncData();
-                //var fullDisplayName = _fileManager.GetFullDisplayName(link);
-                //data.ClientId = internalClient.Id;
-                //data.BaseChangelistId = _fileManager.GetLastChangelistId();
-                //data.Changes.Add(new ClientChange
-                //{
-                //    FullName = fullDisplayName,
-                //    Type = ChangeType.Delete
-                //});
-                //_fileManager.SyncClientChanges(data);
-
-            } 
-        }
-
-
-
     }
 }

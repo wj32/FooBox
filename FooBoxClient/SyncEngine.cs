@@ -841,6 +841,7 @@ namespace FooBoxClient
             return false;
         }
 
+<<<<<<< HEAD
         /*
          * Checks if the given file exists in the sync engine
          */
@@ -859,6 +860,8 @@ namespace FooBoxClient
             return null;
         }
 
+=======
+>>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
         private void MoveFileOrDirectory(string src, string dst)
         {
             if (!MoveFile(src, dst))

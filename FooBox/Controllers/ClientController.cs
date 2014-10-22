@@ -138,12 +138,17 @@ namespace FooBox.Controllers
         }
         
         [HttpGet]
+<<<<<<< HEAD
         public ActionResult GetShareLink(long? id, string secret, string fullName)
+=======
+        public ActionResult GetShareLink(long? id, string secret, string relativeFullName)
+>>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
         {
             var client = FindClient(id, secret);
             if (client == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
 
+<<<<<<< HEAD
             //TODO: set url = public link for file here
             string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
 
@@ -188,6 +193,13 @@ namespace FooBox.Controllers
             auth.SignIn(new AuthenticationProperties() { IsPersistent = true }, identity);
             
             return Redirect(Uri.EscapeDataString(returnUrl));
+=======
+            string key = _fileManager.CreateShareLink(relativeFullName, client.User);
+            if (key == null)
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
+
+            return Content(Url.Action("DownloadKey", "File", new { key = key }, Request.Url.Scheme));
+>>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
         }
 
         private Client FindClient(long? id, string secret)

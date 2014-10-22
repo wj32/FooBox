@@ -48,6 +48,7 @@
             // 
             // notifyFooBox
             // 
+            this.notifyFooBox.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
             this.notifyFooBox.ContextMenuStrip = this.contextMenuNotify;
             this.notifyFooBox.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyFooBox.Icon")));
             this.notifyFooBox.Text = "FooBox";

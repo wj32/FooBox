@@ -200,8 +200,16 @@ namespace FooBoxClient
         private void FormSysTray_DragDrop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (string file in files)
+
+            if (files == null || files.Length == 0)
+                return;
+
+            string file = files[0];
+
+            // Don't block drag and drop.
+            this.BeginInvoke(new Action(() =>
             {
+<<<<<<< HEAD
                     File f = _engine.FileExists(file);
                     if (f != null)
                     {
@@ -216,11 +224,36 @@ namespace FooBoxClient
                         {
                             contextMenuDropFiles.Show(new Point(e.X, e.Y));
                             //show previos version and get link popup
+=======
+                if (!System.IO.Directory.Exists(file) && System.IO.File.Exists(file))
+                {
+                    string fullPath = System.IO.Path.GetFullPath(file);
+
+                    if (fullPath.StartsWith(Properties.Settings.Default.Root))
+                    {
+                        string relativePath = fullPath.Substring(Properties.Settings.Default.Root.Length).Replace('\\', '/');
+
+                        if (!relativePath.StartsWith("/"))
+                            relativePath = "/" + relativePath;
+
+                        string url = Requests.GetShareLink(relativePath);
+
+                        if (url != "")
+                        {
+                            System.Windows.Forms.Clipboard.SetText(url);
+                            notifyFooBox.ShowBalloonTip(3000, "FooBox", "Public link copied to clipboard.", ToolTipIcon.Info);
+                        }
+                        else
+                        {
+                            notifyFooBox.ShowBalloonTip(3000, "FooBox", "Failed to get shareable link.", ToolTipIcon.Info);
+                        }
+>>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
 
                         }
                     }
                     else
                     {
+<<<<<<< HEAD
                         string fileName = file.Substring(file.LastIndexOf("\\"));
                         if (!System.IO.File.Exists(_engine.RootDirectory + fileName)){
                             System.IO.File.Copy(file, _engine.RootDirectory + fileName);
@@ -228,10 +261,27 @@ namespace FooBoxClient
                             notifyFooBox.BalloonTipText = "File already exists in FooBox and was not copied";
                             notifyFooBox.ShowBalloonTip(3000);
 
+=======
+                        var confirmResult = MessageBox.Show(this, "Do you want to add the file to FooBox? This will not move the original copy.",
+                            "FooBox", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                        if (confirmResult == DialogResult.Yes)
+                        {
+                            //copy file 
+                            string fileName = file.Substring(file.LastIndexOf("\\"));
+                            if (!System.IO.File.Exists(_engine.RootDirectory + fileName)){
+                                System.IO.File.Copy(file, _engine.RootDirectory + fileName);
+                            }
+                            else
+                            {
+                                notifyFooBox.ShowBalloonTip(3000, "FooBox", "The file already exists and was not copied.", ToolTipIcon.Info);
+                            }
+                            //sync engine will now do rest
+>>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
                         }
                         //sync engine will now do rest
 
                     }
+<<<<<<< HEAD
          
             }
 
@@ -263,5 +313,10 @@ namespace FooBoxClient
         }
 
 
+=======
+                }
+            }));
+        }
+>>>>>>> dc9ae38f04c05ed618cfaa5f2a9d8fa08003a802
     }
 }
