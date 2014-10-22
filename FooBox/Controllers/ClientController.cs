@@ -137,22 +137,17 @@ namespace FooBox.Controllers
         }
         
         [HttpGet]
-        public ActionResult GetShareLink(long? id, string secret, string hash)
+        public ActionResult GetShareLink(long? id, string secret, string relativeFullName)
         {
-            string url = "";
             var client = FindClient(id, secret);
             if (client == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
-            hash = hash.ToUpper();
-            string key = (from blob in _fileManager.Context.Blobs where blob.Hash == hash select blob.Key).FirstOrDefault();
 
+            string key = _fileManager.CreateShareLink(relativeFullName, client.User);
             if (key == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
-            //TODO: set url = public link for file here
 
-
-
-            return Content(url);
+            return Content(Url.Action("DownloadKey", "File", new { key = key }, Request.Url.Scheme));
         }
 
         private Client FindClient(long? id, string secret)

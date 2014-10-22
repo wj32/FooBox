@@ -360,6 +360,40 @@ namespace FooBox.Models
             return null;
         }
 
+        public string CreateShareLink(string relativeFullName, User user)
+        {
+            string fullDisplayName;
+
+            // Check if the file exists.
+            if (FindFile(relativeFullName, user.RootFolder, out fullDisplayName) == null)
+                return null;
+
+            string key = _context.DocumentLinks.Where(x => x.RelativeFullName == fullDisplayName).Select(x => x.Key).FirstOrDefault();
+
+            if (key == null)
+            {
+                key = Utilities.GenerateRandomString(Utilities.LetterDigitChars, 8);
+                var dl = new DocumentLink
+                {
+                    Key = key,
+                    RelativeFullName = fullDisplayName,
+                    User = user
+                };
+
+                try
+                {
+                    _context.DocumentLinks.Add(dl);
+                    _context.SaveChanges();
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            return key;
+        }
+
         #endregion
 
         #region Client upload
