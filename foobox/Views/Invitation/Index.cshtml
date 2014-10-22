@@ -19,7 +19,7 @@
         </ul>
     </div>
 </p>
-<table class="table">
+<table class="table table-hover">
     <tr>
         <th>
             User
@@ -31,27 +31,39 @@
             Accepted?
         </th>
         <th>
-            
+
         </th>
     </tr>
 
-@foreach (var item in Model.FolderInvitations) {
-    
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.UserName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Timestamp)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Accepted)
-        </td>
-        <td>
-            @Html.ActionLink("Delete", "DeleteInvitation", new { id = item.Id })
-        </td>
-    </tr>
-}
+    @for (int i = 0; i < Model.FolderInvitations.Count(); ++i)
+    {
+        var item = Model.FolderInvitations[i];
+        <tr>
+            <td class="col-md-2">
+                @Html.DisplayFor(modelItem => item.UserName)
+            </td>
+            <td class="col-md-3">
+                @Html.DisplayFor(modelItem => item.Timestamp)
+            </td>
+            <td class="col-md-1">
+                @Html.DisplayFor(modelItem => item.Accepted)
+            </td>
+            <td id="@("inv" + @i)" class="col-md-1">
+                <a href="#" class="deleteLink">Delete</a>
+                <!-- Confirm Delete -->
+                <div class="confirmDeleteDialog" id="@("confirminv" + @i)" style="display:none;">
+                    @using (@Html.BeginForm("DeleteInvitation", "Invitation", new { id = item.Id }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.FullName)
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        <button type="button" class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                    }
+                </div>
+
+            </td>
+        </tr>
+    }
 
 </table>
 
@@ -100,6 +112,15 @@
         });
         $("#inviteGroup").click(function () {
             $('#groupModal').modal("show");
+        });
+        $(".deleteLink").click(function () {
+            $(this).hide();
+            var it = $(this).closest('td').attr('id');
+            $("#confirm" + it).show('slide');
+        });
+        $(".delCancelButton").click(function () {
+            $(".confirmDeleteDialog").hide();
+            $(".deleteLink").show('slide');
         });
     });
 </script>

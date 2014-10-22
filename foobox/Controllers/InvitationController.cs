@@ -152,14 +152,13 @@ namespace FooBox.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteInvitation(long? id)
+        public ActionResult DeleteInvitation(EditInvitationsViewModel model, long? id)
         {
             var inv = (from invitation in _userManager.Context.Invitations 
                            where invitation.Id == id select invitation).SingleOrDefault();
-            var fullName = _fileManager.GetFullName(inv.Target);
             _userManager.Context.Invitations.Remove(inv);
             _userManager.Context.SaveChanges();
-            return RedirectToAction("Index", new { fullName = fullName });
+            return RedirectToAction("Index", new { fullName = model.FullName });
         }
 
 
