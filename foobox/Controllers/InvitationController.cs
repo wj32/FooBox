@@ -92,10 +92,13 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult NewInvitation(EditInvitationsViewModel model)
         {
+            
             HashSet<User> uninvitedUsers = new HashSet<User>();
             if (ModelState.IsValid)
             {
-                Folder f = (Folder)_fileManager.FindFile(model.FullName);
+                Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+                string fullDisplayName;
+                Folder f = (Folder)_fileManager.FindFile(model.FullName, userRootFolder, out fullDisplayName);
                 foreach (var item in model.UsersToInvite)
                 {
                     if (item.IsSelected)
@@ -106,7 +109,8 @@ namespace FooBox.Controllers
                             Target = f,
                             TargetId = f.Id,
                             User = u,
-                            UserId = u.Id
+                            UserId = u.Id,
+                            TimeStamp = DateTime.Now
                         }; // ADD TIMESTAMP
                         _userManager.Context.Invitations.Add(invitation);
                         _userManager.Context.SaveChanges();
@@ -132,7 +136,7 @@ namespace FooBox.Controllers
                                     TargetId = f.Id,
                                     User = u,
                                     UserId = u.Id,
-                                    TimeStamp = new DateTime()
+                                    TimeStamp = DateTime.Now
                                 }; // ADD TIMESTAMP
                                 _userManager.Context.Invitations.Add(invitation);
                                 _userManager.Context.SaveChanges();
