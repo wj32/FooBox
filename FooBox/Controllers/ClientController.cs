@@ -169,8 +169,7 @@ namespace FooBox.Controllers
                 var identity = _userManager.CreateIdentity(client.User, "ApplicationCookie");
                 auth.SignIn(new AuthenticationProperties() { IsPersistent = false }, identity);
             }
-
-            return Redirect(Uri.EscapeDataString(returnUrl));
+            return Redirect(returnUrl);
         }
 
         private Client FindClient(long? id, string secret)

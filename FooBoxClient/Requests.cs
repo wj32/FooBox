@@ -127,6 +127,7 @@ namespace FooBoxClient
         {
             
             string retUrl = "/File/DisplayVersionHistory/?fullName=" + fullName;
+            retUrl = Uri.EscapeDataString(retUrl);
             string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
             string requestUrl = MakeUrl("Authenticate", parameters);
             System.Diagnostics.Process.Start(requestUrl);
