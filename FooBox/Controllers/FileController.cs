@@ -472,6 +472,48 @@ namespace FooBox.Controllers
             return RedirectToAction("Browse", new { path = fromPath });
         }
 
+        public ActionResult AddSharedFolder(long invitationId)
+        {
+            Invitation invitation = (from inv in _userManager.Context.Invitations
+                                     where inv.Id == invitationId select inv).SingleOrDefault();
+            Folder folder = invitation.Target;
+            long userId = User.Identity.GetUserId();
+            var internalClient = _fileManager.GetInternalClient(userId);
+            Folder root = _fileManager.GetUserRootFolder(userId);
+            string destinationDisplayName = folder.DisplayName;
+            if (!EnsureAvailableName(ref destinationDisplayName, root, false))
+            {
+                // ??? unsuccessful
+                return null;
+            }
+            ClientSyncData data = new ClientSyncData();
+            data.ClientId = internalClient.Id;
+            data.BaseChangelistId = _fileManager.GetLastChangelistId(); 
+            data.Changes.Add(new ClientChange
+            {
+                FullName = "/" + userId + "/" + destinationDisplayName,
+                Type = ChangeType.Add,
+                IsFolder = true,
+                InvitationId = invitation.Id
+            });
+
+            _fileManager.SyncClientChanges(data);
+            // Add folder to invitation folders
+            string fullDisplayName;
+            File file = _fileManager.FindFile(destinationDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+            Folder newFolder = (Folder)file;
+            invitation.AcceptedFolders.Add(newFolder);
+            AddSharedFolderOutput output = new AddSharedFolderOutput();
+            output.FolderDisplayName= destinationDisplayName;
+            return Json(output, JsonRequestBehavior.AllowGet);
+        }
+
+        // This should probably be moved but I don't know where...
+        private class AddSharedFolderOutput
+        {
+            public string FolderDisplayName;
+        }
+
         public ActionResult GetShareLink(string fullName)
         {
             string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();

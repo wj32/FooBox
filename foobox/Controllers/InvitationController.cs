@@ -153,24 +153,30 @@ namespace FooBox.Controllers
             var inv = (from invitation in _userManager.Context.Invitations 
                            where invitation.Id == id select invitation).SingleOrDefault();
             _userManager.Context.Invitations.Remove(inv);
+            // TODO gotta remove the folder in invitation.AcceptedFolders
             _userManager.Context.SaveChanges();
             return RedirectToAction("Index", new { fullName = model.FullName });
         }
 
         [HttpPost]
-        public void EditStatus(long id, string submit)
+        // Returns new folder name
+        public ActionResult EditStatus(long id, string submit)
         {
+            var inv = (from invitation in _userManager.Context.Invitations
+                       where invitation.Id == id select invitation).SingleOrDefault();
             if (submit.Equals("Accept"))
             {
-                //TODO
+                return RedirectToAction("AddSharedFolder", "File", new { invitationId = id });
             }
             else if (submit.Equals("Decline"))
             {
-                //TODO
+                _userManager.Context.Invitations.Remove(inv);
+                _userManager.Context.SaveChanges();
+                return null;
             }
             else
             {
-                // ERROR
+                return null;
             }
         }
 
@@ -198,6 +204,7 @@ namespace FooBox.Controllers
             }
             return allUsers.Except(usersAlreadyInvited);
         }
+
 
 
     }

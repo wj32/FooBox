@@ -1,28 +1,49 @@
 ﻿@model ICollection<FooBox.Invitation>
-
-<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="badge" id="invitation-count">@Model.Count</span></a>
-<ul class="dropdown-menu" role="menu" id="invitations-dropdown">
-    <li><div class="container"><strong>Folder invitations</strong></div></li>
-    @foreach (var item in Model)
+@{
+    int count = 0;
+    foreach (var item in Model)
     {
-        <li id=@string.Format("invite{0}-divider", item.Id) class="divider"></li>
-        <li id=@string.Format("invite{0}", item.Id) ><div class="container">
-            @item.Target.Owner.Name invited you to access 
-            <strong>@item.Target.DisplayName</strong>.
-            <div>
-                @using (Ajax.BeginForm("EditStatus", "Invitation",
-                    new AjaxOptions { OnSuccess = string.Format("onChangeInvitationStatusSuccess({0})", item.Id), HttpMethod = "Post" })) {
-                    @Html.Hidden("id", item.Id)
-                    <button type="submit" class="btn btn-primary btn-xs" name="submit" value="Accept">Accept</button>
-                    <button type="submit" class="btn btn-danger btn-xs" name="submit" value="Decline">Decline</button>
-                }
-            </div>
-        </div></li>
+        if (!item.AcceptedFolders.Any())
+        {
+            count += 1;
+        }
     }
-</ul>
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="badge" id="invitation-count">@count</span></a>
+}
+
+@if (count > 0)
+{
+    <ul class="dropdown-menu" role="menu" id="invitations-dropdown">
+        <li><div class="container"><strong>Folder invitations</strong></div></li>
+        @foreach (var item in Model)
+        {
+            if (item.AcceptedFolders.Any()) 
+            {
+                continue;
+            }
+            <li id=@string.Format("invite{0}-divider", item.Id) class="divider"></li>
+            <li id=@string.Format("invite{0}", item.Id)>
+                <div class="container">
+                    @item.Target.Owner.Name invited you to access
+                    <strong>@item.Target.DisplayName</strong>.
+                    <div>
+                        @using (Ajax.BeginForm("EditStatus", "Invitation",
+                            new AjaxOptions { OnSuccess = string.Format("onChangeInvitationStatusSuccess({0}, data)", item.Id), HttpMethod = "Post" }))
+                        {
+                            @Html.Hidden("id", item.Id)
+                            <button type="submit" class="btn btn-primary btn-xs" name="submit" value="Accept">Accept</button>
+                            <button type="submit" class="btn btn-danger btn-xs" name="submit" value="Decline">Decline</button>
+                        }
+                    </div>
+                </div>
+            </li>
+        }
+    </ul>
+
+}
 
 <script>
-    function onChangeInvitationStatusSuccess(id) {
+    function onChangeInvitationStatusSuccess(id, data) {
         console.log(id);
         var inviteId = '#invite' + String(id);
         var dividerId = inviteId + '-divider';
@@ -32,8 +53,14 @@
         numInvitations -= 1;
         $('#invitation-count').text(String(numInvitations));
         if (numInvitations == 0) {
-            $('#invitations-dropdown').hide();
+            $('#invitations-dropdown').hide('slide');
         }
+        if (data) {
+            $('#notifications').append('<div class="alert alert-success alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>A new shared folder <strong>' +
+                data.FolderDisplayName +
+                '</strong> has been created in your root directory.</div>')
+        }
+        console.log(data);
 
     }
 </script>
