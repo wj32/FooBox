@@ -235,7 +235,8 @@ namespace FooBoxClient
                     }
                     else
                     {
-                        var confirmResult = MessageBox.Show("Add file to FooBox?","This will not move the original copy", MessageBoxButtons.YesNo);
+                        var confirmResult = MessageBox.Show(this, "Do you want to add the file to FooBox? This will not move the original copy.",
+                            "FooBox", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                         if (confirmResult == DialogResult.Yes)
                         {
                             //copy file 
