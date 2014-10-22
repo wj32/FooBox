@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Web;
 using System.Web.Mvc;
+using Microsoft.Owin.Security;
 using System.Web.Script.Serialization;
 
 namespace FooBox.Controllers
@@ -171,16 +172,22 @@ namespace FooBox.Controllers
             return Content(key);
         }
 
-        [HttpGet]
-        public ActionResult PreviousVersions(long? id, string secret, string fullName)
-        {
-            var client = FindClient(id, secret);
-            if (client == null)
-                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
 
-            //TODO: set url = public link for file here
-            string key = _fileManager.Context.DocumentLinks.Where(x => x.RelativeFullName == fullName).Select(x => x.Key).FirstOrDefault();
-            return Content(key);
+
+        /*
+         * Authenticates the client wihth the server
+         */
+        public ActionResult Authenticate(long? id, string secret, string returnUrl) {
+            var client = FindClient(id, secret);
+            if (client == null){
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+            }
+            var user = _userManager.FindUser(id.Value);
+            IAuthenticationManager auth = HttpContext.GetOwinContext().Authentication;
+            var identity = _userManager.CreateIdentity(user, "ApplicationCookie");
+            auth.SignIn(new AuthenticationProperties() { IsPersistent = true }, identity);
+            
+            return Redirect(Uri.EscapeDataString(returnUrl));
         }
 
         private Client FindClient(long? id, string secret)

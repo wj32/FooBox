@@ -246,11 +246,9 @@ namespace FooBoxClient
         {
             string url = Requests.GetShareLink("/" + _currentFile.DisplayName);
             if (url != "")
-            {
-                url = "http://" + Properties.Settings.Default.Server +":" +Properties.Settings.Default.Port + "/k/" + url;
+            { 
                 System.Windows.Forms.Clipboard.SetText(url);
                 notifyFooBox.BalloonTipText = "Public link copied to clip board";
-
             }
             else
             {
@@ -261,7 +259,7 @@ namespace FooBoxClient
 
         private void viewPreviousVersionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string url = Requests.ViewPreviousVersions("/" + _currentFile.DisplayName);
+            bool success = Requests.PreviousVersions("/" + _currentFile.DisplayName);
         }
 
 

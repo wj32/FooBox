@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
-
+using System.Diagnostics;
 namespace FooBoxClient
 {
     public static class Requests
@@ -66,7 +66,9 @@ namespace FooBoxClient
 
             using (var response = req.GetResponse())
             using (var reader  = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8)){
-                return reader.ReadToEnd();
+                string url = reader.ReadToEnd();
+                url = "http://" + Properties.Settings.Default.Server + ":" + Properties.Settings.Default.Port + "/k/" + url;
+                return url;
             } 
         }
 
@@ -122,10 +124,17 @@ namespace FooBoxClient
             }
         }
 
-        public static string ViewPreviousVersions(string fullName)
+        public static bool PreviousVersions(string fullName)
         {
-            string url = "";
-            return url;
+            
+            string retUrl = "/File/DisplayVersionHistory/?fullName=" + fullName;
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
+            string requestUrl = MakeUrl("Authenticate", parameters);
+            System.Diagnostics.Process.Start(requestUrl);
+
+            return true;
         }
+
+        
     }
 }
