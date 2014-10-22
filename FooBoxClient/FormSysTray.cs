@@ -253,7 +253,7 @@ namespace FooBoxClient
 
         private void shareToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // TODO
+            Requests.Sharing(_currentFileRelativePath);
         }
 
         private void getPublicLinkToolStripMenuItem_Click(object sender, EventArgs e)

@@ -99,19 +99,19 @@
             this.getPublicLinkToolStripMenuItem,
             this.viewPreviousVersionsToolStripMenuItem});
             this.contextMenuDropFiles.Name = "contextMenuDropFiles";
-            this.contextMenuDropFiles.Size = new System.Drawing.Size(195, 70);
+            this.contextMenuDropFiles.Size = new System.Drawing.Size(166, 48);
             // 
             // getPublicLinkToolStripMenuItem
             // 
             this.getPublicLinkToolStripMenuItem.Name = "getPublicLinkToolStripMenuItem";
-            this.getPublicLinkToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.getPublicLinkToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
             this.getPublicLinkToolStripMenuItem.Text = "Get public link";
             this.getPublicLinkToolStripMenuItem.Click += new System.EventHandler(this.getPublicLinkToolStripMenuItem_Click);
             // 
             // viewPreviousVersionsToolStripMenuItem
             // 
             this.viewPreviousVersionsToolStripMenuItem.Name = "viewPreviousVersionsToolStripMenuItem";
-            this.viewPreviousVersionsToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.viewPreviousVersionsToolStripMenuItem.Size = new System.Drawing.Size(165, 22);
             this.viewPreviousVersionsToolStripMenuItem.Text = "Previous versions";
             this.viewPreviousVersionsToolStripMenuItem.Click += new System.EventHandler(this.viewPreviousVersionsToolStripMenuItem_Click);
             // 
@@ -120,13 +120,13 @@
             this.contextMenuDropFolder.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.shareToolStripMenuItem});
             this.contextMenuDropFolder.Name = "contextMenuDropFolder";
-            this.contextMenuDropFolder.Size = new System.Drawing.Size(104, 26);
+            this.contextMenuDropFolder.Size = new System.Drawing.Size(153, 48);
             // 
             // shareToolStripMenuItem
             // 
             this.shareToolStripMenuItem.Name = "shareToolStripMenuItem";
             this.shareToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.shareToolStripMenuItem.Text = "Share";
+            this.shareToolStripMenuItem.Text = "Sharing";
             this.shareToolStripMenuItem.Click += new System.EventHandler(this.shareToolStripMenuItem_Click);
             // 
             // FormSysTray

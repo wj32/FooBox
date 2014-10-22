@@ -133,6 +133,14 @@ namespace FooBoxClient
             System.Diagnostics.Process.Start(requestUrl);
         }
 
-        
+        public static void Sharing(string fullName)
+        {
+
+            string retUrl = "/Invitation?fullName=" + fullName;
+            retUrl = Uri.EscapeDataString(retUrl);
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
+            string requestUrl = MakeUrl("Authenticate", parameters);
+            System.Diagnostics.Process.Start(requestUrl);
+        }
     }
 }
