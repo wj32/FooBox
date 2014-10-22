@@ -109,7 +109,7 @@ namespace FooBox.Controllers
                             TargetId = f.Id,
                             User = u,
                             UserId = u.Id,
-                            TimeStamp = DateTime.Now
+                            TimeStamp = DateTime.UtcNow
                         };
                         _userManager.Context.Invitations.Add(invitation);
                         _userManager.Context.SaveChanges();
@@ -132,7 +132,7 @@ namespace FooBox.Controllers
                                     TargetId = f.Id,
                                     User = u,
                                     UserId = u.Id,
-                                    TimeStamp = DateTime.Now
+                                    TimeStamp = DateTime.UtcNow
                                 }; 
                                 _userManager.Context.Invitations.Add(invitation);
                                 _userManager.Context.SaveChanges();
