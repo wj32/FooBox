@@ -62,6 +62,7 @@ namespace FooBox.Controllers
             var uninvited = uninvitedUsers(fullName);
             foreach (User u in uninvited)
             {
+                if (u == _userManager.GetDefaultUser()) continue;
                 var e = new EntitySelectedViewModel
                 {
                     Id = u.Id,
@@ -120,6 +121,7 @@ namespace FooBox.Controllers
                         FooBox.Group g = _userManager.FindGroup(item.Id);
                         foreach (User u in g.Users)
                         {
+                            if (u == _userManager.GetDefaultUser()) continue;
                             if (uninvited.Contains(u))
                             {
                                 uninvited.Remove(u);
