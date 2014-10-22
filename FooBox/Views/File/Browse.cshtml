@@ -129,7 +129,7 @@
                         } 
                         else
                         { 
-                            <li>@Html.ActionLink("Set Permissions", "FolderEdit", new { fullName = item.FullDisplayName })</li>
+                            <li>@Html.ActionLink("Invite Users", "Index", "Invitation", new { fullName = item.FullDisplayName }, null)</li>
                             <li class="divider"></li>
                         }
                         <li><a href="#" class="renameLink">Rename</a></li>

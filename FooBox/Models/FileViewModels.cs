@@ -47,14 +47,4 @@ namespace FooBox.Models
     }
 
 
-    public class EditFolderViewModel
-    {
-        public long Id { get; set; }
-
-
-        public List<EntitySelectedViewModel> Users { get; set; }
-
-        //public List<EntitySelectedViewModel> Groups { get; set; }
-    }
-
 }

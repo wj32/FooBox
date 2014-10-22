@@ -1,0 +1,45 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace FooBox.Models
+{
+
+    public class EditInvitationsViewModel
+    {
+        public EditInvitationsViewModel()
+        {
+            FolderInvitations = new List<InvitationVM>();
+            UsersToInvite = new List<EntitySelectedViewModel>();
+            GroupsToInvite = new List<EntitySelectedViewModel>();
+        }
+
+        public string FullName { get; set; }
+
+        public List<InvitationVM> FolderInvitations { get; set; }
+
+        public List<EntitySelectedViewModel> UsersToInvite { get; set; }
+
+        public List<EntitySelectedViewModel> GroupsToInvite { get; set; }
+
+    }
+
+
+    public class InvitationVM
+    {
+        public long Id { get; set; }
+
+        public string UserName { get; set; }
+
+        public string GroupName { get; set; }
+
+        public bool Accepted { get; set; }
+
+        public DateTime Timestamp { get; set; }
+
+    }
+
+}

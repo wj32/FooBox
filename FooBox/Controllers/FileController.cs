@@ -525,59 +525,7 @@ namespace FooBox.Controllers
             return DownloadDocument(doc);   
         }
 
-        public ActionResult FolderEdit(string fullName)
-        {
-            if (fullName == null)
-                return RedirectToAction("Browse");
-
-            Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
-            string fullDisplayName;
-            File file = _fileManager.FindFile(fullName, userRootFolder, out fullDisplayName);
-
-            if (file == null || file is Document)  
-            {
-                return HttpNotFound();
-            }
-
-            Folder folder = (Folder)file;
-            List<EntitySelectedViewModel> users = new List<EntitySelectedViewModel>();
-
-            var mod = new EditFolderViewModel();
-            mod.Id = folder.Id;
-            
-            var userList = _userManager.Context.Users.ToList();
-            foreach (User u in userList)
-            {
-                if (u.Name.Equals("__DEFAULT__") || u.State == ObjectState.Deleted) { continue; }
-                var a = new EntitySelectedViewModel();
-                a.Id = u.Id;
-                a.IsSelected = UserHasLink(u, folder); 
-                a.Name = u.Name;
-                users.Add(a);
-            }
-            mod.Users = users;
-
-            ViewBag.Subheading = folder.DisplayName;
-            return View(mod);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult FolderEdit(EditFolderViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                Folder f = _fileManager.FindFolder(model.Id);
-                foreach (var item in model.Users)
-                {
-                        FooBox.User u = _userManager.FindUser(item.Id);
-                    SetUserHasLink(u, f, item.IsSelected);
-        
-                }
-                return RedirectToAction("Index");
-            }
-            return View(model);
-        }
+       
 
         protected override void Dispose(bool disposing)
         {
