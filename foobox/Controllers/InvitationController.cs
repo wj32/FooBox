@@ -41,6 +41,7 @@ namespace FooBox.Controllers
             var mod = new EditInvitationsViewModel();
             
             mod.FullName = fullName;
+            mod.FromPath = _fileManager.GetFullName(file.ParentFolder, userRootFolder);
             
             var invitations = _fileManager.Context.Invitations.ToList();
             foreach (Invitation i in invitations)

@@ -19,6 +19,8 @@ namespace FooBox.Models
 
         public string FullName { get; set; }
 
+        public string FromPath { get; set; }
+
         public List<InvitationVM> FolderInvitations { get; set; }
 
         [DisplayName("Users")]
