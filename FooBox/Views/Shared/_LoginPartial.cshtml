@@ -1,22 +1,28 @@
 ﻿@using FooBox.Models;
 @if (Request.IsAuthenticated)
 {
-    using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
-    {
-    @Html.AntiForgeryToken()
-
+    
     <ul class="nav navbar-nav navbar-right">
-        <li>
-            @using (var userManager = new UserManager())
+        @using (var userManager = new UserManager())
+        {
+            if (userManager.FindUser(User.Identity.GetUserId()) != null)
             {
-                if (userManager.FindUser(User.Identity.GetUserId()) != null)
-                {
-                    @Html.ActionLink("Hello " + userManager.FindUser(User.Identity.GetUserId()).Name + "!", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "Manage" })
+                @: <li>
+                @Html.ActionLink("Hello " + userManager.FindUser(User.Identity.GetUserId()).Name + "!", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "Manage" })
+                @: </li>
+                @: <li class="dropdown">
+                @Html.Partial("_NotificationsPartial", userManager.FindUser(User.Identity.GetUserId()).Invitations)
+                @: </li>
+
                 }
-            }
-        </li>
+        }
+
         <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
     </ul>
+    using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right pull-right" }))
+    {
+        @Html.AntiForgeryToken()
+
     }
 }
 else

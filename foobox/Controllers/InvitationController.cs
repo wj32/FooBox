@@ -163,6 +163,23 @@ namespace FooBox.Controllers
             return RedirectToAction("Index", new { fullName = model.FullName });
         }
 
+        [HttpPost]
+        public void EditStatus(long id, string submit)
+        {
+            if (submit.Equals("Accept"))
+            {
+                //TODO
+            }
+            else if (submit.Equals("Decline"))
+            {
+                //TODO
+            }
+            else
+            {
+                // ERROR
+            }
+        }
+
         private IEnumerable<User> uninvitedUsers(string fullName) 
         {
             Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
