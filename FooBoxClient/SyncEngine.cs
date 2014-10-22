@@ -684,7 +684,7 @@ namespace FooBoxClient
                     {
                         newFullDisplayName = parentPrefix + Utilities.GenerateNewName(
                             localClientChange.DisplayName,
-                            local.IsFolder,
+                            !local.IsFolder,
                             _state.ClientName + "'s conflicted copy " + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss-fff")
                             );
                     } while (System.IO.File.Exists(newFullDisplayName) || System.IO.Directory.Exists(newFullDisplayName));
