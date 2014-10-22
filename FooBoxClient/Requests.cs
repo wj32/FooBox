@@ -123,7 +123,7 @@ namespace FooBoxClient
             }
         }
 
-        public static bool PreviousVersions(string fullName)
+        public static void PreviousVersions(string fullName)
         {
             
             string retUrl = "/File/DisplayVersionHistory/?fullName=" + fullName;
@@ -131,8 +131,6 @@ namespace FooBoxClient
             string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
             string requestUrl = MakeUrl("Authenticate", parameters);
             System.Diagnostics.Process.Start(requestUrl);
-
-            return true;
         }
 
         

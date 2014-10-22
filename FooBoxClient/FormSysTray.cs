@@ -280,7 +280,7 @@ namespace FooBoxClient
 
         private void viewPreviousVersionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            bool success = Requests.PreviousVersions(_currentFileRelativePath);
+            Requests.PreviousVersions(_currentFileRelativePath);
         }
     }
 }
