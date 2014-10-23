@@ -34,6 +34,7 @@ namespace FooBox.Controllers
                 return RedirectToAction("Browse", "File", null);
 
             Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+            User currentUser = _userManager.FindUser(User.Identity.GetUserId());
             string fullDisplayName;
             File file = _fileManager.FindFile(fullName, userRootFolder, out fullDisplayName);
 
@@ -68,7 +69,9 @@ namespace FooBox.Controllers
             var uninvited = uninvitedUsers(fullName);
             foreach (User u in uninvited)
             {
-                if (u == _userManager.GetDefaultUser() || u.State == ObjectState.Deleted) continue;
+                if (u == _userManager.GetDefaultUser() || 
+                    u.State == ObjectState.Deleted || 
+                    u == currentUser) continue;
                 var e = new EntitySelectedViewModel
                 {
                     Id = u.Id,
@@ -102,6 +105,7 @@ namespace FooBox.Controllers
             if (ModelState.IsValid)
             {
                 Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+                User currentUser = _userManager.FindUser(User.Identity.GetUserId());
                 string fullDisplayName;
                 Folder f = (Folder)_fileManager.FindFile(model.FullName, userRootFolder, out fullDisplayName);
                 foreach (var item in model.UsersToInvite)
@@ -128,7 +132,9 @@ namespace FooBox.Controllers
                         FooBox.Group g = _userManager.FindGroup(item.Id);
                         foreach (User u in g.Users)
                         {
-                            if (u == _userManager.GetDefaultUser() || u.State == ObjectState.Deleted) continue;
+                            if (u == _userManager.GetDefaultUser() || 
+                                u.State == ObjectState.Deleted ||
+                                u == currentUser) continue;
                             if (uninvited.Contains(u))
                             {
                                 uninvited.Remove(u);
