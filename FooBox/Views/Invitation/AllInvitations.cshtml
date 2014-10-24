@@ -1,0 +1,166 @@
+﻿@model FooBox.Models.AllInvitationsViewModel
+
+@{
+    ViewBag.Title = "All Invitations";
+}
+
+<h2>@ViewBag.Title</h2>
+
+<ul class="nav nav-tabs" role="tablist">
+    <li id="incomingNavLi" class="active"><a id="incomingNav" href="#">Incoming</a></li>
+    <li id="outgoingNavLi"><a id="outgoingNav" href="#">Outgoing</a></li>
+</ul>
+
+<table class="table table-hover" id="IncomingInvs">
+    <tr>
+        <th>
+            Folder Name
+        </th>
+        <th>
+            From
+        </th>
+        <th>
+            Date Invited
+        </th>
+        <th>
+            
+        </th>
+        <th>
+
+        </th>
+    </tr>
+
+    @for (int i = 0; i < Model.Incoming.Count(); ++i)
+    {
+        var item = Model.Incoming[i];
+        <tr>
+            <td class="col-sm-2">
+                @Html.DisplayFor(modelItem => item.FolderName)
+            </td>
+            <td class="col-sm-2">
+                @Html.DisplayFor(modelItem => item.UserName)
+            </td>
+            <td class="col-md-3">
+                @Html.Encode(item.Timestamp.ToLocalTime().ToString("F"))
+            </td>
+            <td class="col-md-1">
+                @if (item.Accepted)
+                {
+                    <span class="label label-success">Accepted</span>
+                }
+                else
+                {
+                    <button class="btn btn-default btn-sm">Accept</button>
+                }
+            </td>
+            <td id="@("inv" + @i)" class="col-md-2">
+                <a href="#" class="deleteLink">Delete</a>
+                <!-- Confirm Delete -->
+                <div class="confirmDeleteDialog" id="@("confirminv" + @i)" style="display:none;">
+                    @using (@Html.BeginForm("DeleteInvitationIncoming", "Invitation", new { id = item.Id }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        <button type="button" class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                    }
+                </div>
+
+            </td>
+        </tr>
+    }
+
+</table>
+
+<table class="table table-hover" id="OutgoingInvs">
+    <tr>
+        <th>
+            Folder Name
+        </th>
+        <th>
+            To
+        </th>
+        <th>
+            Date Invited
+        </th>
+        <th>
+
+        </th>
+        <th>
+
+        </th>
+    </tr>
+
+    @for (int i = 0; i < Model.Outgoing.Count(); ++i)
+    {
+        var item = Model.Outgoing[i];
+        <tr>
+            <td class="col-sm-2">
+                @Html.DisplayFor(modelItem => item.FolderName)
+            </td>
+            <td class="col-sm-2">
+                @Html.DisplayFor(modelItem => item.UserName)
+            </td>
+            <td class="col-md-3">
+                @Html.Encode(item.Timestamp.ToLocalTime().ToString("F"))
+            </td>
+            <td class="col-md-1">
+                @if (item.Accepted)
+                {
+                    <span class="label label-success">Accepted</span>
+                }
+                else
+                {
+                    <span class="label label-default">Pending</span>
+                }
+            </td>
+            <td id="@("inv" + @i)" class="col-md-2">
+                <a href="#" class="deleteLink">Delete</a>
+                <!-- Confirm Delete -->
+                <div class="confirmDeleteDialog" id="@("confirminv" + @i)" style="display:none;">
+                    @using (@Html.BeginForm("DeleteInvitationIncoming", "Invitation", new { id = item.Id }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        <button type="button" class="delCancelButton btn btn-sm btn-default">Cancel</button>
+                    }
+                </div>
+
+            </td>
+        </tr>
+    }
+
+</table>
+
+
+@*<div>
+    @Html.ActionLink("Back to List", "Browse", "File", new { path = Model.FromPath }, null)
+</div>*@
+
+
+
+<script>
+    $("document").ready(function () {
+        $("#OutgoingInvs").hide();
+        $(".deleteLink").click(function () {
+            $(this).hide();
+            var it = $(this).closest('td').attr('id');
+            $("#confirm" + it).show('slide');
+        });
+        $(".delCancelButton").click(function () {
+            $(".confirmDeleteDialog").hide();
+            $(".deleteLink").show('slide');
+        });
+        $("#incomingNav").click(function () {
+            $("#incomingNavLi").addClass("active");
+            $("#outgoingNavLi").removeClass("active");
+            $("#IncomingInvs").show();
+            $("#OutgoingInvs").hide();
+        });
+        $("#outgoingNav").click(function () {
+            $("#outgoingNavLi").addClass("active");
+            $("#incomingNavLi").removeClass("active");
+            $("#OutgoingInvs").show();
+            $("#IncomingInvs").hide();
+        });
+    });
+</script>
