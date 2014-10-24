@@ -97,6 +97,44 @@ namespace FooBox.Controllers
             return View(mod);
         }
 
+        public ActionResult AllInvitations()
+        {
+           
+            User currentUser = _userManager.FindUser(User.Identity.GetUserId());
+            AllInvitationsViewModel mod = new AllInvitationsViewModel();
+            var invitations = _fileManager.Context.Invitations.ToList();
+            foreach (Invitation i in invitations)
+            {
+                if (i.User == currentUser)
+                {
+                    var ivm = new InvitationVM
+                    {
+                        Id = i.Id,
+                        FolderName = i.Target.DisplayName,
+                        UserName = i.Target.Owner.Name,
+                        Timestamp = i.TimeStamp,
+                        Accepted = i.AcceptedFolders.Any()
+                    };
+                    mod.Incoming.Add(ivm);
+                }
+                if (i.Target.Owner == currentUser)
+                {
+                    var ivm = new InvitationVM
+                    {
+                        Id = i.Id,
+                        FolderName = i.Target.DisplayName,
+                        UserName = i.User.Name,
+                        Timestamp = i.TimeStamp,
+                        Accepted = i.AcceptedFolders.Any()
+                    };
+                    mod.Outgoing.Add(ivm);
+                }
+            }
+
+            return View(mod);
+        }
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult NewInvitation(EditInvitationsViewModel model)
@@ -168,6 +206,19 @@ namespace FooBox.Controllers
             // TODO gotta remove the folder in invitation.AcceptedFolders
             _userManager.Context.SaveChanges();
             return RedirectToAction("Index", new { fullName = model.FullName });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteInvitationIncoming(long? id)
+        {
+            var inv = (from invitation in _userManager.Context.Invitations
+                       where invitation.Id == id
+                       select invitation).SingleOrDefault();
+            _userManager.Context.Invitations.Remove(inv);
+            // TODO gotta remove the folder in invitation.AcceptedFolders
+            _userManager.Context.SaveChanges();
+            return RedirectToAction("AllInvitations");
         }
 
         [HttpPost]

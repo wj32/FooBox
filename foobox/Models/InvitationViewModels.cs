@@ -32,8 +32,23 @@ namespace FooBox.Models
     }
 
 
+    public class AllInvitationsViewModel
+    {
+        public AllInvitationsViewModel()
+        {
+
+            Incoming = new List<InvitationVM>();
+            Outgoing = new List<InvitationVM>();
+        }
+
+        public List<InvitationVM> Incoming { get; set; }
+        public List<InvitationVM> Outgoing { get; set; }
+    }
+
+
     public class InvitationVM
     {
+        public string FolderName { get; set; }
         public long Id { get; set; }
 
         public string UserName { get; set; }
@@ -45,5 +60,7 @@ namespace FooBox.Models
         public DateTime Timestamp { get; set; }
 
     }
+
+
 
 }
