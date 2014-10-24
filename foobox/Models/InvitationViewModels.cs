@@ -31,6 +31,13 @@ namespace FooBox.Models
 
     }
 
+    public enum InvitationDisallowedReason
+    {
+        None,
+        NotOwner,
+        InSharedFolder
+    }
+
 
     public class AllInvitationsViewModel
     {

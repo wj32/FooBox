@@ -26,7 +26,8 @@ namespace FooBox.Controllers
             }
             base.Dispose(disposing);
         }
-       
+
+
 
         public ActionResult Index(string fullName)
         {
@@ -270,8 +271,5 @@ namespace FooBox.Controllers
             }
             return allUsers.Except(usersAlreadyInvited);
         }
-
-
-
     }
 }
