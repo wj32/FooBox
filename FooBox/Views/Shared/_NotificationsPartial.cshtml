@@ -1,13 +1,6 @@
 ﻿@model ICollection<FooBox.Invitation>
 @{
-    int count = 0;
-    foreach (var item in Model)
-    {
-        if (!item.AcceptedFolders.Any())
-        {
-            count += 1;
-        }
-    }
+    int count = Model.Count(item => !item.AcceptedFolders.Any());
     <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="badge" id="invitation-count">@count</span></a>
 }
 

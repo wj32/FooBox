@@ -24,13 +24,13 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li>@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li>@Html.ActionLink("Shared Links", "DisplayShareLinks", "File")</li>
                     @using (var userManager = new FooBox.Models.UserManager())
                     {
                         if (!string.IsNullOrEmpty(User.Identity.Name) && userManager.IsUserAdmin(FooBox.Models.IdentityExtensions.GetUserId(User.Identity)))
                         {
                             <li>@Html.ActionLink("Users", "Index", "User")</li>
                             <li>@Html.ActionLink("Groups", "Index", "Group")</li>
-                            <li>@Html.ActionLink("Sharing Links", "DisplayShareLinks", "File")</li>
                         }
                     }
                 </ul>

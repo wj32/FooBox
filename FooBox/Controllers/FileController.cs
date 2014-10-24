@@ -498,11 +498,7 @@ namespace FooBox.Controllers
             });
 
             _fileManager.SyncClientChanges(data);
-            // Add folder to invitation folders
-            string fullDisplayName;
-            File file = _fileManager.FindFile(destinationDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
-            Folder newFolder = (Folder)file;
-            invitation.AcceptedFolders.Add(newFolder);
+
             AddSharedFolderOutput output = new AddSharedFolderOutput();
             output.FolderDisplayName= destinationDisplayName;
             return Json(output, JsonRequestBehavior.AllowGet);
@@ -526,7 +522,8 @@ namespace FooBox.Controllers
 
         public ActionResult DisplayShareLinks()
         {
-            return View(_fileManager.Context.DocumentLinks);
+            var user = _userManager.FindUser(User.Identity.GetUserId());
+            return View(_fileManager.Context.DocumentLinks.Where(item => item.User == user));
         }
 
         public ActionResult DeleteShareLink(long? id)
