@@ -99,40 +99,37 @@ namespace FooBox.Controllers
 
         public ActionResult AllInvitations()
         {
-           
-            User currentUser = _userManager.FindUser(User.Identity.GetUserId());
+            long currentUserId = User.Identity.GetUserId();
             AllInvitationsViewModel mod = new AllInvitationsViewModel();
-            var invitations = _fileManager.Context.Invitations.ToList();
-            foreach (Invitation i in invitations)
-            {
-                if (i.User == currentUser)
-                {
-                    var ivm = new InvitationVM
-                    {
-                        Id = i.Id,
-                        FolderName = i.Target.DisplayName,
-                        UserName = i.Target.Owner.Name,
-                        Timestamp = i.TimeStamp,
-                        Accepted = i.AcceptedFolders.Any()
-                    };
-                    mod.Incoming.Add(ivm);
-                }
-                if (i.Target.Owner == currentUser)
-                {
-                    var ivm = new InvitationVM
-                    {
-                        Id = i.Id,
-                        FolderName = i.Target.DisplayName,
-                        UserName = i.User.Name,
-                        Timestamp = i.TimeStamp,
-                        Accepted = i.AcceptedFolders.Any()
-                    };
-                    mod.Outgoing.Add(ivm);
-                }
-            }
 
-            mod.Incoming.Sort((x, y) => x.Accepted.CompareTo(y.Accepted));
-            mod.Outgoing.Sort((x, y) => y.Accepted.CompareTo(x.Accepted));
+            mod.Incoming = (
+                from i in _fileManager.Context.Invitations
+                where i.UserId == currentUserId
+                let accepted = i.AcceptedFolders.Any()
+                orderby accepted
+                select new InvitationVM
+                {
+                    Id = i.Id,
+                    FolderName = i.Target.DisplayName,
+                    UserName = i.Target.Owner.Name,
+                    Timestamp = i.TimeStamp,
+                    Accepted = accepted
+                }
+                ).ToList();
+            mod.Outgoing = (
+                from i in _fileManager.Context.Invitations
+                where i.Target.OwnerId == currentUserId
+                let accepted = i.AcceptedFolders.Any()
+                orderby accepted
+                select new InvitationVM
+                {
+                    Id = i.Id,
+                    FolderName = i.Target.DisplayName,
+                    UserName = i.User.Name,
+                    Timestamp = i.TimeStamp,
+                    Accepted = i.AcceptedFolders.Any()
+                }
+                ).ToList();
 
             return View(mod);
         }

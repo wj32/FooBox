@@ -68,6 +68,12 @@
             </td>
         </tr>
     }
+    @if (!Model.Incoming.Any())
+    {
+        <tr>
+            <td>No incoming invitations to display.</td>
+        </tr>
+    }
 
 </table>
 
@@ -126,6 +132,12 @@
                 </div>
 
             </td>
+        </tr>
+    }
+    @if (!Model.Outgoing.Any())
+    {
+        <tr>
+            <td>No outgoing invitations to display.</td>
         </tr>
     }
 
