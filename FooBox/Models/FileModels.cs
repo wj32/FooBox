@@ -695,9 +695,15 @@ namespace FooBox.Models
             {
                 var folder = (Folder)file;
 
-                // Delete all incoming invitations.
                 if (state == ObjectState.Deleted)
+                {
+                    // Delete all incoming invitations.
                     _context.Invitations.RemoveRange(folder.TargetOfInvitations);
+
+                    // Delete any linked invitation.
+                    if (folder.InvitationId != null)
+                        _context.Invitations.Remove(folder.Invitation);
+                }
 
                 foreach (var subFile in folder.Files)
                     SetFileState(subFile, state, quotaCharge);
@@ -750,6 +756,7 @@ namespace FooBox.Models
                         bool createFolder = false;
                         bool createDocument = false;
                         bool createDocumentVersion = false;
+                        bool setInvitation = false;
                         bool setDisplayName = false;
                         bool undeleted = false;
                         bool replaced = false;
@@ -761,6 +768,7 @@ namespace FooBox.Models
                                 // Nothing -> Folder
                                 // Create the folder.
                                 createFolder = true;
+                                setInvitation = true;
                             }
                             else
                             {
@@ -774,7 +782,8 @@ namespace FooBox.Models
                             if (node.IsFolder)
                             {
                                 // Folder -> Folder
-                                // Only a possible rename is needed.
+                                // Only a possible rename or invitation change is needed.
+                                setInvitation = true;
                                 setDisplayName = true;
                             }
                             else
@@ -797,6 +806,7 @@ namespace FooBox.Models
                                 RenameAndDeleteConflictingFile(parentFolder, file, "Deleted", quotaCharge);
                                 replaced = true;
                                 createFolder = true;
+                                setInvitation = true;
                             }
                             else
                             {
@@ -831,28 +841,6 @@ namespace FooBox.Models
                                 Owner = parentFolder.Owner
                             });
                             createChange = true;
-
-                            long invitationId = clientChangesByFullName[node.FullName].InvitationId;
-
-                            if (invitationId != 0)
-                            {
-                                var invitation = (
-                                    from i in client.User.Invitations.AsQueryable()
-                                    where i.Id == invitationId
-                                    select i
-                                    ).SingleOrDefault();
-
-                                if (invitation != null)
-                                {
-                                    // Remove all other folders that link to this invitation.
-                                    invitation.AcceptedFolders.Clear();
-                                    invitation.AcceptedFolders.Add((Folder)file);
-                                }
-                            }
-                            else
-                            {
-                                ((Folder)file).InvitationId = null;
-                            }
                         }
                         else if (createDocument)
                         {
@@ -900,6 +888,31 @@ namespace FooBox.Models
                             else if (undeleted)
                             {
                                 AddQuotaCharge(quotaCharge, file.ParentFolder.Owner, latestSize);
+                            }
+                        }
+
+                        if (setInvitation)
+                        {
+                            long invitationId = clientChangesByFullName[node.FullName].InvitationId;
+
+                            if (invitationId != 0)
+                            {
+                                var invitation = (
+                                    from i in client.User.Invitations.AsQueryable()
+                                    where i.Id == invitationId
+                                    select i
+                                    ).SingleOrDefault();
+
+                                if (invitation != null)
+                                {
+                                    // Remove all other folders that link to this invitation.
+                                    invitation.AcceptedFolders.Clear();
+                                    invitation.AcceptedFolders.Add((Folder)file);
+                                }
+                            }
+                            else
+                            {
+                                ((Folder)file).InvitationId = null;
                             }
                         }
 

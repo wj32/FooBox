@@ -810,7 +810,7 @@ namespace FooBoxClient
                 var result = Requests.Sync(new ClientSyncData { BaseChangelistId = 0 });
 
                 IgnoreSpecialNames(result.Changes);
-                FilterTopLevelNames(result.Changes, new HashSet<string>(_state.NewInvitations.Keys.Select(x => x.ToString())));
+                FilterTopLevelNames(result.Changes, new HashSet<string>(_state.NewInvitations.Keys.Select(x => "@" + x.ToString())));
 
                 _state.PendingChanges.Insert(0, result.Changes); // Insert at the front because this must applied first.
 

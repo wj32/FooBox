@@ -158,8 +158,11 @@ namespace FooBox.Controllers
         {
             var inv = (from invitation in _userManager.Context.Invitations 
                            where invitation.Id == id select invitation).SingleOrDefault();
+            if (inv == null)
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
+            foreach (var folder in inv.AcceptedFolders)
+                folder.InvitationId = null;
             _userManager.Context.Invitations.Remove(inv);
-            // TODO gotta remove the folder in invitation.AcceptedFolders
             _userManager.Context.SaveChanges();
             return RedirectToAction("Index", new { fullName = model.FullName });
         }
