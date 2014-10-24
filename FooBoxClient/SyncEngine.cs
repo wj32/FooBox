@@ -70,6 +70,13 @@ namespace FooBoxClient
             if (invitationId != 0)
             {
                 System.IO.File.WriteAllText(fileName, invitationId.ToString());
+
+                try
+                {
+                    System.IO.File.SetAttributes(fileName, FileAttributes.Hidden);
+                }
+                catch
+                { }
             }
             else
             {
@@ -239,7 +246,7 @@ namespace FooBoxClient
             if (firstComponent.Length != 0 && firstComponent[0] == '@' &&
                 _state.Invitations.TryGetValue(firstComponent.Substring(1), out newPrefixFullName))
             {
-                return GetLocalFullName(newPrefixFullName) + fullName.Remove(0, 1 + firstComponent.Length).Remove('/', '\\');
+                return GetLocalFullName(newPrefixFullName) + fullName.Remove(0, 1 + firstComponent.Length).Replace('/', '\\');
             }
 
             throw new Exception("Invalid file name '" + fullName + "'");
@@ -287,14 +294,14 @@ namespace FooBoxClient
                 {
                     foreach (File oldFile in oldFolder.Files.Values)
                     {
-                        if (oldFile.InvitationId != 0)
-                        {
-                            _state.Invitations.Remove(oldFile.InvitationId.ToString());
-                            _state.NewInvitations.Remove(oldFile.InvitationId.ToString());
-                        }
-
                         if (newFolder.Files == null || !newFolder.Files.ContainsKey(oldFile.Name))
                         {
+                            if (oldFile.InvitationId != 0)
+                            {
+                                _state.Invitations.Remove(oldFile.InvitationId.ToString());
+                                _state.NewInvitations.Remove(oldFile.InvitationId.ToString());
+                            }
+
                             changes.Add(new ClientChange
                             {
                                 FullName = oldFile.FullName,
