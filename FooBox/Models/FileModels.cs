@@ -1153,10 +1153,12 @@ namespace FooBox.Models
         {
             var translated = new List<ClientChange>();
             string userPrefix = "/" + client.UserId.ToString() + "/";
-            var map = client.User.Invitations.AsQueryable()
-                .SelectMany(invitation => invitation.AcceptedFolders)
-                .AsEnumerable()
-                .Select(folder => Tuple.Create(GetFullName(folder) + "/", "/@" + folder.InvitationId.Value.ToString() + "/"))
+            var map = (
+                from invitation in client.User.Invitations.AsQueryable()
+                where invitation.AcceptedFolders.Any()
+                select new { Id = invitation.Id, Target = invitation.Target }
+                ).AsEnumerable()
+                .Select(x => Tuple.Create(GetFullName(x.Target) + "/", "/@" + x.Id.ToString() + "/"))
                 .ToList();
 
             map.Add(Tuple.Create(userPrefix, userPrefix));
