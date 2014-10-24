@@ -136,7 +136,7 @@ namespace FooBox.Controllers
             }
         }
 
-        public ActionResult DisplayVersionHistory(string fullName)
+        public ActionResult Versions(string fullName)
         {
             if (fullName == null)
                 return RedirectToAction("Browse");
@@ -212,7 +212,7 @@ namespace FooBox.Controllers
             });
             _fileManager.SyncClientChanges(data);
 
-            return RedirectToAction("DisplayVersionHistory", new { fullName = fullName });
+            return RedirectToAction("Versions", new { fullName = fullName });
         }
 
         
@@ -521,17 +521,21 @@ namespace FooBox.Controllers
             return PartialView("_DocumentLinkURL", key);
         }
 
-        public ActionResult DisplayShareLinks()
+        public ActionResult SharedLinks()
         {
-            var user = _userManager.FindUser(User.Identity.GetUserId());
-            return View(_fileManager.Context.DocumentLinks.Where(item => item.User == user));
+            var userId = User.Identity.GetUserId();
+            var entries =
+                from item in _fileManager.Context.DocumentLinks
+                where item.User.Id == userId
+                select new SharedLinkEntry { Id = item.Id, RelativeFullName = item.RelativeFullName, Key = item.Key };
+            return View(entries.ToList());
         }
 
         public ActionResult DeleteShareLink(long? id)
         {
             _fileManager.Context.DocumentLinks.RemoveRange(from linc in _fileManager.Context.DocumentLinks where linc.Id == id select linc);
             _fileManager.Context.SaveChanges();
-            return RedirectToAction("DisplayShareLinks");
+            return RedirectToAction("SharedLinks");
         }
 
         public ActionResult DownloadKey(string key)

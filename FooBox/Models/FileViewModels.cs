@@ -46,5 +46,10 @@ namespace FooBox.Models
         public List<VersionEntry> Versions { get; set; }
     }
 
-
+    public class SharedLinkEntry
+    {
+        public long Id { get; set; }
+        public string RelativeFullName { get; set; }
+        public string Key { get; set; }
+    }
 }

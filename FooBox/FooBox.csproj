@@ -232,9 +232,9 @@
     <Content Include="Views\User\UserNewForm.cshtml" />
     <Content Include="Views\Group\GroupEdit.cshtml" />
     <Content Include="Views\File\Browse.cshtml" />
-    <Content Include="Views\File\DisplayVersionHistory.cshtml" />
+    <Content Include="Views\File\Versions.cshtml" />
     <Content Include="Views\File\FolderEdit.cshtml" />
-    <Content Include="Views\File\DisplayShareLinks.cshtml" />
+    <Content Include="Views\File\SharedLinks.cshtml" />
     <Content Include="Views\File\_DocumentLinkURL.cshtml" />
     <Content Include="Views\Invitation\Index.cshtml" />
     <Content Include="Views\Shared\_NotificationsPartial.cshtml" />

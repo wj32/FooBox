@@ -122,7 +122,7 @@
                     <ul class="dropdown-menu" role="menu">
                         @if (!item.IsFolder)
                         {
-                            <li>@Html.ActionLink("Version History", "DisplayVersionHistory", new { fullName = item.FullDisplayName })</li>
+                            <li>@Html.ActionLink("Version History", "Versions", new { fullName = item.FullDisplayName })</li>
                             <li>@Ajax.ActionLink("Get Sharing Link", "GetShareLink", new { fullName = item.FullDisplayName },
                              new AjaxOptions { UpdateTargetId = "shareLink", OnSuccess = "onSharingLinkSuccess" }, new { @class = "getShareLink" })</li>
                             <li class="divider"></li>

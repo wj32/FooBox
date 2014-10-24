@@ -24,7 +24,7 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("Shared Links", "DisplayShareLinks", "File")</li>
+                    <li>@Html.ActionLink("Shared Links", "SharedLinks", "File")</li>
                     @using (var userManager = new FooBox.Models.UserManager())
                     {
                         if (!string.IsNullOrEmpty(User.Identity.Name) && userManager.IsUserAdmin(FooBox.Models.IdentityExtensions.GetUserId(User.Identity)))
