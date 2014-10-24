@@ -150,39 +150,44 @@ namespace FooBox.Models
             return (from file in _context.Files where file.Id == fileId select file).SingleOrDefault();
         }
 
-        public File FindFile(string fullName)
+        public File FindFile(string relativeFullName)
         {
             string fullDisplayName;
-            return FindFile(fullName, null, out fullDisplayName);
+            return FindFile(relativeFullName, null, out fullDisplayName);
         }
 
-        public File FindFile(string fullName, Folder root, out string fullDisplayName)
+        public File FindFile(string relativeFullName, Folder root, out string relativeFullDisplayName, bool followInvitations = true)
         {
             File file = root ?? GetRootFolder();
-            string[] names = fullName.ToUpperInvariant().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            StringBuilder fullDisplayNameSb = new StringBuilder();
+            string[] names = relativeFullName.ToUpperInvariant().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            StringBuilder relativeFullDisplayNameSb = new StringBuilder();
 
             foreach (var name in names)
             {
                 if (!(file is Folder))
                 {
-                    fullDisplayName = null;
+                    relativeFullDisplayName = null;
                     return null;
                 }
 
-                file = ((Folder)file).Files.AsQueryable().Where(subFile => subFile.Name == name).SingleOrDefault();
+                Folder folder = (Folder)file;
+
+                if (followInvitations && folder.InvitationId != null)
+                    folder = folder.Invitation.Target;
+
+                file = folder.Files.AsQueryable().Where(subFile => subFile.Name == name).SingleOrDefault();
 
                 if (file == null)
                 {
-                    fullDisplayName = null;
+                    relativeFullDisplayName = null;
                     return null;
                 }
 
-                fullDisplayNameSb.Append('/');
-                fullDisplayNameSb.Append(file.DisplayName);
+                relativeFullDisplayNameSb.Append('/');
+                relativeFullDisplayNameSb.Append(file.DisplayName);
             }
 
-            fullDisplayName = fullDisplayNameSb.ToString();
+            relativeFullDisplayName = relativeFullDisplayNameSb.ToString();
 
             return file;
         }
@@ -392,6 +397,19 @@ namespace FooBox.Models
             }
 
             return key;
+        }
+
+        #endregion
+
+        #region Invitations
+
+        public Invitation GetInvitationForUser(Folder folder, long userId)
+        {
+            return (
+                from invitation in folder.TargetOfInvitations.AsQueryable()
+                where invitation.UserId == userId
+                select invitation
+                ).SingleOrDefault();
         }
 
         #endregion

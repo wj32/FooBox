@@ -36,7 +36,8 @@ namespace FooBox.Controllers
 
         private FileBrowseViewModel CreateBrowseModelForFolder(Folder folder, string fullDisplayName)
         {
-            Folder userRootFolder = _fileManager.GetUserRootFolder(User.Identity.GetUserId());
+            long userId = User.Identity.GetUserId();
+            Folder userRootFolder = _fileManager.GetUserRootFolder(userId);
 
             if (folder == null)
             {
@@ -44,11 +45,17 @@ namespace FooBox.Controllers
                 fullDisplayName = "";
             }
 
+            Folder originalFolder = folder;
+
+            // Follow any invitation link.
+            if (folder.InvitationId != null)
+                folder = folder.Invitation.Target;
+
             FileBrowseViewModel model = new FileBrowseViewModel();
 
             model.FullDisplayName = fullDisplayName;
-            model.DisplayName = folder == userRootFolder ? "Home" : folder.DisplayName;
-            model.State = folder.State;
+            model.DisplayName = originalFolder == userRootFolder ? "Home" : originalFolder.DisplayName;
+            model.State = originalFolder.State;
             model.Files = (
                 from file in folder.Files.AsQueryable()
                 where file.State == ObjectState.Normal || file.State == folder.State // Always show deleted files in a deleted folder
@@ -73,17 +80,30 @@ namespace FooBox.Controllers
             // Construct the parent list for the breadcrumb.
 
             List<Folder> parentFolders = new List<Folder>();
+            Folder currentFolder = folder;
 
-            if (folder != userRootFolder)
+            while (currentFolder != userRootFolder)
             {
-                Folder parentFolder = folder.ParentFolder;
-
-                while (parentFolder != userRootFolder)
+                if (currentFolder.InvitationId != null || currentFolder.TargetOfInvitations.Any())
                 {
-                    parentFolders.Add(parentFolder);
-                    parentFolder = parentFolder.ParentFolder;
+                    model.SharedFolder = true;
+
+                    // Follow any invitation link backwards.
+
+                    var invitation = _fileManager.GetInvitationForUser(currentFolder, userId);
+                    Folder acceptedFolder = null;
+
+                    if (invitation != null)
+                        acceptedFolder = invitation.AcceptedFolders.SingleOrDefault();
+                    if (acceptedFolder != null)
+                        currentFolder = acceptedFolder;
                 }
-            }
+
+                currentFolder = currentFolder.ParentFolder;
+
+                if (currentFolder != userRootFolder)
+                    parentFolders.Add(currentFolder);
+            };
 
             parentFolders.Reverse();
 

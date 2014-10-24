@@ -26,6 +26,7 @@ namespace FooBox.Models
         public ObjectState State { get; set; }
         public List<FileEntry> Files { get; set; }
         public List<Tuple<string, string>> Parents { get; set; }
+        public bool SharedFolder { get; set; }
     }
 
     public class VersionHistoryViewModel
