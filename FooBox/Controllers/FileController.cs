@@ -494,6 +494,7 @@ namespace FooBox.Controllers
                 FullName = "/" + userId + "/" + destinationDisplayName,
                 Type = ChangeType.Add,
                 IsFolder = true,
+                DisplayName = destinationDisplayName,
                 InvitationId = invitation.Id
             });
 
