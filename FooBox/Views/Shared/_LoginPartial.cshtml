@@ -10,10 +10,6 @@
             @: <li>
             @Html.ActionLink("Hello " + userManager.FindUser(User.Identity.GetUserId()).Name + "!", "Manage", "Account", routeValues: null, htmlAttributes: new { title = "Manage" })
             @: </li>
-            @: <li class="dropdown">
-            @Html.Partial("_NotificationsPartial", userManager.FindUser(User.Identity.GetUserId()).Invitations)
-            @: </li>
-
             }
         }
 

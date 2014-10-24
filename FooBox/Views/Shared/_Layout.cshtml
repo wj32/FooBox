@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using FooBox.Models;
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -24,13 +25,19 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("Shared Links", "SharedLinks", "File")</li>
                     @using (var userManager = new FooBox.Models.UserManager())
                     {
-                        if (!string.IsNullOrEmpty(User.Identity.Name) && userManager.IsUserAdmin(FooBox.Models.IdentityExtensions.GetUserId(User.Identity)))
+                        if (!string.IsNullOrEmpty(User.Identity.Name))
                         {
-                            <li>@Html.ActionLink("Users", "Index", "User")</li>
-                            <li>@Html.ActionLink("Groups", "Index", "Group")</li>
+                            <li>@Html.ActionLink("Shared Links", "SharedLinks", "File")</li>
+                            <li class="dropdown">
+                                @Html.Partial("_NotificationsPartial", userManager.FindUser(User.Identity.GetUserId()).Invitations)
+                            </li>
+                            if (userManager.IsUserAdmin(FooBox.Models.IdentityExtensions.GetUserId(User.Identity)))
+                            {
+                                <li>@Html.ActionLink("Users", "Index", "User")</li>
+                                <li>@Html.ActionLink("Groups", "Index", "Group")</li>
+                            }
                         }
                     }
                 </ul>

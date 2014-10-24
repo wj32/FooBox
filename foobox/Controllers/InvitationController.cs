@@ -131,6 +131,9 @@ namespace FooBox.Controllers
                 }
             }
 
+            mod.Incoming.Sort((x, y) => x.Accepted.CompareTo(y.Accepted));
+            mod.Outgoing.Sort((x, y) => y.Accepted.CompareTo(x.Accepted));
+
             return View(mod);
         }
 
