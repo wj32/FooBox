@@ -67,5 +67,5 @@ namespace FooBox.Controllers
             // Error
             return View(model);
         }
-	}
+    }
 }
