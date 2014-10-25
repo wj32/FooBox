@@ -57,6 +57,6 @@
         }
     </table>
     <div>
-        @Html.ActionLink("Back to List", "Index")
+        @Html.ActionLink("Back to List", "Browse", "File", new { path = Utilities.GetParentFullName(Model.FullDisplayName) }, null)
     </div>
 </div>

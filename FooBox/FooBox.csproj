@@ -233,7 +233,6 @@
     <Content Include="Views\Group\GroupEdit.cshtml" />
     <Content Include="Views\File\Browse.cshtml" />
     <Content Include="Views\File\Versions.cshtml" />
-    <Content Include="Views\File\FolderEdit.cshtml" />
     <Content Include="Views\File\SharedLinks.cshtml" />
     <Content Include="Views\File\_DocumentLinkURL.cshtml" />
     <Content Include="Views\Invitation\Index.cshtml" />
