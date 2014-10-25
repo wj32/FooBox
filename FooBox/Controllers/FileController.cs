@@ -73,7 +73,8 @@ namespace FooBox.Controllers
                     Size = latestVersion != null ? latestVersion.Blob.Size : 0,
                     TimeStamp = latestVersion != null ? latestVersion.TimeStamp : DateTime.UtcNow,
                     State = file.State,
-                    HasInvitation = (file is Folder) ? ((Folder)file).InvitationId != null : false
+                    HasInvitation = (file is Folder) ? ((Folder)file).InvitationId != null : false,
+                    HasTargetInvitations = (file is Folder) ? ((Folder)file).TargetOfInvitations.Any() : false
                 }
                 ).ToList();
             model.Parents = new List<Tuple<string, string>>();

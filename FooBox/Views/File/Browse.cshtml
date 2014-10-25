@@ -133,12 +133,19 @@
                         } 
                         else if (!Model.SharedFolder && !item.HasInvitation)
                         { 
-                            <li>@Html.ActionLink("Invite Users", "Index", "Invitation", new { fullName = item.FullDisplayName }, null)</li>
+                            <li>@Html.ActionLink("Invitations", "Index", "Invitation", new { fullName = item.FullDisplayName }, null)</li>
                             <li class="divider"></li>
                         } 
-                        
-                        <li><a href="#" class="renameLink">Rename</a></li>
-                        <li><a href="#" class="deleteLink">Delete</a></li>
+
+                        @if (!item.HasTargetInvitations)
+                        {
+                            <li><a href="#" class="renameLink">Rename</a></li>
+                            <li><a href="#" class="deleteLink">Delete</a></li>
+                        }
+                        else
+                        {
+                            <li class="disabled"><a href="#">A shared folder cannot be<br />renamed or deleted.</a></li>
+                        }
                     </ul>
                 </div>
                 <!-- Confirm Delete -->
