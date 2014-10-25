@@ -173,17 +173,18 @@ namespace FooBox.Controllers
         }
 
         [HttpGet]
-        public ActionResult Invitations(long? id, string secret, DateTime since)
+        public ActionResult Invitations(long? id, string secret, long since)
         {
             var client = FindClient(id, secret);
             if (client == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
 
-            return Json((
+            var sinceDateTime = DateTime.FromFileTimeUtc(since);
+            var entries = (
                 from invitation in client.User.Invitations
-                where invitation.TimeStamp > since
+                where invitation.TimeStamp > sinceDateTime
                 orderby invitation.TimeStamp descending
-                select new InvitationInfo
+                select new InvitationInfo.Entry
                 {
                     Id = invitation.Id,
                     TimeStamp = invitation.TimeStamp,
@@ -191,7 +192,14 @@ namespace FooBox.Controllers
                     TargetOwnerName = invitation.Target.Owner.Name,
                     Accepted = invitation.AcceptedFolders.Any()
                 }
-                ).ToList());
+                ).ToList();
+            var invitationInfo = new InvitationInfo
+            {
+                At = DateTime.UtcNow,
+                Entries = entries
+            };
+
+            return Json(invitationInfo, JsonRequestBehavior.AllowGet);
         }
 
         private Client FindClient(long? id, string secret)

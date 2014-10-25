@@ -34,6 +34,8 @@
             this.contextMenuNotify = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.pauseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
+            this.viewInWebBrowserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.changeUserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuDropFiles = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -52,6 +54,7 @@
             this.notifyFooBox.ContextMenuStrip = this.contextMenuNotify;
             this.notifyFooBox.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyFooBox.Icon")));
             this.notifyFooBox.Text = "FooBox";
+            this.notifyFooBox.BalloonTipClicked += new System.EventHandler(this.notifyFooBox_BalloonTipClicked);
             this.notifyFooBox.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyFooBox_MouseClick);
             this.notifyFooBox.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.notifyFooBox_MouseDoubleClick);
             // 
@@ -60,36 +63,50 @@
             this.contextMenuNotify.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.pauseToolStripMenuItem,
             this.settingsToolStripMenuItem,
+            this.toolStripMenuItem1,
+            this.viewInWebBrowserToolStripMenuItem,
             this.changeUserToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.contextMenuNotify.Name = "contextMenuNotify";
-            this.contextMenuNotify.Size = new System.Drawing.Size(150, 92);
+            this.contextMenuNotify.Size = new System.Drawing.Size(183, 120);
             // 
             // pauseToolStripMenuItem
             // 
             this.pauseToolStripMenuItem.Name = "pauseToolStripMenuItem";
-            this.pauseToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
+            this.pauseToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.pauseToolStripMenuItem.Text = "Pause syncing";
             this.pauseToolStripMenuItem.Click += new System.EventHandler(this.pauseToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(179, 6);
+            // 
+            // viewInWebBrowserToolStripMenuItem
+            // 
+            this.viewInWebBrowserToolStripMenuItem.Name = "viewInWebBrowserToolStripMenuItem";
+            this.viewInWebBrowserToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.viewInWebBrowserToolStripMenuItem.Text = "View in web browser";
+            this.viewInWebBrowserToolStripMenuItem.Click += new System.EventHandler(this.viewInWebBrowserToolStripMenuItem_Click);
             // 
             // changeUserToolStripMenuItem
             // 
             this.changeUserToolStripMenuItem.Name = "changeUserToolStripMenuItem";
-            this.changeUserToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
+            this.changeUserToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.changeUserToolStripMenuItem.Text = "Change user";
             this.changeUserToolStripMenuItem.Click += new System.EventHandler(this.changeUserToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -120,12 +137,12 @@
             this.contextMenuDropFolder.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.shareToolStripMenuItem});
             this.contextMenuDropFolder.Name = "contextMenuDropFolder";
-            this.contextMenuDropFolder.Size = new System.Drawing.Size(153, 48);
+            this.contextMenuDropFolder.Size = new System.Drawing.Size(115, 26);
             // 
             // shareToolStripMenuItem
             // 
             this.shareToolStripMenuItem.Name = "shareToolStripMenuItem";
-            this.shareToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.shareToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
             this.shareToolStripMenuItem.Text = "Sharing";
             this.shareToolStripMenuItem.Click += new System.EventHandler(this.shareToolStripMenuItem_Click);
             // 
@@ -168,6 +185,8 @@
         private System.Windows.Forms.ToolStripMenuItem viewPreviousVersionsToolStripMenuItem;
         private System.Windows.Forms.ContextMenuStrip contextMenuDropFolder;
         private System.Windows.Forms.ToolStripMenuItem shareToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem viewInWebBrowserToolStripMenuItem;
 
     }
 }

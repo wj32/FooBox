@@ -719,12 +719,12 @@ namespace FooBox.Models
                 return new ClientSyncResult
                 {
                     State = ClientSyncResultState.Error,
-                    Exception = ex
+                    ErrorMessage = ex.Message
                 };
             }
         }
 
-        private void RenameAndDeleteConflictingFile(Folder parentFolder, File file, string reason, Dictionary<User, long> quotaCharge)
+        private void RenameAndDeleteConflictingFile(Folder parentFolder, File file, string reason, Dictionary<User, long> quotaCharge, Changelist changelist)
         {
             string newDisplayName = file.DisplayName + " (" + reason + " " + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss-fff") + ")";
             string newName = newDisplayName.ToUpperInvariant();
@@ -742,7 +742,7 @@ namespace FooBox.Models
 
             file.Name = newName;
             file.DisplayName = newDisplayName;
-            SetFileState(file, ObjectState.Deleted, quotaCharge);
+            SetFileState(file, ObjectState.Deleted, quotaCharge, changelist);
         }
 
         private void AddQuotaCharge(IDictionary<User, long> quotaCharge, User user, long charge)
@@ -753,7 +753,7 @@ namespace FooBox.Models
             quotaCharge[user] += charge;
         }
 
-        private void SetFileState(File file, ObjectState state, IDictionary<User, long> quotaCharge)
+        private void SetFileState(File file, ObjectState state, IDictionary<User, long> quotaCharge, Changelist changelist)
         {
             if (file is Document)
             {
@@ -774,6 +774,22 @@ namespace FooBox.Models
                 if (state == ObjectState.Deleted)
                 {
                     // Delete all invitations that target this folder.
+
+                    foreach (var invitation in folder.TargetOfInvitations)
+                    {
+                        var acceptedFolder = invitation.AcceptedFolders.SingleOrDefault();
+
+                        if (acceptedFolder != null)
+                        {
+                            SetFileState(acceptedFolder, ObjectState.Deleted, quotaCharge, changelist);
+                            changelist.Changes.Add(new Change
+                            {
+                                Type = ChangeType.Delete,
+                                FullName = GetFullName(acceptedFolder)
+                            });
+                        }
+                    }
+
                     _context.Invitations.RemoveRange(folder.TargetOfInvitations);
 
                     // Remove any linked invitation (but don't delete it).
@@ -781,7 +797,7 @@ namespace FooBox.Models
                 }
 
                 foreach (var subFile in folder.Files)
-                    SetFileState(subFile, state, quotaCharge);
+                    SetFileState(subFile, state, quotaCharge, changelist);
             }
 
             file.State = state;
@@ -866,7 +882,7 @@ namespace FooBox.Models
                                 // Folder -> Document
                                 // The folder is implicitly being deleted.
 
-                                RenameAndDeleteConflictingFile(parentFolder, file, "Deleted", quotaCharge);
+                                RenameAndDeleteConflictingFile(parentFolder, file, "Deleted", quotaCharge, changelist);
                                 replaced = true;
                                 createDocument = true;
                             }
@@ -878,7 +894,7 @@ namespace FooBox.Models
                                 // Document -> Folder
                                 // The document is implicitly being deleted.
 
-                                RenameAndDeleteConflictingFile(parentFolder, file, "Deleted", quotaCharge);
+                                RenameAndDeleteConflictingFile(parentFolder, file, "Deleted", quotaCharge, changelist);
                                 replaced = true;
                                 createFolder = true;
                                 setInvitation = true;
@@ -1020,7 +1036,7 @@ namespace FooBox.Models
                     case ChangeType.Delete:
                         if (file != null && file.State != ObjectState.Deleted)
                         {
-                            SetFileState(file, ObjectState.Deleted, quotaCharge);
+                            SetFileState(file, ObjectState.Deleted, quotaCharge, changelist);
                             createChange = true;
                         }
                         break;
@@ -1028,7 +1044,7 @@ namespace FooBox.Models
                     case ChangeType.Undelete:
                         if (file != null && file is Document && file.State != ObjectState.Normal)
                         {
-                            SetFileState(file, ObjectState.Normal, quotaCharge);
+                            SetFileState(file, ObjectState.Normal, quotaCharge, changelist);
                             createChange = true;
                         }
                         break;

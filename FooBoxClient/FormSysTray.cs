@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 using FooBox.Common;
+using System.Collections.Generic;
 
 namespace FooBoxClient
 {
@@ -18,6 +19,8 @@ namespace FooBoxClient
         private bool _paused = false;
         private Size _correctSize;
         private string _currentFileRelativePath = null;
+
+        private string _lastBalloonTip = "";
 
         public FormSysTray()
         {
@@ -40,6 +43,9 @@ namespace FooBoxClient
             _cancellationTokenSource = new CancellationTokenSource();
             notifyFooBox.Visible = true;
             _correctSize = this.Size;
+
+            if (!this.IsHandleCreated)
+                this.CreateHandle();
 
             _syncThread.Start();
         }
@@ -71,22 +77,31 @@ namespace FooBoxClient
 
         private void SyncThreadStart()
         {
+            Thread.Sleep(500);
+
             while (!_closing)
             {
                 bool noDelay = false;
 
                 if (!_paused && _engine != null)
                 {
+                    var log = new List<string>();
+
                     try
                     {
                         lock (_engineSyncObject)
                         {
                             if (_engine != null)
-                                noDelay = _engine.Run(_cancellationTokenSource.Token);
+                                noDelay = _engine.Run(_cancellationTokenSource.Token, log);
                         }
                     }
                     catch
                     { }
+
+                    if (log.Count != 0)
+                    {
+                        this.BeginInvoke(new Action(() => ShowNotification(log[log.Count - 1])));
+                    }
                 }
 
                 if (!noDelay)
@@ -99,10 +114,21 @@ namespace FooBoxClient
             _closing = true;
             _cancellationTokenSource.Cancel();
         }
-        
-        /*
-         * Sets the location of the form for popping up
-         */
+
+        private void ShowNotification(string message)
+        {
+            if (_lastBalloonTip == message)
+                return;
+
+            _lastBalloonTip = message;
+            ToolTipIcon icon = ToolTipIcon.Info;
+
+            if (message.StartsWith("Sync error:"))
+                icon = ToolTipIcon.Error;
+
+            notifyFooBox.ShowBalloonTip(5000, "FooBox", message, icon);
+        }
+
         private void notifyFooBox_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -279,9 +305,20 @@ namespace FooBoxClient
             }
         }
 
+        private void viewInWebBrowserToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Requests.Authenticate("/Home");
+        }
+
         private void viewPreviousVersionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Requests.PreviousVersions(_currentFileRelativePath);
+        }
+
+        private void notifyFooBox_BalloonTipClicked(object sender, EventArgs e)
+        {
+            if (_lastBalloonTip.Contains("invited you to folder"))
+                Requests.Authenticate("/Invitation/AllInvitations");
         }
     }
 }

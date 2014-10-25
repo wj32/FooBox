@@ -8,11 +8,17 @@ namespace FooBox.Common
 {
     public class InvitationInfo
     {
-        public long Id { get; set; }
-        public DateTime TimeStamp { get; set; }
-        public string TargetName { get; set; }
-        public string TargetOwnerName { get; set; }
-        public bool Accepted { get; set; }
+        public class Entry
+        {
+            public long Id { get; set; }
+            public DateTime TimeStamp { get; set; }
+            public string TargetName { get; set; }
+            public string TargetOwnerName { get; set; }
+            public bool Accepted { get; set; }
+        }
+
+        public DateTime At;
+        public List<Entry> Entries;
     }
 
     public class ClientChange : ChangeItem
@@ -88,7 +94,7 @@ namespace FooBox.Common
 
         // >= Error
 
-        public Exception Exception { get; set; }
+        public string ErrorMessage { get; set; }
 
         // >= Conflict
 

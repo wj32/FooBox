@@ -44,6 +44,8 @@ namespace FooBoxClient
             public Dictionary<string, string> Invitations { get; set; }
 
             public Dictionary<string, string> NewInvitations { get; set; }
+
+            public DateTime LastInvitationCheckTime { get; set; }
         }
 
         public static long ReadInvitationId(string directoryName)
@@ -88,7 +90,9 @@ namespace FooBoxClient
         private string _rootDirectory;
         private State _state;
         private bool _stateLoaded;
+
         private CancellationToken _cancellationToken;
+        private ICollection<string> _log;
 
         private string _localSpecialFolder;
         private string _stateFileName;
@@ -130,7 +134,8 @@ namespace FooBoxClient
                 Root = File.CreateRoot(),
                 PendingChanges = new List<ICollection<ClientChange>>(),
                 Invitations = new Dictionary<string, string>(),
-                NewInvitations = new Dictionary<string, string>()
+                NewInvitations = new Dictionary<string, string>(),
+                LastInvitationCheckTime = DateTime.UtcNow
             };
             var userRoot = new File
             {
@@ -720,9 +725,16 @@ namespace FooBoxClient
                 });
         }
 
-        public bool Run(CancellationToken cancellationToken)
+        private void Log(string text)
+        {
+            if (_log != null)
+                _log.Add(text);
+        }
+
+        public bool Run(CancellationToken cancellationToken, ICollection<string> log = null)
         {
             _cancellationToken = cancellationToken;
+            _log = log;
 
             if (!_stateLoaded)
             {
@@ -760,7 +772,8 @@ namespace FooBoxClient
                     case ClientSyncResultState.TooOld:
                         throw new NotImplementedException("TooOld");
                     case ClientSyncResultState.Error:
-                        throw new Exception("Sync error");
+                        Log("Sync error: " + result.ErrorMessage);
+                        throw new Exception("Sync error: " + result.ErrorMessage);
                     case ClientSyncResultState.Conflict:
                         ResolveConflicts(localChanges, result.Changes);
                         return true;
@@ -873,6 +886,18 @@ namespace FooBoxClient
             } while (processed);
 
             CleanBlobDirectory();
+
+            var invitationInfo = Requests.Invitations(_state.LastInvitationCheckTime);
+            _state.LastInvitationCheckTime = invitationInfo.At;
+            this.SaveState();
+
+            foreach (var entry in invitationInfo.Entries)
+            {
+                if (entry.Accepted)
+                    Log("Shared folder '" + entry.TargetName + "' was added to FooBox.");
+                else
+                    Log(entry.TargetOwnerName + " invited you to folder '" + entry.TargetName + "'.");
+            }
 
             return false;
         }

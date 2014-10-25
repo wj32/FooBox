@@ -123,29 +123,27 @@ namespace FooBoxClient
             }
         }
 
-        public static void PreviousVersions(string fullName)
+        public static void Authenticate(string returnUrl)
         {
-            
-            string retUrl = "/File/Versions/?fullName=" + Uri.EscapeDataString(fullName);
-            retUrl = Uri.EscapeDataString(retUrl);
-            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret +
+                "&returnUrl=" + Uri.EscapeDataString(returnUrl);
             string requestUrl = MakeUrl("Authenticate", parameters);
             System.Diagnostics.Process.Start(requestUrl);
+        }
+
+        public static void PreviousVersions(string fullName)
+        {
+            Authenticate("/File/Versions/?fullName=" + Uri.EscapeDataString(fullName));
         }
 
         public static void Sharing(string fullName)
         {
-
-            string retUrl = "/Invitation?fullName=" + Uri.EscapeDataString(fullName);
-            retUrl = Uri.EscapeDataString(retUrl);
-            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
-            string requestUrl = MakeUrl("Authenticate", parameters);
-            System.Diagnostics.Process.Start(requestUrl);
+            Authenticate("/Invitation?fullName=" + Uri.EscapeDataString(fullName));
         }
 
-        public static List<InvitationInfo> Invitations(DateTime since)
+        public static InvitationInfo Invitations(DateTime since)
         {
-            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&since=" + since.ToString();
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&since=" + since.ToFileTimeUtc().ToString();
             HttpWebRequest req = WebRequest.Create(MakeUrl("Invitations", parameters)) as HttpWebRequest;
 
             req.KeepAlive = true;
@@ -155,7 +153,7 @@ namespace FooBoxClient
             using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8))
             {
                 var serializer = new JavaScriptSerializer();
-                return serializer.Deserialize<List<InvitationInfo>>(reader.ReadToEnd());
+                return serializer.Deserialize<InvitationInfo>(reader.ReadToEnd());
             }
         }
     }
