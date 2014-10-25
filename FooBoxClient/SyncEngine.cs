@@ -611,7 +611,12 @@ namespace FooBoxClient
                                     SalvageAndDeleteDocument(file, GetLocalFullName(file.FullName));
 
                                 if (file.InvitationId != 0)
+                                {
                                     _state.Invitations.Remove(file.InvitationId.ToString());
+
+                                    // Remove the invitation root from our file system.
+                                    _state.Root.Files.Remove("@" + file.InvitationId.ToString());
+                                }
 
                                 rootFolder.Files.Remove(file.Name);
                             }
@@ -818,45 +823,54 @@ namespace FooBoxClient
             if (cancellationToken.IsCancellationRequested)
                 return false;
 
-            // Process new invitations.
-            if (_state.NewInvitations.Count != 0)
+            bool processed;
+
+            do
             {
-                // Get a complete list of files in the shared folders so we can download everything.
-                var result = Requests.Sync(new ClientSyncData { BaseChangelistId = 0 });
+                processed = false;
 
-                IgnoreSpecialNames(result.Changes);
-                FilterTopLevelNames(result.Changes, new HashSet<string>(_state.NewInvitations.Keys.Select(x => "@" + x.ToString())));
-
-                _state.PendingChanges.Insert(0, result.Changes); // Insert at the front because this must applied first.
-
-                foreach (var pair in _state.NewInvitations)
-                    _state.Invitations[pair.Key] = pair.Value;
-                _state.NewInvitations.Clear();
-
-                this.SaveState();
-            }
-
-            if (cancellationToken.IsCancellationRequested)
-                return false;
-
-            // Process pending changes.
-            while (_state.PendingChanges.Count != 0)
-            {
-                try
+                // Process new invitations.
+                if (_state.NewInvitations.Count != 0)
                 {
-                    this.Apply(_state.PendingChanges[0]);
+                    // Get a complete list of files in the shared folders so we can download everything.
+                    var result = Requests.Sync(new ClientSyncData { BaseChangelistId = 0 });
 
-                    if (_state.PendingChanges[0].Count == 0) // Has the changelist been fully applied?
-                        _state.PendingChanges.RemoveAt(0);
-                }
-                finally
-                {
+                    IgnoreSpecialNames(result.Changes);
+                    FilterTopLevelNames(result.Changes, new HashSet<string>(_state.NewInvitations.Keys.Select(x => "@" + x.ToString())));
+
+                    _state.PendingChanges.Insert(0, result.Changes); // Insert at the front because this must applied first.
+
+                    foreach (var pair in _state.NewInvitations)
+                        _state.Invitations[pair.Key] = pair.Value;
+                    _state.NewInvitations.Clear();
+
                     this.SaveState();
+                    processed = true;
                 }
 
-                if (_cancellationToken.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
                     return false;
-            }
+
+                // Process pending changes.
+                while (_state.PendingChanges.Count != 0)
+                {
+                    try
+                    {
+                        this.Apply(_state.PendingChanges[0]);
+
+                        if (_state.PendingChanges[0].Count == 0) // Has the changelist been fully applied?
+                            _state.PendingChanges.RemoveAt(0);
+                    }
+                    finally
+                    {
+                        this.SaveState();
+                        processed = true;
+                    }
+
+                    if (_cancellationToken.IsCancellationRequested)
+                        return false;
+                }
+            } while (processed);
 
             CleanBlobDirectory();
 
