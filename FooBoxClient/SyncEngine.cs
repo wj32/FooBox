@@ -188,12 +188,17 @@ namespace FooBoxClient
 
         private void SalvageAndDeleteDocument(File file, string localFullName = null)
         {
-            var blobDirectory = AccessBlobDirectory();
-
             if (localFullName == null)
                 localFullName = GetLocalFullName(file.FullName);
 
-            if (string.IsNullOrEmpty(file.Hash) || System.IO.File.Exists(blobDirectory.FullName + "\\" + file.Hash))
+            SalvageAndDeleteDocument(file.Hash, localFullName);
+        }
+
+        private void SalvageAndDeleteDocument(string hash, string localFullName)
+        {
+            var blobDirectory = AccessBlobDirectory();
+
+            if (string.IsNullOrEmpty(hash) || System.IO.File.Exists(blobDirectory.FullName + "\\" + hash))
             {
                 Utilities.DeleteFile(localFullName);
                 return;
@@ -201,7 +206,7 @@ namespace FooBoxClient
 
             try
             {
-                MoveFileOrDirectory(localFullName, blobDirectory.FullName + "\\" + file.Hash);
+                MoveFileOrDirectory(localFullName, blobDirectory.FullName + "\\" + hash);
             }
             catch
             {
@@ -484,7 +489,7 @@ namespace FooBoxClient
                                 else if (file != null && file.DisplayName != newDisplayName)
                                     MoveFileOrDirectory(newFullDisplayName, newFullDisplayName);
 
-                                long invitationId = clientChanges[node.FullName].InvitationId;
+                                long invitationId = clientChanges[node.FullName].InvitationId.Value;
                                 WriteInvitationId(newFullDisplayName, invitationId);
 
                                 if (invitationId != 0 && (file == null || file.InvitationId != invitationId))
@@ -670,15 +675,25 @@ namespace FooBoxClient
         private void ResolveConflicts(ICollection<ClientChange> localChanges, ICollection<ClientChange> remoteChanges)
         {
             var localByName = localChanges.ToDictionary(local => local.FullName);
+            var remoteByName = remoteChanges.ToDictionary(remote => remote.FullName);
             ChangeNode.FromItems(localChanges).PreservingConflicts(ChangeNode.FromItems(remoteChanges), (local, remote) =>
                 {
                     if (local.Type != ChangeType.Add)
                         return;
 
-                    if (localByName[local.FullName].InvitationId != 0)
+                    if (localByName[local.FullName].InvitationId.HasValue &&
+                        localByName[local.FullName].InvitationId.Value != 0)
                     {
                         // Cannot resolve a conflict on a shared folder. Just delete our copy.
                         Utilities.DeleteDirectoryRecursive(GetLocalFullName(local.FullName));
+                        return;
+                    }
+
+                    if (!local.IsFolder && !remote.IsFolder &&
+                        localByName[local.FullName].Hash == remoteByName[remote.FullName].Hash)
+                    {
+                        // The two copies are actually identical. Just delete our copy.
+                        SalvageAndDeleteDocument(localByName[local.FullName].Hash, GetLocalFullName(local.FullName));
                         return;
                     }
 

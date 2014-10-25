@@ -490,7 +490,7 @@ namespace FooBox.Controllers
             string dummy;
             string syncFullName;
             File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId),
-                out dummy, out syncFullName);
+                out dummy, out syncFullName, followEndInvitation: true);
 
             if (file == null || !(file is Folder) || !Utilities.ValidateFileName(newFolderName))
                 return RedirectToAction("Browse");

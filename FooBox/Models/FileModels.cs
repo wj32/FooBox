@@ -968,26 +968,29 @@ namespace FooBox.Models
 
                         if (setInvitation)
                         {
-                            long invitationId = clientChangesByFullName[node.FullName].InvitationId;
+                            long? invitationId = clientChangesByFullName[node.FullName].InvitationId;
 
-                            if (invitationId != 0 && ((Folder)file).OwnerId == client.UserId)
+                            if (invitationId != null)
                             {
-                                var invitation = (
-                                    from i in client.User.Invitations.AsQueryable()
-                                    where i.Id == invitationId
-                                    select i
-                                    ).SingleOrDefault();
-
-                                if (invitation != null)
+                                if (invitationId.Value != 0 && ((Folder)file).OwnerId == client.UserId)
                                 {
-                                    // Remove all other folders that link to this invitation.
-                                    invitation.AcceptedFolders.Clear();
-                                    invitation.AcceptedFolders.Add((Folder)file);
+                                    var invitation = (
+                                        from i in client.User.Invitations.AsQueryable()
+                                        where i.Id == invitationId.Value
+                                        select i
+                                        ).SingleOrDefault();
+
+                                    if (invitation != null)
+                                    {
+                                        // Remove all other folders that link to this invitation.
+                                        invitation.AcceptedFolders.Clear();
+                                        invitation.AcceptedFolders.Add((Folder)file);
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                ((Folder)file).InvitationId = null;
+                                else
+                                {
+                                    ((Folder)file).InvitationId = null;
+                                }
                             }
                         }
 
