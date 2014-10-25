@@ -38,12 +38,14 @@ namespace FooBox.Models
             public DateTime TimeStamp { get; set; }
             public long VersionId { get; set; }
             public string ClientName { get; set; }
+            public long UserId { get; set; }
+            public string UserName { get; set; }
 
         }
 
         public string DisplayName { get; set; }
         public string FullDisplayName { get; set; }
-
+        public bool SharedFolder { get; set; }
 
         public List<VersionEntry> Versions { get; set; }
     }

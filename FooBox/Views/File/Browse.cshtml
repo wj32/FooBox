@@ -34,11 +34,15 @@
         @:&gt;
     }
     <strong>@Model.DisplayName</strong>
+    @if (Model.State == ObjectState.Deleted)
+    {
+        <em style="color: red; margin-left: 15px; font-size: 20px;">Deleted</em>
+    }
+    else if (Model.SharedFolder)
+    {
+        <em style="color: #148320; margin-left: 15px; font-size: 20px;">Shared</em>
+    }
 </h2>
-@if (Model.State == ObjectState.Deleted)
-{
-    <h4>(deleted)</h4>
-}
 <p>@Html.ValidationSummary(true)</p>
 <div class="row">
     <div class="col-md-3">

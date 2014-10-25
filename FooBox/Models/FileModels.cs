@@ -158,36 +158,67 @@ namespace FooBox.Models
 
         public File FindFile(string relativeFullName, Folder root, out string relativeFullDisplayName, bool followInvitations = true)
         {
+            string syncFullName;
+            return FindFile(relativeFullName, root, out relativeFullDisplayName, out syncFullName, followInvitations);
+        }
+
+        public File FindFile(
+            string relativeFullName,
+            Folder root,
+            out string relativeFullDisplayName,
+            out string syncFullName,
+            bool followInvitations = true,
+            bool followEndInvitation = false)
+        {
             File file = root ?? GetRootFolder();
             string[] names = relativeFullName.ToUpperInvariant().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             StringBuilder relativeFullDisplayNameSb = new StringBuilder();
+            StringBuilder syncFullNameSb = new StringBuilder();
+
+            relativeFullDisplayName = null;
+            syncFullName = null;
+
+            syncFullNameSb.Append(GetFullName(root));
 
             foreach (var name in names)
             {
                 if (!(file is Folder))
-                {
-                    relativeFullDisplayName = null;
                     return null;
-                }
 
                 Folder folder = (Folder)file;
 
                 if (followInvitations && folder.InvitationId != null)
+                {
+                    long invitationId = folder.InvitationId.Value;
                     folder = folder.Invitation.Target;
+                    syncFullNameSb.Clear();
+                    syncFullNameSb.Append("/@");
+                    syncFullNameSb.Append(invitationId);
+                }
 
                 file = folder.Files.AsQueryable().Where(subFile => subFile.Name == name).SingleOrDefault();
 
                 if (file == null)
-                {
-                    relativeFullDisplayName = null;
                     return null;
-                }
 
                 relativeFullDisplayNameSb.Append('/');
                 relativeFullDisplayNameSb.Append(file.DisplayName);
+
+                syncFullNameSb.Append('/');
+                syncFullNameSb.Append(file.Name);
+            }
+
+            if (file is Folder && followEndInvitation && ((Folder)file).InvitationId != null)
+            {
+                long invitationId = ((Folder)file).InvitationId.Value;
+                file = ((Folder)file).Invitation.Target;
+                syncFullNameSb.Clear();
+                syncFullNameSb.Append("/@");
+                syncFullNameSb.Append(invitationId);
             }
 
             relativeFullDisplayName = relativeFullDisplayNameSb.ToString();
+            syncFullName = syncFullNameSb.ToString();
 
             return file;
         }
@@ -403,6 +434,11 @@ namespace FooBox.Models
 
         #region Invitations
 
+        public Invitation FindInvitation(long id)
+        {
+            return (from invitation in _context.Invitations where invitation.Id == id select invitation).SingleOrDefault();
+        }
+
         public Invitation GetInvitationForUser(Folder folder, long userId)
         {
             return (
@@ -410,6 +446,28 @@ namespace FooBox.Models
                 where invitation.UserId == userId
                 select invitation
                 ).SingleOrDefault();
+        }
+
+        public bool IsInSharedFolder(File file)
+        {
+            Folder folder;
+
+            if (file is Folder)
+                folder = (Folder)file;
+            else
+                folder = file.ParentFolder;
+
+            while (folder != null && folder.Name.Length != 0)
+            {
+                if (folder.InvitationId != null)
+                    return true;
+                if (folder.TargetOfInvitations.Any())
+                    return true;
+
+                folder = folder.ParentFolder;
+            }
+
+            return false;
         }
 
         #endregion

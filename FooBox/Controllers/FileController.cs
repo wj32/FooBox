@@ -174,6 +174,7 @@ namespace FooBox.Controllers
 
             model.DisplayName = document.DisplayName;
             model.FullDisplayName = fullDisplayName;
+            model.SharedFolder = _fileManager.IsInSharedFolder(document);
             model.Versions = (
                 from version in document.DocumentVersions
                 orderby version.TimeStamp descending
@@ -182,7 +183,9 @@ namespace FooBox.Controllers
                     Size = version.Blob.Size,
                     TimeStamp = version.TimeStamp,
                     VersionId = version.Id,
-                    ClientName = version.Client.Name
+                    ClientName = version.Client.Name,
+                    UserId = version.Client.UserId,
+                    UserName = version.Client.User.Name
                 }
                 ).ToList();
 
@@ -208,14 +211,14 @@ namespace FooBox.Controllers
         public ActionResult RevertVersion(string fullName, long versionId)
         {
             long userId = User.Identity.GetUserId();
-            string fullDisplayName = null;
             DocumentVersion version = _fileManager.FindDocumentVersion(versionId);
             if (version == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            _fileManager.FindFile(fullName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
-            File file = _fileManager.FindFile(fullName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+            string dummy;
+            string syncFullName;
+            File file = _fileManager.FindFile(fullName, _fileManager.GetUserRootFolder(userId), out dummy, out syncFullName);
             if (file == null || !(file is Document))
                 return RedirectToAction("Browse");
 
@@ -226,7 +229,7 @@ namespace FooBox.Controllers
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
             data.Changes.Add(new ClientChange
             {
-                FullName = "/" + userId.ToString() + "/" + fullDisplayName,
+                FullName = syncFullName,
                 Type = ChangeType.Add,
                 Hash = version.Blob.Hash,
                 Size = version.Blob.Size
@@ -292,12 +295,17 @@ namespace FooBox.Controllers
         public ActionResult Delete(string fromPath, string fileDisplayName)
         {
             long userId = User.Identity.GetUserId();
-            string fullDisplayName = null;
+            string dummy;
+            string syncFullName;
             string fromPathString = fromPath == null ? "" : fromPath + "/";
-            File file = _fileManager.FindFile(fromPathString + fileDisplayName, _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+            File file = _fileManager.FindFile(fromPathString + fileDisplayName, _fileManager.GetUserRootFolder(userId), out dummy, out syncFullName);
 
             if (file == null || file.State != ObjectState.Normal)
                 return RedirectToAction("Browse");
+
+            Invitation invitation = null;
+            if (file is Folder && ((Folder)file).InvitationId != null)
+                invitation = ((Folder)file).Invitation;
 
             var internalClient = _fileManager.GetInternalClient(userId);
             ClientSyncData data = new ClientSyncData();
@@ -306,10 +314,19 @@ namespace FooBox.Controllers
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
             data.Changes.Add(new ClientChange
             {
-                FullName = "/" + userId.ToString() + "/" + fullDisplayName,
+                FullName = syncFullName,
                 Type = ChangeType.Delete
             });
-            _fileManager.SyncClientChanges(data);
+
+            if (_fileManager.SyncClientChanges(data).State == ClientSyncResultState.Success)
+            {
+                // Delete any linked invitation.
+                if (invitation != null)
+                {
+                    _fileManager.Context.Invitations.Remove(invitation);
+                    _fileManager.Context.SaveChanges();
+                }
+            }
 
             return RedirectToAction("Browse", new { path = fromPath });
         }
@@ -319,8 +336,10 @@ namespace FooBox.Controllers
         {
             long userId = User.Identity.GetUserId();
             var internalClient = _fileManager.GetInternalClient(userId);
-            string parentFolderFullName = null;
-            File parentFolderFile = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out parentFolderFullName);
+            string dummy;
+            string parentFolderSyncFullName;
+            File parentFolderFile = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId),
+                out dummy, out parentFolderSyncFullName, followEndInvitation: true);
 
             if (!Utilities.ValidateFileName(newFileDisplayName))
                 return RedirectToAction("Browse", new { path = fromPath });
@@ -343,13 +362,11 @@ namespace FooBox.Controllers
 
             // Check if the user is just trying to change the case.
 
-            string parentFolderFullNameFromRoot = "/" + userId.ToString() + "/" + parentFolderFullName;
-
             if (string.Equals(oldFileDisplayName, newFileDisplayName, StringComparison.InvariantCultureIgnoreCase))
             {
                 data.Changes.Add(new ClientChange
                 {
-                    FullName = parentFolderFullNameFromRoot + "/" + oldFileDisplayName,
+                    FullName = parentFolderSyncFullName + "/" + oldFileDisplayName,
                     Type = ChangeType.SetDisplayName,
                     DisplayName = newFileDisplayName
                 });
@@ -363,11 +380,11 @@ namespace FooBox.Controllers
 
                 data.Changes.Add(new ClientChange
                 {
-                    FullName = parentFolderFullNameFromRoot + "/" + oldFileDisplayName,
+                    FullName = parentFolderSyncFullName + "/" + oldFileDisplayName,
                     Type = ChangeType.Delete
                 });
 
-                AddFileRecursive(data.Changes, existingFile, parentFolderFullNameFromRoot + "/" + destinationDisplayName, destinationDisplayName);
+                AddFileRecursive(data.Changes, existingFile, parentFolderSyncFullName + "/" + destinationDisplayName, destinationDisplayName);
             }
 
             _fileManager.SyncClientChanges(data);
@@ -379,12 +396,17 @@ namespace FooBox.Controllers
         {
             long size = 0;
             string hash = null;
+            long invitationId = 0;
 
             if (existingFile is Document)
             {
                 Blob blob = _fileManager.GetLastDocumentVersion((Document)existingFile).Blob;
                 size = blob.Size;
                 hash = blob.Hash;
+            }
+            else if (existingFile is Folder)
+            {
+                invitationId = ((Folder)existingFile).InvitationId ?? 0;
             }
 
             changes.Add(new ClientChange
@@ -394,7 +416,8 @@ namespace FooBox.Controllers
                 IsFolder = existingFile is Folder,
                 DisplayName = newDisplayName ?? existingFile.DisplayName,
                 Size = size,
-                Hash = hash
+                Hash = hash,
+                InvitationId = invitationId
             });
 
             if (existingFile is Folder)
@@ -414,8 +437,10 @@ namespace FooBox.Controllers
         {
             long userId = User.Identity.GetUserId();
             var internalClient = _fileManager.GetInternalClient(userId);
-            string fullDisplayName = null;
-            File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+            string dummy;
+            string syncFullName;
+            File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId),
+                out dummy, out syncFullName, followEndInvitation: true);
 
             if (file == null || !(file is Folder) || uploadFile == null || !Utilities.ValidateFileName(uploadFile.FileName))
                 return RedirectToAction("Browse");
@@ -439,7 +464,7 @@ namespace FooBox.Controllers
                 data.BaseChangelistId = _fileManager.GetLastChangelistId();
                 data.Changes.Add(new ClientChange
                 {
-                    FullName = "/" + userId.ToString() + "/" + fullDisplayName + "/" + destinationDisplayName,
+                    FullName = syncFullName + "/" + destinationDisplayName,
                     Type = ChangeType.Add,
                     IsFolder = false,
                     Size = fileSize,
@@ -462,8 +487,10 @@ namespace FooBox.Controllers
         {
             long userId = User.Identity.GetUserId();
             var internalClient = _fileManager.GetInternalClient(userId);
-            string fullDisplayName = null;
-            File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId), out fullDisplayName);
+            string dummy;
+            string syncFullName;
+            File file = _fileManager.FindFile(fromPath ?? "", _fileManager.GetUserRootFolder(userId),
+                out dummy, out syncFullName);
 
             if (file == null || !(file is Folder) || !Utilities.ValidateFileName(newFolderName))
                 return RedirectToAction("Browse");
@@ -480,7 +507,7 @@ namespace FooBox.Controllers
             data.BaseChangelistId = _fileManager.GetLastChangelistId();
             data.Changes.Add(new ClientChange
             {
-                FullName = "/" + userId + "/" + fromPath + "/" + destinationDisplayName,
+                FullName = syncFullName + "/" + destinationDisplayName,
                 Type = ChangeType.Add,
                 IsFolder = true,
                 DisplayName = destinationDisplayName

@@ -64,7 +64,7 @@ namespace FooBox.Controllers
             var mod = new EditInvitationsViewModel();
             
             mod.FullName = fullName;
-            mod.FromPath = _fileManager.GetFullName(file.ParentFolder, userRootFolder);
+            mod.FromPath = _fileManager.GetFullDisplayName(file.ParentFolder, userRootFolder);
             
             var invitations = _fileManager.Context.Invitations.ToList();
             foreach (Invitation i in invitations)
@@ -122,7 +122,7 @@ namespace FooBox.Controllers
                 from i in _fileManager.Context.Invitations
                 where i.UserId == currentUserId
                 let accepted = i.AcceptedFolders.Any()
-                orderby accepted
+                orderby accepted ascending, i.TimeStamp descending
                 select new InvitationVM
                 {
                     Id = i.Id,
@@ -136,7 +136,7 @@ namespace FooBox.Controllers
                 from i in _fileManager.Context.Invitations
                 where i.Target.OwnerId == currentUserId
                 let accepted = i.AcceptedFolders.Any()
-                orderby accepted
+                orderby accepted ascending, i.TimeStamp descending
                 select new InvitationVM
                 {
                     Id = i.Id,
@@ -220,8 +220,7 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteInvitation(EditInvitationsViewModel model, long? id)
         {
-            var inv = (from invitation in _userManager.Context.Invitations 
-                           where invitation.Id == id select invitation).SingleOrDefault();
+            var inv = _fileManager.FindInvitation(id.Value);
             if (inv == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
             foreach (var folder in inv.AcceptedFolders)
@@ -235,9 +234,7 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteInvitationIncoming(long? id)
         {
-            var inv = (from invitation in _userManager.Context.Invitations
-                       where invitation.Id == id
-                       select invitation).SingleOrDefault();
+            var inv = _fileManager.FindInvitation(id.Value);
             _userManager.Context.Invitations.Remove(inv);
             // TODO gotta remove the folder in invitation.AcceptedFolders
             _userManager.Context.SaveChanges();

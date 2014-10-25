@@ -4,6 +4,11 @@
 @{
     ViewBag.Title = "Version History";
     bool first = true;
+    long myUserId = User.Identity.GetUserId();
+    bool displayUserNames =
+        Model.SharedFolder ||
+        Model.Versions.Any(version => version.UserId != myUserId) ||
+        Model.Versions.Select(version => version.UserId).Distinct().Count() != 1;
 }
 
 <h2>Version History</h2>
@@ -22,10 +27,17 @@
         </thead>
         @foreach (var version in Model.Versions)
         {
+            string changedBy = version.ClientName == "Internal" ? "Web" : version.ClientName;
+
+            if (displayUserNames)
+            {
+                changedBy = version.UserName + " (" + changedBy + ")";
+            }
+            
             <tr>
                 <td class="vert-align">@Html.Encode(version.TimeStamp.ToLocalTime().ToString("F"))</td>
                 <td class="vert-align">@Html.Encode(Utilities.SizeToString(version.Size))</td>
-                <td class="vert-align">@(version.ClientName == "Internal" ? "Web" : version.ClientName)</td>
+                <td class="vert-align">@changedBy</td>
                 <td class="vert-align">@Html.ActionLink("Download", "DownloadVersion", new { id = version.VersionId }, new { @class = "btn btn-link" })</td>
                 <td class="vert-align">
                     @{
