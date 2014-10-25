@@ -29,7 +29,7 @@ namespace FooBoxClient
         {
             FolderBrowserDialog fbd = new FolderBrowserDialog();
             fbd.Description = "Select the directory to synchronise to.";
-            fbd.RootFolder = Environment.SpecialFolder.Personal;
+            fbd.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             DialogResult result = fbd.ShowDialog();
             if (result == DialogResult.OK)
             {
