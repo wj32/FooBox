@@ -53,7 +53,7 @@
             this.labelName.Location = new System.Drawing.Point(0, 19);
             this.labelName.Name = "labelName";
             this.labelName.Size = new System.Drawing.Size(451, 51);
-            this.labelName.TabIndex = 0;
+            this.labelName.TabIndex = 1;
             this.labelName.Text = "FooBox";
             this.labelName.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -64,7 +64,7 @@
             this.labelWelcome.Location = new System.Drawing.Point(17, 94);
             this.labelWelcome.Name = "labelWelcome";
             this.labelWelcome.Size = new System.Drawing.Size(321, 25);
-            this.labelWelcome.TabIndex = 1;
+            this.labelWelcome.TabIndex = 2;
             this.labelWelcome.Text = "Welcome to FooBox client setup";
             // 
             // labelServerLocation
@@ -105,7 +105,7 @@
             this.textBoxPassword.Location = new System.Drawing.Point(194, 227);
             this.textBoxPassword.Name = "textBoxPassword";
             this.textBoxPassword.Size = new System.Drawing.Size(245, 20);
-            this.textBoxPassword.TabIndex = 7;
+            this.textBoxPassword.TabIndex = 6;
             this.textBoxPassword.UseSystemPasswordChar = true;
             // 
             // labelPassword
@@ -122,7 +122,7 @@
             this.textBoxDirLoc.Location = new System.Drawing.Point(194, 253);
             this.textBoxDirLoc.Name = "textBoxDirLoc";
             this.textBoxDirLoc.Size = new System.Drawing.Size(164, 20);
-            this.textBoxDirLoc.TabIndex = 9;
+            this.textBoxDirLoc.TabIndex = 7;
             // 
             // label3
             // 
@@ -138,7 +138,7 @@
             this.buttonBrowse.Location = new System.Drawing.Point(364, 251);
             this.buttonBrowse.Name = "buttonBrowse";
             this.buttonBrowse.Size = new System.Drawing.Size(75, 23);
-            this.buttonBrowse.TabIndex = 10;
+            this.buttonBrowse.TabIndex = 8;
             this.buttonBrowse.Text = "Browse";
             this.buttonBrowse.UseVisualStyleBackColor = true;
             this.buttonBrowse.Click += new System.EventHandler(this.buttonBrowse_Click);
@@ -154,10 +154,11 @@
             // 
             // buttonCancel
             // 
+            this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.buttonCancel.Location = new System.Drawing.Point(364, 282);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
-            this.buttonCancel.TabIndex = 12;
+            this.buttonCancel.TabIndex = 10;
             this.buttonCancel.Text = "Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
@@ -167,7 +168,7 @@
             this.buttonNext.Location = new System.Drawing.Point(279, 282);
             this.buttonNext.Name = "buttonNext";
             this.buttonNext.Size = new System.Drawing.Size(79, 23);
-            this.buttonNext.TabIndex = 13;
+            this.buttonNext.TabIndex = 9;
             this.buttonNext.Text = "OK";
             this.buttonNext.UseVisualStyleBackColor = true;
             this.buttonNext.Click += new System.EventHandler(this.buttonNext_Click);
@@ -177,7 +178,7 @@
             this.textBoxServerPort.Location = new System.Drawing.Point(194, 175);
             this.textBoxServerPort.Name = "textBoxServerPort";
             this.textBoxServerPort.Size = new System.Drawing.Size(245, 20);
-            this.textBoxServerPort.TabIndex = 15;
+            this.textBoxServerPort.TabIndex = 4;
             this.textBoxServerPort.Text = "7348";
             // 
             // labelServerPort
