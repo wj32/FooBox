@@ -173,27 +173,25 @@ namespace FooBox.Controllers
         }
 
         [HttpGet]
-        public ActionResult CheckInvites(long? id, string secret, DateTime since)
+        public ActionResult Invitations(long? id, string secret, DateTime since)
         {
-            InviteStatus invites = new InviteStatus();
             var client = FindClient(id, secret);
             if (client == null)
-            {
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
-            }
-            foreach(Invitation i in client.User.Invitations){
-                //if invitation is newer than since
-                if (i.TimeStamp.CompareTo(since) > 0)
+
+            return Json((
+                from invitation in client.User.Invitations
+                where invitation.TimeStamp > since
+                orderby invitation.TimeStamp descending
+                select new InvitationInfo
                 {
-                    invites.New = true;
-          
+                    Id = invitation.Id,
+                    TimeStamp = invitation.TimeStamp,
+                    TargetName = invitation.Target.DisplayName,
+                    TargetOwnerName = invitation.Target.Owner.Name,
+                    Accepted = invitation.AcceptedFolders.Any()
                 }
-                if (i.AcceptedFolders.Count > 0)
-                {
-                    invites.Accepted = true;
-                }
-            }
-            return Json(invites);
+                ).ToList());
         }
 
         private Client FindClient(long? id, string secret)

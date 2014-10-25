@@ -283,28 +283,5 @@ namespace FooBoxClient
         {
             Requests.PreviousVersions(_currentFileRelativePath);
         }
-        /// <summary>
-        /// This will open invitation list 
-        /// when sync engine detects a new invite
-        /// </summary>
-        public void newInvite(InviteStatus status)
-        {
-            this.BeginInvoke(new Action(() => {
-                string balloonTipText = "";
-                if (status.New && status.Accepted)
-                {
-                    balloonTipText = "You have new sharing invites and an existing invite was accepted!";
-                }
-                else if (status.New)
-                {
-                    balloonTipText = "You have new sharing invites!";
-                }
-                else if (status.Accepted)
-                {
-                    balloonTipText = "A sharing invite was accepted!";
-                }
-                notifyFooBox.ShowBalloonTip(3000, "FooBox", balloonTipText, ToolTipIcon.Info);
-            }));
-        }
     }
 }

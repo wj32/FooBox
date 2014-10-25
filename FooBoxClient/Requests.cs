@@ -126,7 +126,7 @@ namespace FooBoxClient
         public static void PreviousVersions(string fullName)
         {
             
-            string retUrl = "/File/Versions/?fullName=" + fullName;
+            string retUrl = "/File/Versions/?fullName=" + Uri.EscapeDataString(fullName);
             retUrl = Uri.EscapeDataString(retUrl);
             string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
             string requestUrl = MakeUrl("Authenticate", parameters);
@@ -136,17 +136,17 @@ namespace FooBoxClient
         public static void Sharing(string fullName)
         {
 
-            string retUrl = "/Invitation?fullName=" + fullName;
+            string retUrl = "/Invitation?fullName=" + Uri.EscapeDataString(fullName);
             retUrl = Uri.EscapeDataString(retUrl);
             string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&returnUrl=" + retUrl;
             string requestUrl = MakeUrl("Authenticate", parameters);
             System.Diagnostics.Process.Start(requestUrl);
         }
 
-
-        public static InviteStatus GetInviteStatus(DateTime since){
-            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&since=" + since.ToString() ;
-            HttpWebRequest req = WebRequest.Create(MakeUrl("CheckInvites", parameters)) as HttpWebRequest;
+        public static List<InvitationInfo> Invitations(DateTime since)
+        {
+            string parameters = "id=" + Properties.Settings.Default.ID + "&secret=" + Properties.Settings.Default.Secret + "&since=" + since.ToString();
+            HttpWebRequest req = WebRequest.Create(MakeUrl("Invitations", parameters)) as HttpWebRequest;
 
             req.KeepAlive = true;
             req.Method = "GET";
@@ -155,8 +155,8 @@ namespace FooBoxClient
             using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.UTF8))
             {
                 var serializer = new JavaScriptSerializer();
-                return serializer.Deserialize<InviteStatus>(reader.ReadToEnd());
-            }  
+                return serializer.Deserialize<List<InvitationInfo>>(reader.ReadToEnd());
+            }
         }
     }
 }

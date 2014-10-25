@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 
 namespace FooBox.Common
 {
-    public class InviteStatus
+    public class InvitationInfo
     {
-        public bool New { get; set; }
+        public long Id { get; set; }
+        public DateTime TimeStamp { get; set; }
+        public string TargetName { get; set; }
+        public string TargetOwnerName { get; set; }
         public bool Accepted { get; set; }
     }
 
