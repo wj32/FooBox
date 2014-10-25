@@ -50,7 +50,13 @@
                 }
                 else
                 {
-                    <button class="btn btn-default btn-sm">Accept</button>
+                    using (Ajax.BeginForm("EditStatus", "Invitation",
+                            new AjaxOptions { OnSuccess = string.Format("onChangeInvitationStatusSuccess({0}, data)", item.Id), HttpMethod = "Post" }))
+                    {
+                        @Html.Hidden("id", item.Id)
+                        <button class="btn btn-default btn-sm" name="submit" value="Accept">Accept</button>
+                    }
+                    
                 }
             </td>
             <td id="@("inv" + @i)" class="col-md-2">
@@ -175,4 +181,18 @@
             $("#IncomingInvs").hide();
         });
     });
+</script>
+
+<script>
+    function onChangeInvitationStatusSuccess(id, data) {
+        //console.log(id);
+        window.location.href = "/Invitation/AllInvitations";
+        //if (data) {
+        //    $('#notifications').append('<div class="alert alert-success alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>A new shared folder <strong>' +
+        //        data.FolderDisplayName +
+        //        '</strong> has been created in your root directory. You may need to <a href="javascript:location.reload()">refresh</a> the page to see it.</div>')
+        //}
+        //console.log(data);
+       
+    }
 </script>
