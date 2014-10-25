@@ -80,7 +80,16 @@ namespace FooBoxClient
             // Lock the sync object to pause syncing.
             lock (_syncObject)
             {
-                Directory.Move(Properties.Settings.Default.Root, location);
+                try
+                {
+                    Directory.Move(Properties.Settings.Default.Root, location);
+                }
+                catch (Exception ex)
+                {
+                    labelError.Text = "Unable to access the directory: " + ex.Message;
+                    return;
+                }
+
                 _engine.RootDirectory = location;
             }
 

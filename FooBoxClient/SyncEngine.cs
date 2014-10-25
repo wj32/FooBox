@@ -71,6 +71,13 @@ namespace FooBoxClient
 
             if (invitationId != 0)
             {
+                try
+                {
+                    System.IO.File.SetAttributes(fileName, FileAttributes.Normal);
+                }
+                catch
+                { }
+
                 System.IO.File.WriteAllText(fileName, invitationId.ToString());
 
                 try

@@ -146,17 +146,12 @@ namespace FooBoxClient
 
                 if (!keep)
                 {
-                    Utilities.DeleteDirectoryRecursive(Properties.Settings.Default.Root);
-
-                    // This sometimes doesn't work...
-                    for (int attempts = 0; attempts < 4; attempts++)
+                    foreach (var info in (new DirectoryInfo(Properties.Settings.Default.Root)).EnumerateFileSystemInfos())
                     {
-                        Directory.CreateDirectory(Properties.Settings.Default.Root);
-
-                        if (Directory.Exists(Properties.Settings.Default.Root))
-                            break;
-
-                        System.Threading.Thread.Sleep(500);
+                        if ((info.Attributes & FileAttributes.Directory) != 0)
+                            Utilities.DeleteDirectoryRecursive(info.FullName);
+                        else
+                            Utilities.DeleteFile(info.FullName);
                     }
                 }
             }
