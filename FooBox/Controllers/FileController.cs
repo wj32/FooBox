@@ -100,13 +100,16 @@ namespace FooBox.Controllers
                         currentFolder = acceptedFolder;
                 }
 
-                currentFolder = currentFolder.ParentFolder;
-
                 if (currentFolder != userRootFolder)
                     parentFolders.Add(currentFolder);
+
+                currentFolder = currentFolder.ParentFolder;
             };
 
             parentFolders.Reverse();
+
+            if (parentFolders.Count != 0)
+                parentFolders.RemoveAt(parentFolders.Count - 1);
 
             if (folder != userRootFolder)
                 model.Parents.Add(new Tuple<string, string>("Home", ""));
