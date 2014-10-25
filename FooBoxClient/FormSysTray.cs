@@ -21,6 +21,7 @@ namespace FooBoxClient
         private string _currentFileRelativePath = null;
 
         private string _lastBalloonTip = "";
+        private DateTime _lastBalloonTipTime = DateTime.UtcNow;
 
         public FormSysTray()
         {
@@ -117,10 +118,13 @@ namespace FooBoxClient
 
         private void ShowNotification(string message)
         {
-            if (_lastBalloonTip == message)
+            DateTime now = DateTime.UtcNow;
+
+            if (_lastBalloonTip == message && (now - _lastBalloonTipTime).TotalSeconds < 60)
                 return;
 
             _lastBalloonTip = message;
+            _lastBalloonTipTime = now;
             ToolTipIcon icon = ToolTipIcon.Info;
 
             if (message.StartsWith("Sync error:"))
