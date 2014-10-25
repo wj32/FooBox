@@ -63,7 +63,7 @@
                 <a href="#" class="deleteLink">Delete</a>
                 <!-- Confirm Delete -->
                 <div class="confirmDeleteDialog" id="@("confirminv" + @i)" style="display:none;">
-                    @using (@Html.BeginForm("DeleteInvitationIncoming", "Invitation", new { id = item.Id }))
+                    @using (@Html.BeginForm("DeleteInvitation2", "Invitation", new { id = item.Id }))
                     {
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -129,7 +129,7 @@
                 <a href="#" class="deleteLink">Delete</a>
                 <!-- Confirm Delete -->
                 <div class="confirmDeleteDialog" id="@("confirminv" + @i)" style="display:none;">
-                    @using (@Html.BeginForm("DeleteInvitationIncoming", "Invitation", new { id = item.Id }))
+                    @using (@Html.BeginForm("DeleteInvitation2", "Invitation", new { id = item.Id }))
                     {
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-sm btn-danger">Delete</button>

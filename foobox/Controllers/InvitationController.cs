@@ -1,4 +1,5 @@
-﻿using FooBox.Models;
+﻿using FooBox.Common;
+using FooBox.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -215,7 +216,6 @@ namespace FooBox.Controllers
             return View(model);
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult DeleteInvitation(EditInvitationsViewModel model, long? id)
@@ -223,22 +223,48 @@ namespace FooBox.Controllers
             var inv = _fileManager.FindInvitation(id.Value);
             if (inv == null)
                 return new HttpStatusCodeResult(System.Net.HttpStatusCode.NotFound);
-            foreach (var folder in inv.AcceptedFolders)
-                folder.InvitationId = null;
-            _userManager.Context.Invitations.Remove(inv);
-            _userManager.Context.SaveChanges();
+            DeleteInvitation(inv);
             return RedirectToAction("Index", new { fullName = model.FullName });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteInvitationIncoming(long? id)
+        public ActionResult DeleteInvitation2(long? id)
         {
             var inv = _fileManager.FindInvitation(id.Value);
-            _userManager.Context.Invitations.Remove(inv);
-            // TODO gotta remove the folder in invitation.AcceptedFolders
-            _userManager.Context.SaveChanges();
+            DeleteInvitation(inv);
             return RedirectToAction("AllInvitations");
+        }
+
+        private bool DeleteInvitation(Invitation invitation)
+        {
+            // Delete any associated accepted folder.
+
+            var acceptedFolder = invitation.AcceptedFolders.SingleOrDefault();
+
+            if (acceptedFolder != null)
+            {
+                var internalClient = _fileManager.GetInternalClient(acceptedFolder.OwnerId);
+                ClientSyncData data = new ClientSyncData();
+
+                data.ClientId = internalClient.Id;
+                data.BaseChangelistId = _fileManager.GetLastChangelistId();
+                data.Changes.Add(new ClientChange
+                {
+                    FullName = _fileManager.GetFullName(acceptedFolder),
+                    Type = ChangeType.Delete
+                });
+
+                if (_fileManager.SyncClientChanges(data).State != ClientSyncResultState.Success)
+                    return false;
+            }
+
+            // Delete the invitation.
+
+            _fileManager.Context.Invitations.Remove(invitation);
+            _fileManager.Context.SaveChanges();
+
+            return true;
         }
 
         [HttpPost]
