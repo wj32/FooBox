@@ -19,6 +19,7 @@ namespace FooBox.Models
             public long Size { get; set; }
             public DateTime TimeStamp { get; set; }
             public ObjectState State { get; set; }
+            public bool HasInvitation { get; set; }
         }
 
         public string FullDisplayName { get; set; }

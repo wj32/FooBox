@@ -7,6 +7,7 @@ using System.Web.Mvc;
 
 namespace FooBox.Controllers
 {
+    [Authorize]
     public class InvitationController : Controller
     {
         private FileManager _fileManager;
@@ -27,7 +28,18 @@ namespace FooBox.Controllers
             base.Dispose(disposing);
         }
 
+        private InvitationDisallowedReason DetermineDisallowedReason(Folder folder)
+        {
+            long userId = User.Identity.GetUserId();
 
+            if (folder.OwnerId != userId)
+                return InvitationDisallowedReason.NotOwner;
+
+            if (folder.InvitationId != null)
+                return InvitationDisallowedReason.InSharedFolder;
+
+            return InvitationDisallowedReason.None;
+        }
 
         public ActionResult Index(string fullName)
         {
@@ -45,6 +57,9 @@ namespace FooBox.Controllers
             }
 
             Folder folder = (Folder)file;
+
+            if (DetermineDisallowedReason(folder) != InvitationDisallowedReason.None)
+                return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
 
             var mod = new EditInvitationsViewModel();
             
@@ -147,6 +162,10 @@ namespace FooBox.Controllers
                 User currentUser = _userManager.FindUser(User.Identity.GetUserId());
                 string fullDisplayName;
                 Folder f = (Folder)_fileManager.FindFile(model.FullName, userRootFolder, out fullDisplayName);
+
+                if (DetermineDisallowedReason(f) != InvitationDisallowedReason.None)
+                    return new HttpStatusCodeResult(System.Net.HttpStatusCode.Forbidden);
+
                 foreach (var item in model.UsersToInvite)
                 {
                     if (item.IsSelected)

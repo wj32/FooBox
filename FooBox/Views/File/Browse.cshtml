@@ -127,7 +127,7 @@
                              new AjaxOptions { UpdateTargetId = "shareLink", OnSuccess = "onSharingLinkSuccess" }, new { @class = "getShareLink" })</li>
                             <li class="divider"></li>
                         } 
-                        else if (!Model.SharedFolder)
+                        else if (!Model.SharedFolder && !item.HasInvitation)
                         { 
                             <li>@Html.ActionLink("Invite Users", "Index", "Invitation", new { fullName = item.FullDisplayName }, null)</li>
                             <li class="divider"></li>

@@ -13,9 +13,16 @@ namespace FooBox.Controllers
     {
         private UserManager um = new UserManager();
 
+        private bool IsAuthorized()
+        {
+            return um.IsUserAdmin(User.Identity.GetUserId());
+        }
+
         // GET: Group/Index
         public ActionResult Index()
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             return View(um.Context.Groups);
         }
 
@@ -44,8 +51,8 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult GroupCreate(AdminNewGroupViewModel model)
         {
-
-            
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             Group template = null;
             if (ModelState.IsValid)
             {
@@ -82,6 +89,8 @@ namespace FooBox.Controllers
         // GET: Group/GroupEdit/5
         public ActionResult GroupEdit(long? id)
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
@@ -119,6 +128,8 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult GroupEdit(AdminEditGroupViewModel model)
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             if (ModelState.IsValid)
             {
                 Group g = um.FindGroup(model.Id);
@@ -158,6 +169,8 @@ namespace FooBox.Controllers
         // GET: Group/GroupDelete/5
         public ActionResult GroupDelete(long? id)
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);

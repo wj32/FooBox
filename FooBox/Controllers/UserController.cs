@@ -16,10 +16,16 @@ namespace FooBox.Controllers
     {
         private UserManager um = new UserManager();
 
-        
+        private bool IsAuthorized()
+        {
+            return um.IsUserAdmin(User.Identity.GetUserId());
+        }
+
         // GET: User/Index
         public ActionResult Index()
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             return View(um.Context.Users.ToList());
         }
 
@@ -52,6 +58,8 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult UserCreate(AdminNewUserViewModel model)
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             User template;
             if (ModelState.IsValid)
             {
@@ -74,6 +82,8 @@ namespace FooBox.Controllers
         // GET: User/UserEdit/5
         public ActionResult UserEdit(long? id)
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
@@ -100,6 +110,8 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult UserEdit(AdminEditUserViewModel model)
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             if (ModelState.IsValid)
             {
                 User u = um.FindUser(model.Id);
@@ -129,6 +141,8 @@ namespace FooBox.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult UserDelete(long? id)
         {
+            if (!IsAuthorized())
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             if (!id.HasValue)
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 

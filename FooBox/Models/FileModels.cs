@@ -715,12 +715,11 @@ namespace FooBox.Models
 
                 if (state == ObjectState.Deleted)
                 {
-                    // Delete all incoming invitations.
+                    // Delete all invitations that target this folder.
                     _context.Invitations.RemoveRange(folder.TargetOfInvitations);
 
-                    // Delete any linked invitation.
-                    if (folder.InvitationId != null)
-                        _context.Invitations.Remove(folder.Invitation);
+                    // Remove any linked invitation (but don't delete it).
+                    folder.InvitationId = null;
                 }
 
                 foreach (var subFile in folder.Files)
@@ -913,7 +912,7 @@ namespace FooBox.Models
                         {
                             long invitationId = clientChangesByFullName[node.FullName].InvitationId;
 
-                            if (invitationId != 0)
+                            if (invitationId != 0 && ((Folder)file).OwnerId == client.UserId)
                             {
                                 var invitation = (
                                     from i in client.User.Invitations.AsQueryable()
