@@ -216,7 +216,7 @@ namespace FooBoxClient
             else
             {
                 _paused = true;
-                pauseToolStripMenuItem.Text = "Resuming syncing";
+                pauseToolStripMenuItem.Text = "Resume syncing";
             }
         }
 
