@@ -29,6 +29,7 @@ namespace FooBox.Models
         public List<FileEntry> Files { get; set; }
         public List<Tuple<string, string>> Parents { get; set; }
         public bool SharedFolder { get; set; }
+        public bool SharedWithMe { get; set; }
     }
 
     public class VersionHistoryViewModel

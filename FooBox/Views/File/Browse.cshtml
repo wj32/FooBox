@@ -40,7 +40,7 @@
     }
     else if (Model.SharedFolder)
     {
-        <em style="color: #148320; margin-left: 15px; font-size: 20px;">Shared</em>
+        <em style="color: #148320; margin-left: 15px; font-size: 20px;">Shared @(Model.SharedWithMe ? "with" : "by") you</em>
     }
 </h2>
 <p>@Html.ValidationSummary(true)</p>
@@ -99,11 +99,11 @@
                     string iconClass;
                     if (item.HasTargetInvitations)
                     {
-                        iconClass = "glyphicon-export";
+                        iconClass = "glyphicon-cloud-upload";
                     }
                     else if (item.HasInvitation)
                     {
-                        iconClass = "glyphicon-import";
+                        iconClass = "glyphicon-cloud-download";
                     }
                     else if (item.IsFolder)
                     {
@@ -146,7 +146,7 @@
                             <li>@Ajax.ActionLink("Get Sharing Link", "GetShareLink", new { fullName = item.FullDisplayName },
                              new AjaxOptions { UpdateTargetId = "shareLink", OnSuccess = "onSharingLinkSuccess" }, new { @class = "getShareLink" })</li>
                             <li class="divider"></li>
-                        } 
+                        }
                         else if (!Model.SharedFolder && !item.HasInvitation)
                         { 
                             <li>@Html.ActionLink("Invitations", "Index", "Invitation", new { fullName = item.FullDisplayName }, null)</li>

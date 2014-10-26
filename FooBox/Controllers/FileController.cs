@@ -86,7 +86,7 @@ namespace FooBox.Controllers
 
             while (currentFolder != userRootFolder)
             {
-                if (currentFolder.InvitationId != null || currentFolder.TargetOfInvitations.Any())
+                if (currentFolder.TargetOfInvitations.Any())
                 {
                     model.SharedFolder = true;
 
@@ -97,8 +97,12 @@ namespace FooBox.Controllers
 
                     if (invitation != null)
                         acceptedFolder = invitation.AcceptedFolders.SingleOrDefault();
+
                     if (acceptedFolder != null)
+                    {
                         currentFolder = acceptedFolder;
+                        model.SharedWithMe = true;
+                    }
                 }
 
                 if (currentFolder != userRootFolder)
