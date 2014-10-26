@@ -73,6 +73,17 @@
             </td>
         </tr>
     }
+    @if (!Model.FolderInvitations.Any())
+    {
+        <tr>
+            <td>
+                <em>No invitations to display.</em>
+            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    }
 
 </table>
 

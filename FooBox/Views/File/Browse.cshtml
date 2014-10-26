@@ -97,9 +97,13 @@
             <td>
                 @{
                     string iconClass;
-                    if (item.HasInvitation || item.HasTargetInvitations)
+                    if (item.HasTargetInvitations)
                     {
-                        iconClass = "glyphicon-globe";
+                        iconClass = "glyphicon-export";
+                    }
+                    else if (item.HasInvitation)
+                    {
+                        iconClass = "glyphicon-import";
                     }
                     else if (item.IsFolder)
                     {
