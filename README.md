@@ -1,4 +1,11 @@
-This is FooBox.
+This is FooBox, a file synchronisation and backup system made in 2014 for COMP4920 (Management and Ethics) class at UNSW Australia.
+
+Project members:
+
+* Luke Esther
+* Vivian Ho
+* Wen Jia Liu
+* Luke Pearson
 
 Minimum requirements:
 Operating System: Windows 7+
